@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   CalendarClock,
+  CalendarDays,
   Clock3,
   LogOut,
   UserRound,
@@ -15,6 +16,12 @@ interface StaffMoreMenuProps {
 }
 
 const items = [
+  {
+    title: "Schedule",
+    description: "View your events and duties",
+    href: "/staff/schedule",
+    icon: CalendarDays,
+  },
   {
     title: "Availability",
     description: "Manage your availability",
@@ -33,7 +40,7 @@ const items = [
     href: "/staff/profile",
     icon: UserRound,
   },
-];
+];;
 
 export default function StaffMoreMenu({
   open,
