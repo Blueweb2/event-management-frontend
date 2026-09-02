@@ -31,7 +31,7 @@ export default function DashboardHeader({
           </div>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#29241f] sm:text-3xl">
-            Good morning, {isManager ? "Manager" : "Staff"} 👋
+            Good morning, {isManager ? "Manager" : "Staff"} 
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#756d64]">
