@@ -155,6 +155,39 @@ export default function EventDetailsStep({
           helperText="Enter the venue name, hall, or complete event location."
           required
         />
+
+        {/* Event Description */}
+        <div>
+          <label
+            htmlFor="description"
+            className="mb-2 block text-sm font-semibold text-[#403a34]"
+          >
+            Event Description
+            <span className="ml-1 text-[#b8894b]">*</span>
+          </label>
+
+          <textarea
+            id="description"
+            rows={5}
+            placeholder="Describe your event, including any special requirements, theme, food preferences, or other details..."
+            value={formData.description}
+            onChange={(event) =>
+              updateField("description", event.target.value)
+            }
+            required
+            className={[
+              "w-full resize-none rounded-xl border bg-white px-4 py-3",
+              "text-sm text-[#403a34]",
+              "placeholder:text-[#a69b90]",
+              "outline-none transition-all duration-200",
+              "border-[#d9d0c6]",
+              "focus:border-[#b8894b]",
+              "focus:ring-2 focus:ring-[#b8894b]/15",
+            ].join(" ")}
+          />
+        </div>
+
+
       </div>
     </Card>
   );

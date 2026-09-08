@@ -5,6 +5,7 @@ export interface BookingFormData {
   eventTime: string;
   guests: string;
   location: string;
+  description: string;
 
   // Package
   package: string;
