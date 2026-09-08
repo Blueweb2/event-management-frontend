@@ -1,32 +1,33 @@
-export interface BookingFormData {
+export type ServiceItem = {
+  id: string;
+  category: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type BookingFormData = {
   // Event details
+  eventName: string;
   eventType: string;
   eventDate: string;
   eventTime: string;
   guests: string;
   location: string;
+  description: string;
 
-  // Package
-  package: string;
+  // Services & Items
+  services: ServiceItem[];
 
-  // Food
-  foodType: string;
-  meals: string[];
-  foodRequirements: string;
+  // Pricing
+  discountType: "percentage" | "fixed";
+  discountValue: string;
+  additionalCharges: string;
 
-  // Additional requirements
-  requirements: string[];
-  otherRequirements: string;
-
-  // Customer details
+  // Client
   name: string;
   phone: string;
   email: string;
   message: string;
-}
-
-export interface BookingStep {
-  id: number;
-  title: string;
-  shortTitle: string;
-}
+};
