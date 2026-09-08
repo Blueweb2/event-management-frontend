@@ -1,84 +1,136 @@
-import { Check } from "lucide-react";
-import { bookingSteps } from "./constants";
+"use client";
 
-interface BookingProgressProps {
+import {
+  Check,
+  FileText,
+  Layers3,
+  ReceiptText,
+  Send,
+} from "lucide-react";
+
+type BookingProgressProps = {
   currentStep: number;
-}
+};
+
+const steps = [
+  {
+    number: 1,
+    title: "Event Details",
+    icon: FileText,
+  },
+  {
+    number: 2,
+    title: "Services & Items",
+    icon: Layers3,
+  },
+  {
+    number: 3,
+    title: "Pricing",
+    icon: ReceiptText,
+  },
+  {
+    number: 4,
+    title: "Preview",
+    icon: Send,
+  },
+];
 
 export default function BookingProgress({
   currentStep,
 }: BookingProgressProps) {
   return (
-    <section className="border-b border-[#e8e1d8] bg-white">
-      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
-        <div className="flex items-start">
-          {bookingSteps.map((step, index) => {
+    <div className="border-b border-[var(--border)] bg-white">
+      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-7">
+        <div className="flex items-start justify-between">
+          {steps.map((step, index) => {
             const Icon = step.icon;
 
-            const completed = currentStep > step.id;
-            const active = currentStep === step.id;
+            const isCompleted =
+              currentStep > step.number;
+
+            const isCurrent =
+              currentStep === step.number;
+
+            const isUpcoming =
+              currentStep < step.number;
 
             return (
               <div
-                key={step.id}
-                className="flex min-w-0 flex-1 items-start"
+                key={step.number}
+                className="flex flex-1 items-start"
               >
-                {/* Step */}
-                <div className="flex min-w-0 flex-col items-center">
+                {/* Step + Label */}
+                <div className="flex min-w-0 flex-1 flex-col items-center">
+                  {/* Circle */}
                   <div
                     className={[
                       "flex h-10 w-10 shrink-0 items-center justify-center",
                       "rounded-full border-2 transition-all duration-200",
-                      completed
-                        ? "border-[#b8894b] bg-[#b8894b] text-white"
-                        : active
-                          ? "border-[#b8894b] bg-[#fbf5ec] text-[#b8894b] shadow-sm"
-                          : "border-[#ddd5cb] bg-white text-[#aaa198]",
+                      isCompleted
+                        ? "border-[var(--sage-dark)] bg-[var(--sage-dark)] text-white"
+                        : isCurrent
+                          ? "border-[#b49a6a] bg-[#b49a6a] text-white"
+                          : "border-gray-200 bg-white text-gray-400",
                     ].join(" ")}
                   >
-                    {completed ? (
-                      <Check size={18} strokeWidth={2.5} />
+                    {isCompleted ? (
+                      <Check
+                        size={17}
+                        strokeWidth={2.5}
+                      />
                     ) : (
-                      <Icon size={18} />
+                      <Icon
+                        size={17}
+                        strokeWidth={1.8}
+                      />
                     )}
                   </div>
 
+                  {/* Label */}
                   <div className="mt-2 text-center">
                     <p
                       className={[
-                        "text-[11px] font-semibold sm:text-xs",
-                        active || completed
-                          ? "text-[#8a6435]"
-                          : "text-[#9b938a]",
+                        "text-[10px] font-medium sm:text-xs",
+                        isCurrent || isCompleted
+                          ? "text-[var(--sage-dark)]"
+                          : "text-gray-400",
                       ].join(" ")}
                     >
-                      <span className="sm:hidden">
-                        {step.shortTitle}
-                      </span>
+                      {step.title}
+                    </p>
 
-                      <span className="hidden sm:inline">
-                        {step.title}
-                      </span>
+                    <p
+                      className={[
+                        "mt-0.5 hidden text-[10px] sm:block",
+                        isCurrent
+                          ? "text-[var(--sage)]"
+                          : "text-gray-400",
+                      ].join(" ")}
+                    >
+                      Step {step.number}
                     </p>
                   </div>
                 </div>
 
                 {/* Connector */}
-                {index < bookingSteps.length - 1 && (
-                  <div
-                    className={[
-                      "mt-5 mx-2 h-0.5 flex-1 rounded-full transition-colors duration-300 sm:mx-4",
-                      completed
-                        ? "bg-[#b8894b]"
-                        : "bg-[#e5ded5]",
-                    ].join(" ")}
-                  />
+                {index < steps.length - 1 && (
+                  <div className="mt-5 flex flex-1 items-center px-1 sm:px-3">
+                    <div
+                      className={[
+                        "h-0.5 w-full transition-all duration-300",
+                        currentStep >
+                        step.number
+                          ? "bg-[var(--sage-dark)]"
+                          : "bg-gray-200",
+                      ].join(" ")}
+                    />
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
