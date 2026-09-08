@@ -9,9 +9,34 @@ import {
 
 import EventCard from "./EventCard";
 import EventStatusBadge from "./EventStatusBadge";
-import { events } from "./constants";
 
-export default function EventsTable() {
+import type { ManagerEvent } from "@/types/event";
+
+interface EventsTableProps {
+  events: ManagerEvent[];
+}
+
+function formatDate(date: string) {
+  if (!date) return "Not available";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+export default function EventsTable({
+  events,
+}: EventsTableProps) {
   return (
     <section className="rounded-2xl border border-[#e8e1d8] bg-white shadow-sm">
       {/* Header */}
@@ -71,14 +96,14 @@ export default function EventsTable() {
           <tbody className="divide-y divide-[#eee8e1]">
             {events.map((event) => (
               <tr
-                key={event.id}
+                key={event._id}
                 className="transition hover:bg-[#fdfbf8]"
               >
                 {/* Event */}
                 <td className="px-5 py-4">
                   <div className="min-w-[190px]">
                     <p className="text-sm font-semibold text-[#29241f]">
-                      {event.title}
+                      {event.name}
                     </p>
 
                     <p className="mt-1 text-xs text-[#9a6c37]">
@@ -86,7 +111,8 @@ export default function EventsTable() {
                     </p>
 
                     <p className="mt-1 text-xs text-[#9b938a]">
-                      {event.customer}
+                      {event.customer?.name ||
+                        "No customer assigned"}
                     </p>
                   </div>
                 </td>
@@ -101,7 +127,7 @@ export default function EventsTable() {
 
                     <div>
                       <p className="whitespace-nowrap text-sm font-medium text-[#5f574f]">
-                        {event.date}
+                        {formatDate(event.date)}
                       </p>
 
                       <p className="mt-0.5 text-xs text-[#9b938a]">
@@ -140,14 +166,14 @@ export default function EventsTable() {
                 {/* Package */}
                 <td className="px-5 py-4">
                   <span className="text-sm font-medium text-[#5f574f]">
-                    {event.package}
+                    {event.package || "—"}
                   </span>
                 </td>
 
                 {/* Amount */}
                 <td className="px-5 py-4">
                   <span className="whitespace-nowrap text-sm font-semibold text-[#29241f]">
-                    {event.amount}
+                    {formatAmount(event.amount)}
                   </span>
                 </td>
 
@@ -161,8 +187,8 @@ export default function EventsTable() {
                 {/* Action */}
                 <td className="px-5 py-4">
                   <Link
-                    href={`/dashboard/events/${event.id}`}
-                    aria-label={`View ${event.title}`}
+                    href={`/dashboard/events/${event._id}`}
+                    aria-label={`View ${event.name}`}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-[#756d64] transition hover:bg-[#f5eee5] hover:text-[#9a6c37]"
                   >
                     <MoreHorizontal size={18} />
@@ -178,7 +204,7 @@ export default function EventsTable() {
       <div className="grid gap-4 p-4 md:hidden">
         {events.map((event) => (
           <EventCard
-            key={event.id}
+            key={event._id}
             event={event}
           />
         ))}

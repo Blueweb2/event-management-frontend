@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Eye,
@@ -15,12 +16,30 @@ import {
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: "admin" | "staff";
+    };
+    token: string;
+  };
+}
+
 export default function LoginForm() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
@@ -28,18 +47,77 @@ export default function LoginForm() {
     event.preventDefault();
 
     setLoading(true);
+    setError("");
 
-    // Backend authentication will be connected later.
-    console.log({
-      email,
-      password,
-      rememberMe,
-    });
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
+      );
 
-    // Temporary loading simulation
-    setTimeout(() => {
+      const result: LoginResponse = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message || "Login failed"
+        );
+      }
+
+      if (!result.data) {
+        throw new Error("Invalid login response");
+      }
+
+      const { user, token } = result.data;
+
+      // Store token based on "Remember me"
+      if (rememberMe) {
+        localStorage.setItem("token", token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify(user)
+        );
+
+        // Remove any old session token
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+      } else {
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify(user)
+        );
+
+        // Remove any old persistent token
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
+
+      // Redirect based on role
+      if (user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/staff");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -77,6 +155,15 @@ export default function LoginForm() {
             bookings.
           </p>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm text-red-600">
+              {error}
+            </p>
+          </div>
+        )}
 
         {/* Form */}
         <form

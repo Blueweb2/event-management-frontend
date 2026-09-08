@@ -54,7 +54,7 @@ export default function StaffEventCard({
         <Detail
           icon={<CalendarDays size={16} />}
           label="Date"
-          value={event.date}
+          value={formatDate(event.date)}
         />
 
         <Detail
@@ -77,6 +77,18 @@ export default function StaffEventCard({
       </div>
     </article>
   );
+}
+
+function formatDate(date: string) {
+  if (!date) {
+    return "Not available";
+  }
+
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function Detail({

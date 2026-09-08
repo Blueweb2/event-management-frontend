@@ -9,30 +9,17 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "EventFlow | Event Management Made Simple",
-    template: "%s | EventFlow",
+    default: "Pircello Events",
+    template: "%s | Pircello Events",
   },
   description:
-    "Manage events, customers, staff duties, food planning, expenses, payments, and reports from one responsive event management platform.",
-  keywords: [
-    "event management",
-    "event planning",
-    "staff management",
-    "catering management",
-    "food calculation",
-    "event expenses",
-    "event management software",
-  ],
-  applicationName: "EventFlow",
+    "Pircello Events — a professional event management platform for planning, managing, estimating, and delivering exceptional events.",
+  applicationName: "Pircello Events",
   authors: [
     {
-      name: "EventFlow",
+      name: "Pircello Events",
     },
   ],
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-  },
 };
 
 export default function RootLayout({
@@ -43,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} bg-white text-gray-900 antialiased`}
+        className={`${inter.variable} bg-[#0b0b0a] text-gray-900 antialiased`}
       >
         {children}
       </body>

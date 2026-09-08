@@ -8,27 +8,28 @@ import {
 } from "lucide-react";
 
 import EventStatusBadge from "./EventStatusBadge";
-
-export interface EventCardData {
-  id: number | string;
-  title: string;
-  type: string;
-  date: string;
-  time: string;
-  location: string;
-  guests: number;
-  customer: string;
-  package: string;
-  amount: string;
-  status:
-    | "Confirmed"
-    | "Pending"
-    | "Completed"
-    | "Cancelled";
-}
+import type { ManagerEvent } from "@/types/event";
 
 interface EventCardProps {
-  event: EventCardData;
+  event: ManagerEvent;
+}
+
+function formatDate(date: string) {
+  if (!date) return "Not available";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export default function EventCard({
@@ -44,11 +45,11 @@ export default function EventCard({
           </p>
 
           <h3 className="mt-1 truncate text-base font-bold text-[#29241f]">
-            {event.title}
+            {event.name}
           </h3>
 
           <p className="mt-1 text-xs text-[#8d847b]">
-            {event.customer}
+            {event.customer?.name || "No customer assigned"}
           </p>
         </div>
 
@@ -57,6 +58,7 @@ export default function EventCard({
 
       {/* Event details */}
       <div className="mt-5 grid gap-3">
+        {/* Date */}
         <div className="flex items-center gap-3 text-sm text-[#5f574f]">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
             <CalendarDays size={16} />
@@ -68,11 +70,12 @@ export default function EventCard({
             </p>
 
             <p className="font-medium">
-              {event.date}
+              {formatDate(event.date)}
             </p>
           </div>
         </div>
 
+        {/* Time */}
         <div className="flex items-center gap-3 text-sm text-[#5f574f]">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
             <Clock3 size={16} />
@@ -89,6 +92,7 @@ export default function EventCard({
           </div>
         </div>
 
+        {/* Location */}
         <div className="flex items-center gap-3 text-sm text-[#5f574f]">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
             <MapPin size={16} />
@@ -105,6 +109,7 @@ export default function EventCard({
           </div>
         </div>
 
+        {/* Guests */}
         <div className="flex items-center gap-3 text-sm text-[#5f574f]">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
             <Users size={16} />
@@ -126,16 +131,18 @@ export default function EventCard({
       <div className="mt-5 flex items-center justify-between border-t border-[#eee8e1] pt-4">
         <div>
           <p className="text-[11px] text-[#9b938a]">
-            {event.package} Package
+            {event.package
+              ? `${event.package} Package`
+              : "Package not specified"}
           </p>
 
           <p className="mt-1 text-sm font-bold text-[#29241f]">
-            {event.amount}
+            {formatAmount(event.amount)}
           </p>
         </div>
 
         <Link
-          href={`/dashboard/events/${event.id}`}
+          href={`/dashboard/events/${event._id}`}
           className="inline-flex items-center gap-1.5 rounded-full border border-[#ded5cb] px-3.5 py-2 text-xs font-semibold text-[#5f574f] transition hover:border-[#b8894b] hover:bg-[#f8f3ec] hover:text-[#8a6435]"
         >
           View Details

@@ -6,41 +6,54 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+interface EventStatsData {
+  total: number;
+  upcoming: number;
+  confirmed: number;
+  pending: number;
+}
+
+interface EventStatsProps {
+  stats: EventStatsData;
+}
+
 interface EventStat {
   title: string;
-  value: string;
+  value: number;
   description: string;
   icon: LucideIcon;
 }
 
-const eventStats: EventStat[] = [
-  {
-    title: "Total Events",
-    value: "24",
-    description: "All scheduled events",
-    icon: LayoutList,
-  },
-  {
-    title: "Upcoming",
-    value: "12",
-    description: "Events coming soon",
-    icon: CalendarDays,
-  },
-  {
-    title: "Confirmed",
-    value: "9",
-    description: "Confirmed events",
-    icon: CheckCircle2,
-  },
-  {
-    title: "Pending",
-    value: "3",
-    description: "Awaiting confirmation",
-    icon: Clock3,
-  },
-];
+export default function EventStats({
+  stats,
+}: EventStatsProps) {
+  const eventStats: EventStat[] = [
+    {
+      title: "Total Events",
+      value: stats.total,
+      description: "All scheduled events",
+      icon: LayoutList,
+    },
+    {
+      title: "Upcoming",
+      value: stats.upcoming,
+      description: "Events coming soon",
+      icon: CalendarDays,
+    },
+    {
+      title: "Confirmed",
+      value: stats.confirmed,
+      description: "Confirmed events",
+      icon: CheckCircle2,
+    },
+    {
+      title: "Pending",
+      value: stats.pending,
+      description: "Awaiting confirmation",
+      icon: Clock3,
+    },
+  ];
 
-export default function EventStats() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {eventStats.map((stat) => {

@@ -6,7 +6,6 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useState } from "react";
 
 const eventTypes = [
   "All Event Types",
@@ -26,17 +25,33 @@ const statuses = [
   "Cancelled",
 ];
 
-export default function EventFilters() {
-  const [search, setSearch] = useState("");
-  const [eventType, setEventType] = useState("All Event Types");
-  const [status, setStatus] = useState("All Statuses");
-  const [date, setDate] = useState("");
+interface EventFiltersProps {
+  search: string;
+  eventType: string;
+  status: string;
+  date: string;
 
+  onSearchChange: (value: string) => void;
+  onEventTypeChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
+  onDateChange: (value: string) => void;
+}
+
+export default function EventFilters({
+  search,
+  eventType,
+  status,
+  date,
+  onSearchChange,
+  onEventTypeChange,
+  onStatusChange,
+  onDateChange,
+}: EventFiltersProps) {
   const resetFilters = () => {
-    setSearch("");
-    setEventType("All Event Types");
-    setStatus("All Statuses");
-    setDate("");
+    onSearchChange("");
+    onEventTypeChange("All Event Types");
+    onStatusChange("All Statuses");
+    onDateChange("");
   };
 
   const hasFilters =
@@ -80,7 +95,7 @@ export default function EventFilters() {
       {/* Filters */}
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Search */}
-        <div className="xl:col-span-1">
+        <div>
           <label
             htmlFor="event-search"
             className="mb-2 block text-xs font-semibold text-[#5f574f]"
@@ -99,7 +114,7 @@ export default function EventFilters() {
               type="search"
               value={search}
               onChange={(event) =>
-                setSearch(event.target.value)
+                onSearchChange(event.target.value)
               }
               placeholder="Search event or customer..."
               className="h-10 w-full rounded-lg border border-[#d9d0c6] bg-white pl-10 pr-3 text-sm text-[#403a34] outline-none transition placeholder:text-[#aaa198] focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/15"
@@ -120,7 +135,7 @@ export default function EventFilters() {
             id="event-type"
             value={eventType}
             onChange={(event) =>
-              setEventType(event.target.value)
+              onEventTypeChange(event.target.value)
             }
             className="h-10 w-full rounded-lg border border-[#d9d0c6] bg-white px-3 text-sm text-[#403a34] outline-none transition focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/15"
           >
@@ -145,7 +160,7 @@ export default function EventFilters() {
             id="event-status"
             value={status}
             onChange={(event) =>
-              setStatus(event.target.value)
+              onStatusChange(event.target.value)
             }
             className="h-10 w-full rounded-lg border border-[#d9d0c6] bg-white px-3 text-sm text-[#403a34] outline-none transition focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/15"
           >
@@ -177,7 +192,7 @@ export default function EventFilters() {
               type="date"
               value={date}
               onChange={(event) =>
-                setDate(event.target.value)
+                onDateChange(event.target.value)
               }
               className="h-10 w-full rounded-lg border border-[#d9d0c6] bg-white pl-10 pr-3 text-sm text-[#403a34] outline-none transition focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/15"
             />

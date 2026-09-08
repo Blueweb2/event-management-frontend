@@ -9,7 +9,7 @@ import Card from "@/components/ui/Card";
 
 interface EventCustomerCardProps {
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   message?: string;
 }
@@ -39,30 +39,32 @@ export default function EventCustomerCard({
             </p>
 
             <p className="mt-1 text-sm font-semibold text-[#29241f]">
-              {name}
+              {name || "No customer assigned"}
             </p>
           </div>
         </div>
 
         {/* Phone */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
-            <Phone size={19} />
-          </div>
+        {phone && (
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
+              <Phone size={19} />
+            </div>
 
-          <div>
-            <p className="text-xs text-[#9b938a]">
-              Phone Number
-            </p>
+            <div>
+              <p className="text-xs text-[#9b938a]">
+                Phone Number
+              </p>
 
-            <a
-              href={`tel:${phone}`}
-              className="mt-1 block text-sm font-semibold text-[#29241f] transition hover:text-[#9a6c37]"
-            >
-              {phone}
-            </a>
+              <a
+                href={`tel:${phone}`}
+                className="mt-1 block text-sm font-semibold text-[#29241f] transition hover:text-[#9a6c37]"
+              >
+                {phone}
+              </a>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Email */}
         {email && (

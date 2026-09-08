@@ -15,7 +15,25 @@ interface EventDetailsCardProps {
   location: string;
   guests: number;
   package: string;
-  amount: string;
+  amount: number;
+}
+
+function formatDate(date: string) {
+  if (!date) return "Not available";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatAmount(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export default function EventDetailsCard({
@@ -37,21 +55,21 @@ export default function EventDetailsCard({
         <DetailItem
           icon={<CalendarDays size={19} />}
           label="Event Date"
-          value={date}
+          value={formatDate(date)}
         />
 
         {/* Time */}
         <DetailItem
           icon={<Clock3 size={19} />}
           label="Event Time"
-          value={time}
+          value={time || "Not available"}
         />
 
         {/* Location */}
         <DetailItem
           icon={<MapPin size={19} />}
           label="Location"
-          value={location}
+          value={location || "Not available"}
         />
 
         {/* Guests */}
@@ -65,14 +83,14 @@ export default function EventDetailsCard({
         <DetailItem
           icon={<ClipboardList size={19} />}
           label="Package"
-          value={packageName}
+          value={packageName || "Not specified"}
         />
 
         {/* Amount */}
         <DetailItem
           icon={<IndianRupee size={19} />}
           label="Booking Amount"
-          value={amount}
+          value={formatAmount(amount)}
         />
       </div>
     </Card>

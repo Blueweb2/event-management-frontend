@@ -6,16 +6,23 @@ import {
 } from "lucide-react";
 
 import EventStatusBadge from "./EventStatusBadge";
+import type { EventStatus } from "@/types/event";
 
 interface EventDetailsHeaderProps {
   title: string;
   type: string;
   date: string;
-  status:
-    | "Confirmed"
-    | "Pending"
-    | "Completed"
-    | "Cancelled";
+  status: EventStatus;
+}
+
+function formatDate(date: string) {
+  if (!date) return "Not available";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function EventDetailsHeader({
@@ -56,7 +63,7 @@ export default function EventDetailsHeader({
               className="text-[#a7773f]"
             />
 
-            <span>{date}</span>
+            <span>{formatDate(date)}</span>
           </div>
         </div>
 
