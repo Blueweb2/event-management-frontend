@@ -40,30 +40,29 @@ export default function ServiceCard({
     );
 
   return (
-    <div className="group rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-[var(--ink)]">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2.5">
+            <h3 className="truncate text-base font-semibold text-[#5F6062]">
               {service.name}
             </h3>
 
             <span
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+              className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${
                 service.active
-                  ? "bg-green-50 text-green-700"
-                  : "bg-gray-100 text-gray-500"
+                  ? "bg-[#F3F4F8] text-[#5F6062]"
+                  : "bg-[#F3F4F8] text-[#96979A]"
               }`}
             >
-              {service.active
-                ? "Active"
-                : "Inactive"}
+              {service.active ? "Active" : "Inactive"}
             </span>
           </div>
 
-          <div className="mt-2 flex items-center gap-2 text-xs text-[var(--muted)]">
-            <Tag size={13} />
+          {/* Category */}
+          <div className="mt-2.5 flex items-center gap-2 text-xs text-[#8A8B8F]">
+            <Tag size={13} strokeWidth={2} />
 
             <span className="capitalize">
               {service.category}
@@ -76,22 +75,20 @@ export default function ServiceCard({
           <button
             type="button"
             onClick={() => onEdit(service)}
-            className="rounded-lg p-2 text-[var(--muted)] transition hover:bg-[var(--ivory)] hover:text-[var(--ink)]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A8B8F] transition-all duration-200 hover:bg-[#F3F4F8] hover:text-[#5F6062] active:scale-95"
             aria-label={`Edit ${service.name}`}
           >
-            <Edit3 size={17} />
+            <Edit3 size={16} strokeWidth={2} />
           </button>
 
           {service.active && (
             <button
               type="button"
-              onClick={() =>
-                onDeactivate(service)
-              }
-              className="rounded-lg p-2 text-[var(--muted)] transition hover:bg-red-50 hover:text-red-600"
+              onClick={() => onDeactivate(service)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#8A8B8F] transition-all duration-200 hover:bg-[#F3F4F8] hover:text-[#5F6062] active:scale-95"
               aria-label={`Deactivate ${service.name}`}
             >
-              <Power size={17} />
+              <Power size={16} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -99,37 +96,37 @@ export default function ServiceCard({
 
       {/* Description */}
       {service.description && (
-        <p className="mt-4 line-clamp-2 text-sm leading-6 text-[var(--muted)]">
+        <p className="mt-4 line-clamp-2 text-sm leading-6 text-[#85868A]">
           {service.description}
         </p>
       )}
 
       {/* Pricing */}
-      <div className="mt-5 rounded-xl bg-[var(--ivory)]/70 p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+      <div className="mt-5 rounded-xl bg-[#F3F4F8] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8B8F]">
           Pricing
         </p>
 
-        <div className="mt-1 flex items-baseline gap-1.5">
-          <span className="text-lg font-semibold text-[var(--ink)]">
+        <div className="mt-1.5 flex items-baseline gap-1.5">
+          <span className="text-xl font-semibold tracking-tight text-[#5F6062]">
             ₹{formattedPrice}
           </span>
 
           {service.pricingType !== "FIXED" && (
-            <span className="text-xs text-[var(--muted)]">
+            <span className="text-xs text-[#85868A]">
               / {service.unitLabel || "unit"}
             </span>
           )}
         </div>
 
-        <p className="mt-1 text-xs text-[var(--muted)]">
+        <p className="mt-1 text-xs text-[#85868A]">
           {pricingLabel}
         </p>
       </div>
 
       {/* Options */}
-      <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-4">
-        <span className="text-xs text-[var(--muted)]">
+      <div className="mt-4 flex items-center justify-between border-t border-[#ECEDEF] pt-4">
+        <span className="text-xs font-medium text-[#85868A]">
           {service.options?.length || 0}{" "}
           {service.options?.length === 1
             ? "option"
@@ -138,15 +135,13 @@ export default function ServiceCard({
 
         {service.options &&
           service.options.length > 0 && (
-            <div className="flex -space-x-1">
+            <div className="flex -space-x-1.5">
               {service.options
                 .slice(0, 3)
                 .map((option, index) => (
                   <span
-                    key={
-                      option._id || index
-                    }
-                    className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[var(--ink)] text-[9px] font-medium text-white"
+                    key={option._id || index}
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#5F6062] text-[9px] font-semibold text-white"
                     title={option.name}
                   >
                     {option.name
@@ -156,7 +151,7 @@ export default function ServiceCard({
                 ))}
 
               {service.options.length > 3 && (
-                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[var(--gold)] text-[9px] font-medium text-[var(--ink)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#F3F4F8] text-[9px] font-semibold text-[#5F6062]">
                   +{service.options.length - 3}
                 </span>
               )}
