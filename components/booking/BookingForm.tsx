@@ -6,13 +6,14 @@ import BookingProgress from "./BookingProgress";
 import BookingNavigation from "./BookingNavigation";
 
 import EventDetailsStep from "./steps/EventDetailsStep";
+import ClientDetailsStep from "./steps/ClientDetailsStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
-import PricingStep from "./steps/PricingStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
 
 import type { BookingFormData } from "./types";
 
 const initialFormData: BookingFormData = {
+  // Event Details
   eventType: "",
   eventDate: "",
   eventTime: "",
@@ -21,16 +22,19 @@ const initialFormData: BookingFormData = {
   eventName: "",
   description: "",
 
-  services: [],
-
-  discountType: "percentage",
-  discountValue: "0",
-  additionalCharges: "0",
-
+  // Client Details
   name: "",
   phone: "",
   email: "",
   message: "",
+
+  // Services & Items
+  services: [],
+
+  // Pricing
+  discountType: "percentage",
+  discountValue: "0",
+  additionalCharges: "0",
 };
 
 export default function BookingForm() {
@@ -47,9 +51,9 @@ export default function BookingForm() {
   const [submitted, setSubmitted] =
     useState(false);
 
-  const updateField = (
-    field: keyof BookingFormData,
-    value: string,
+  const updateField = <K extends keyof BookingFormData>(
+    field: K,
+    value: BookingFormData[K],
   ) => {
     setFormData((previous) => ({
       ...previous,
@@ -77,7 +81,9 @@ export default function BookingForm() {
   const validateStep = () => {
     setError("");
 
+    // ==========================================
     // STEP 1 - EVENT DETAILS
+    // ==========================================
     if (currentStep === 1) {
       if (!formData.eventName.trim()) {
         setError("Please enter the event name.");
@@ -120,48 +126,17 @@ export default function BookingForm() {
         setError("Please enter the event location.");
         return false;
       }
+
+      if (!formData.description.trim()) {
+        setError("Please describe your event.");
+        return false;
+      }
     }
 
-    // STEP 2 - SERVICES & ITEMS
+    // ==========================================
+    // STEP 2 - CLIENT DETAILS
+    // ==========================================
     if (currentStep === 2) {
-      if (formData.services.length === 0) {
-        setError(
-          "Please add at least one service or item.",
-        );
-        return false;
-      }
-    }
-
-    // STEP 3 - PRICING
-    if (currentStep === 3) {
-      const discount = Number(
-        formData.discountValue,
-      );
-
-      const additionalCharges = Number(
-        formData.additionalCharges,
-      );
-
-      if (Number.isNaN(discount) || discount < 0) {
-        setError(
-          "Please enter a valid discount.",
-        );
-        return false;
-      }
-
-      if (
-        Number.isNaN(additionalCharges) ||
-        additionalCharges < 0
-      ) {
-        setError(
-          "Please enter valid additional charges.",
-        );
-        return false;
-      }
-    }
-
-    // STEP 4 - PREVIEW / SUBMIT
-    if (currentStep === 4) {
       if (!formData.name.trim()) {
         setError("Please enter the client name.");
         return false;
@@ -180,11 +155,87 @@ export default function BookingForm() {
         );
         return false;
       }
+
+      const emailRegex =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailRegex.test(formData.email)) {
+        setError(
+          "Please enter a valid email address.",
+        );
+        return false;
+      }
+    }
+
+    // ==========================================
+    // STEP 3 - SERVICES & ITEMS
+    // ==========================================
+    if (currentStep === 3) {
+      if (formData.services.length === 0) {
+        setError(
+          "Please add at least one service or item.",
+        );
+        return false;
+      }
+
+      const invalidService =
+        formData.services.find(
+          (service) =>
+            !service.name.trim() ||
+            service.quantity <= 0 ||
+            service.unitPrice < 0,
+        );
+
+      if (invalidService) {
+        setError(
+          "Please check the quantity and price of your selected services.",
+        );
+        return false;
+      }
+    }
+
+    // ==========================================
+    // STEP 4 - ESTIMATE PREVIEW
+    // ==========================================
+    if (currentStep === 4) {
+      // Client details have already been validated
+      // in Step 2.
+
+      const discount = Number(
+        formData.discountValue,
+      );
+
+      const additionalCharges = Number(
+        formData.additionalCharges,
+      );
+
+      if (
+        Number.isNaN(discount) ||
+        discount < 0
+      ) {
+        setError(
+          "Please enter a valid discount.",
+        );
+        return false;
+      }
+
+      if (
+        Number.isNaN(additionalCharges) ||
+        additionalCharges < 0
+      ) {
+        setError(
+          "Please enter valid additional charges.",
+        );
+        return false;
+      }
     }
 
     return true;
   };
 
+  // ==========================================
+  // NEXT STEP
+  // ==========================================
   const nextStep = () => {
     if (!validateStep()) {
       return;
@@ -204,6 +255,9 @@ export default function BookingForm() {
     });
   };
 
+  // ==========================================
+  // PREVIOUS STEP
+  // ==========================================
   const previousStep = () => {
     setError("");
 
@@ -221,6 +275,9 @@ export default function BookingForm() {
     });
   };
 
+  // ==========================================
+  // SUBMIT ESTIMATE
+  // ==========================================
   const submitBooking = async () => {
     if (!validateStep()) {
       return;
@@ -255,6 +312,9 @@ export default function BookingForm() {
     }
   };
 
+  // ==========================================
+  // SUCCESS STATE
+  // ==========================================
   if (submitted) {
     return (
       <section className="px-4 py-10 sm:px-6 lg:px-8">
@@ -281,6 +341,7 @@ export default function BookingForm() {
 
   return (
     <>
+      {/* Progress */}
       <BookingProgress
         currentStep={currentStep}
       />
@@ -288,7 +349,9 @@ export default function BookingForm() {
       <section className="px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <div className="mx-auto max-w-4xl">
 
-          {/* STEP 1 */}
+          {/* ======================================
+              STEP 1 - EVENT DETAILS
+          ====================================== */}
           {currentStep === 1 && (
             <EventDetailsStep
               formData={formData}
@@ -296,23 +359,29 @@ export default function BookingForm() {
             />
           )}
 
-          {/* STEP 2 */}
+          {/* ======================================
+              STEP 2 - CLIENT DETAILS
+          ====================================== */}
           {currentStep === 2 && (
+            <ClientDetailsStep
+              formData={formData}
+              updateField={updateField}
+            />
+          )}
+
+          {/* ======================================
+              STEP 3 - SERVICES & ITEMS
+          ====================================== */}
+          {currentStep === 3 && (
             <ServicesItemsStep
               formData={formData}
               updateServices={updateServices}
             />
           )}
 
-          {/* STEP 3 */}
-          {currentStep === 3 && (
-            <PricingStep
-              formData={formData}
-              updateField={updateField}
-            />
-          )}
-
-          {/* STEP 4 */}
+          {/* ======================================
+              STEP 4 - ESTIMATE PREVIEW
+          ====================================== */}
           {currentStep === 4 && (
             <EstimatePreviewStep
               formData={formData}
@@ -341,7 +410,6 @@ export default function BookingForm() {
             onSubmit={submitBooking}
             loading={isSubmitting}
           />
-
         </div>
       </section>
     </>

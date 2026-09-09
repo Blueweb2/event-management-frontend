@@ -33,6 +33,21 @@ export default function EventDetailsStep({
       className="border-[#e8e1d8] shadow-sm"
     >
       <div className="space-y-6">
+
+        {/* Event Name */}
+        <Input
+          id="eventName"
+          label="Event Name"
+          placeholder="e.g. Annual Corporate Gala"
+          value={formData.eventName}
+          onChange={(event) =>
+            updateField(
+              "eventName",
+              event.target.value,
+            )
+          }
+          required
+        />
         {/* Event Type */}
         <div>
           <label
@@ -135,7 +150,7 @@ export default function EventDetailsStep({
             )
           }
           leftIcon={<Users size={18} />}
-          helperText="Food quantities and staff requirements will be planned based on your guest count."
+          helperText="Guest count helps determine quantities and staffing requirements for the selected services."
           required
         />
 
@@ -169,7 +184,7 @@ export default function EventDetailsStep({
           <textarea
             id="description"
             rows={5}
-            placeholder="Describe your event, including any special requirements, theme, food preferences, or other details..."
+            placeholder="Describe your event, including the theme, special requirements, or any other details..."
             value={formData.description}
             onChange={(event) =>
               updateField("description", event.target.value)

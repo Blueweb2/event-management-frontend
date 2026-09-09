@@ -3,9 +3,9 @@
 import {
   Check,
   FileText,
-  Layers3,
   ReceiptText,
   Send,
+  UserRound,
 } from "lucide-react";
 
 type BookingProgressProps = {
@@ -20,17 +20,17 @@ const steps = [
   },
   {
     number: 2,
-    title: "Services & Items",
-    icon: Layers3,
+    title: "Client Details",
+    icon: UserRound,
   },
   {
     number: 3,
-    title: "Pricing",
+    title: "Services & Items",
     icon: ReceiptText,
   },
   {
     number: 4,
-    title: "Preview",
+    title: "Estimate Preview",
     icon: Send,
   },
 ];
@@ -50,9 +50,6 @@ export default function BookingProgress({
 
             const isCurrent =
               currentStep === step.number;
-
-            const isUpcoming =
-              currentStep < step.number;
 
             return (
               <div
@@ -118,8 +115,7 @@ export default function BookingProgress({
                     <div
                       className={[
                         "h-0.5 w-full transition-all duration-300",
-                        currentStep >
-                        step.number
+                        currentStep > step.number
                           ? "bg-[var(--sage-dark)]"
                           : "bg-gray-200",
                       ].join(" ")}

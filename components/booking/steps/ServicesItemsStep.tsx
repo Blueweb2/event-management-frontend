@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  AlertCircle,
   Camera,
   Check,
   ChevronDown,
   Clapperboard,
   Lightbulb,
+  Loader2,
   Mic2,
   Plus,
   Trash2,
@@ -22,6 +24,15 @@ import type {
   ServiceItem,
 } from "../types";
 
+import {
+  getServices,
+} from "@/lib/services.api";
+
+import type {
+  PricingType,
+  Service,
+} from "@/types/service";
+
 type ServicesItemsStepProps = {
   formData: BookingFormData;
   updateServices: (
@@ -35,679 +46,963 @@ type Category = {
   icon: React.ElementType;
 };
 
-const categories: Category[] = [
-  {
-    id: "venue",
-    name: "Venue",
-    icon: Warehouse,
-  },
-  {
-    id: "catering",
-    name: "Catering",
-    icon: Utensils,
-  },
-  {
-    id: "decoration",
-    name: "Decoration",
-    icon: Clapperboard,
-  },
-  {
-    id: "lighting",
-    name: "Lighting",
-    icon: Lightbulb,
-  },
-  {
-    id: "sound",
-    name: "Sound",
-    icon: Volume2,
-  },
-  {
-    id: "photography",
-    name: "Photography",
-    icon: Camera,
-  },
-  {
-    id: "entertainment",
-    name: "Entertainment",
-    icon: Mic2,
-  },
-  {
-    id: "staff",
-    name: "Staff",
-    icon: Users,
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    icon: Wrench,
-  },
-];
-
-const defaultItems: Record<
+const categoryIcons: Record<
   string,
-  Omit<ServiceItem, "id">[]
+  React.ElementType
 > = {
-  venue: [
-    {
-      category: "Venue",
-      name: "Event Venue",
-      description: "Event venue rental",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+  venue: Warehouse,
+  catering: Utensils,
+  decoration: Clapperboard,
+  lighting: Lightbulb,
+  sound: Volume2,
+  photography: Camera,
+  videography: Camera,
+  entertainment: Mic2,
+  staff: Users,
+  other: Wrench,
+};
 
-  catering: [
-    {
-      category: "Catering",
-      name: "Premium Catering",
-      description: "Multi-cuisine buffet",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+const fallbackIcon = Wrench;
 
-  decoration: [
-    {
-      category: "Decoration",
-      name: "Stage Decoration",
-      description: "Elegant stage setup",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+const pricingLabels: Record<
+  PricingType,
+  string
+> = {
+  FIXED: "Fixed Price",
+  PER_GUEST: "Per Guest",
+  PER_UNIT: "Per Unit",
+  PER_HOUR: "Per Hour",
+  PER_DAY: "Per Day",
+  PER_STAFF: "Per Staff",
+  PER_REEL: "Per Reel",
+};
 
-  lighting: [
-    {
-      category: "Lighting",
-      name: "Event Lighting",
-      description: "Professional lighting setup",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+const formatCategoryName = (
+  category: string,
+) => {
+  return category
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
+};
 
-  sound: [
-    {
-      category: "Sound",
-      name: "Sound & Audio",
-      description: "Professional sound system",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+const formatCurrency = (
+  amount: number,
+) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
-  photography: [
-    {
-      category: "Photography",
-      name: "Event Photography",
-      description: "Professional event photography",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+const getDefaultQuantity = (
+  pricingType: PricingType,
+  guests: number,
+) => {
+  switch (pricingType) {
+    case "PER_GUEST":
+      return guests || 1;
 
-  entertainment: [
-    {
-      category: "Entertainment",
-      name: "Live Entertainment",
-      description: "Entertainment package",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+    case "FIXED":
+      return 1;
 
-  staff: [
-    {
-      category: "Staff",
-      name: "Event Staff",
-      description: "Event support staff",
-      quantity: 1,
-      unitPrice: 0,
-    },
-  ],
+    default:
+      return 1;
+  }
+};
+
+const getQuantityLabel = (
+  pricingType: PricingType,
+  unitLabel?: string,
+) => {
+  if (unitLabel) {
+    return formatCategoryName(unitLabel);
+  }
+
+  switch (pricingType) {
+    case "PER_GUEST":
+      return "Guests";
+
+    case "PER_HOUR":
+      return "Hours";
+
+    case "PER_DAY":
+      return "Days";
+
+    case "PER_STAFF":
+      return "Staff";
+
+    case "PER_REEL":
+      return "Reels";
+
+    case "PER_UNIT":
+      return "Quantity";
+
+    case "FIXED":
+      return "Quantity";
+
+    default:
+      return "Quantity";
+  }
+};
+
+const getQuantityFromItem = (
+  item: ServiceItem,
+) => {
+  return Math.max(
+    Number(item.quantity) || 1,
+    1,
+  );
 };
 
 export default function ServicesItemsStep({
   formData,
   updateServices,
 }: ServicesItemsStepProps) {
+  const [services, setServices] =
+    useState<Service[]>([]);
+
   const [selectedCategory, setSelectedCategory] =
-    useState("catering");
+    useState("all");
 
-  const [showCustomForm, setShowCustomForm] =
-    useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [customName, setCustomName] =
+  const [error, setError] =
     useState("");
 
-  const [customDescription, setCustomDescription] =
-    useState("");
+  const [addingServiceId, setAddingServiceId] =
+    useState<string | null>(null);
 
-  const [customQuantity, setCustomQuantity] =
-    useState("1");
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-  const [customPrice, setCustomPrice] =
-    useState("");
+        // Only active services are returned.
+        const data = await getServices();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+        setServices(data);
 
-  const addItem = (categoryId: string) => {
-    if (categoryId === "custom") {
-      setShowCustomForm(true);
-      return;
-    }
-
-    const availableItems =
-      defaultItems[categoryId];
-
-    if (!availableItems?.length) {
-      return;
-    }
-
-    const item = availableItems[0];
-
-    const newItem: ServiceItem = {
-      ...item,
-      id: crypto.randomUUID(),
+        if (data.length > 0) {
+          setSelectedCategory(
+            data[0].category,
+          );
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load services.",
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
-    updateServices([
-      ...formData.services,
-      newItem,
-    ]);
-  };
+    loadServices();
+  }, []);
 
-  const addCustomItem = () => {
-    if (!customName.trim()) {
-      return;
-    }
-
-    const newItem: ServiceItem = {
-      id: crypto.randomUUID(),
-      category: "Custom",
-      name: customName.trim(),
-      description:
-        customDescription.trim(),
-      quantity:
-        Math.max(Number(customQuantity) || 1, 1),
-      unitPrice:
-        Math.max(Number(customPrice) || 0, 0),
-    };
-
-    updateServices([
-      ...formData.services,
-      newItem,
-    ]);
-
-    setCustomName("");
-    setCustomDescription("");
-    setCustomQuantity("1");
-    setCustomPrice("");
-    setShowCustomForm(false);
-  };
-
-  const removeItem = (id: string) => {
-    updateServices(
-      formData.services.filter(
-        (item) => item.id !== id,
+  /*
+   * Build categories dynamically from
+   * Admin-configured services.
+   */
+  const categories = useMemo<
+    Category[]
+  >(() => {
+    const uniqueCategories = Array.from(
+      new Set(
+        services.map(
+          (service) =>
+            service.category.toLowerCase(),
+        ),
       ),
     );
+
+    return uniqueCategories.map(
+      (category) => ({
+        id: category,
+        name: formatCategoryName(
+          category,
+        ),
+        icon:
+          categoryIcons[category] ||
+          fallbackIcon,
+      }),
+    );
+  }, [services]);
+
+  /*
+   * Services belonging to the
+   * currently selected category.
+   */
+  const visibleServices = useMemo(() => {
+    if (selectedCategory === "all") {
+      return services;
+    }
+
+    return services.filter(
+      (service) =>
+        service.category.toLowerCase() ===
+        selectedCategory.toLowerCase(),
+    );
+  }, [
+    services,
+    selectedCategory,
+  ]);
+
+  /*
+   * Add a service to the booking.
+   */
+  const addService = (
+    service: Service,
+  ) => {
+    const alreadySelected =
+      formData.services.some(
+        (item) =>
+          item.serviceId ===
+            service._id ||
+          item.id === service._id,
+      );
+
+    if (alreadySelected) {
+      return;
+    }
+
+    const guests =
+      Number(formData.guests) || 1;
+
+    const quantity =
+      getDefaultQuantity(
+        service.pricingType,
+        guests,
+      );
+
+    const newItem =
+      {
+        id: crypto.randomUUID(),
+
+        // Backend service ID
+        serviceId: service._id,
+
+        // Display information
+        category: service.category,
+        name: service.name,
+        description:
+          service.description || "",
+
+        // Quantity selected by customer
+        quantity,
+
+        /*
+         * Snapshot/display value only.
+         *
+         * IMPORTANT:
+         * This value is NOT trusted by the backend.
+         */
+        unitPrice: service.basePrice,
+
+        pricingType:
+          service.pricingType,
+
+        unitLabel:
+          service.unitLabel || "",
+      } as ServiceItem;
+
+    updateServices([
+      ...formData.services,
+      newItem,
+    ]);
   };
 
-  const updateItem = (
-    id: string,
-    field: "quantity" | "unitPrice",
-    value: number,
+  /*
+   * Remove selected service.
+   */
+  const removeService = (
+    itemId: string,
   ) => {
     updateServices(
-      formData.services.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: Math.max(value, 0),
-            }
-          : item,
+      formData.services.filter(
+        (item) =>
+          item.id !== itemId,
       ),
     );
   };
 
-  const totalItems = formData.services.length;
+  /*
+   * Update quantity only.
+   *
+   * There is deliberately NO
+   * updateUnitPrice function.
+   */
+  const updateQuantity = (
+    itemId: string,
+    value: number,
+  ) => {
+    const quantity = Math.max(
+      Number(value) || 1,
+      1,
+    );
 
-  const subtotal = formData.services.reduce(
-    (total, item) =>
-      total + item.quantity * item.unitPrice,
-    0,
-  );
+    updateServices(
+      formData.services.map(
+        (item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                quantity,
+              }
+            : item,
+      ),
+    );
+  };
+
+  /*
+   * Select an option for a service.
+   */
+  const selectOption = (
+    itemId: string,
+    service: Service,
+    optionId: string,
+  ) => {
+    const option =
+      service.options.find(
+        (item) =>
+          item._id === optionId,
+      );
+
+    if (!option) {
+      return;
+    }
+
+    updateServices(
+      formData.services.map(
+        (item) =>
+          item.id === itemId
+            ? {
+                ...item,
+
+                serviceId:
+                  service._id,
+
+                optionId:
+                  option._id,
+
+                name:
+                  service.name,
+
+                description:
+                  option.description ||
+                  service.description ||
+                  "",
+
+                unitPrice:
+                  option.price,
+
+                pricingType:
+                  option.pricingType,
+
+                unitLabel:
+                  option.unitLabel ||
+                  "",
+              }
+            : item,
+      ),
+    );
+  };
+
+  /*
+   * Display-only subtotal.
+   *
+   * Backend remains the source of truth.
+   */
+  const displaySubtotal =
+    formData.services.reduce(
+      (total, item) =>
+        total +
+        getQuantityFromItem(item) *
+          Number(item.unitPrice || 0),
+      0,
+    );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sage)]">
-          Step 2
+          Step 3
         </p>
 
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--sage-dark)] sm:text-3xl">
-          Add Services & Items
+          Services & Items
         </h2>
 
         <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--taupe)] sm:text-base">
-          Select the services your client needs and
-          add the items, quantities and prices.
+          Select the services your event
+          requires. Pricing is configured by
+          the event manager.
         </p>
       </div>
 
-      {/* Categories */}
-      <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-[var(--sage-dark)]">
-              Service Categories
-            </h3>
+      {/* Error */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle
+            size={18}
+            className="mt-0.5 shrink-0"
+          />
 
-            <p className="mt-1 text-xs text-[var(--taupe)]">
-              Select a category to add a service.
+          <div>
+            <p className="font-medium">
+              Unable to load services
+            </p>
+
+            <p className="mt-1">
+              {error}
             </p>
           </div>
-
-          <span className="rounded-full bg-[var(--ivory)] px-3 py-1.5 text-xs font-medium text-[var(--taupe)]">
-            {totalItems}{" "}
-            {totalItems === 1 ? "item" : "items"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
-          {categories.map((category) => {
-            const Icon = category.icon;
-
-            const isSelected =
-              selectedCategory === category.id;
-
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() =>
-                  setSelectedCategory(category.id)
-                }
-                className={[
-                  "relative flex min-h-[82px] flex-col",
-                  "items-center justify-center gap-2",
-                  "rounded-xl border px-2 py-3",
-                  "transition-all duration-200",
-                  isSelected
-                    ? "border-[var(--sage)] bg-[#b49a6a] text-white shadow-sm"
-                    : "border-transparent bg-[var(--ivory)] text-[var(--sage-dark)] hover:border-[var(--border)] hover:bg-[#f5f1e8]",
-                ].join(" ")}
-              >
-                <Icon
-                  size={19}
-                  strokeWidth={1.8}
-                />
-
-                <span className="text-[10px] font-medium leading-tight sm:text-xs">
-                  {category.name}
-                </span>
-
-                {isSelected && (
-                  <span className="absolute right-1.5 top-1.5">
-                    <Check size={11} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Add button */}
-        <div className="mt-5 flex justify-end">
-          <button
-            type="button"
-            onClick={() =>
-              addItem(selectedCategory)
-            }
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--sage-dark)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--sage)]"
-          >
-            <Plus size={17} />
-
-            {selectedCategory === "custom"
-              ? "Add Custom Item"
-              : `Add ${categories.find(
-                  (category) =>
-                    category.id ===
-                    selectedCategory,
-                )?.name}`}
-          </button>
-        </div>
-      </div>
-
-      {/* Custom Item Form */}
-      {showCustomForm && (
-        <div className="rounded-2xl border border-[var(--sage)]/20 bg-[#faf8f2] p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="font-semibold text-[var(--sage-dark)]">
-                Add Custom Item
-              </h3>
-
-              <p className="mt-1 text-xs text-[var(--taupe)]">
-                Add any service or item that is not
-                listed above.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() =>
-                setShowCustomForm(false)
-              }
-              className="text-xs font-medium text-[var(--taupe)] hover:text-gray-900"
-            >
-              Cancel
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {/* Name */}
-            <div className="sm:col-span-2">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                Item Name *
-              </label>
-
-              <input
-                type="text"
-                value={customName}
-                onChange={(event) =>
-                  setCustomName(event.target.value)
-                }
-                placeholder="e.g. Fireworks"
-                className="h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--sage)]"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="sm:col-span-2">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                Description
-              </label>
-
-              <input
-                type="text"
-                value={customDescription}
-                onChange={(event) =>
-                  setCustomDescription(
-                    event.target.value,
-                  )
-                }
-                placeholder="Short description"
-                className="h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--sage)]"
-              />
-            </div>
-
-            {/* Quantity */}
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                Quantity
-              </label>
-
-              <input
-                type="number"
-                min="1"
-                value={customQuantity}
-                onChange={(event) =>
-                  setCustomQuantity(
-                    event.target.value,
-                  )
-                }
-                className="h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--sage)]"
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                Unit Price
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                value={customPrice}
-                onChange={(event) =>
-                  setCustomPrice(
-                    event.target.value,
-                  )
-                }
-                placeholder="₹ 0"
-                className="h-12 w-full rounded-xl border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--sage)]"
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={addCustomItem}
-            disabled={!customName.trim()}
-            className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--sage-dark)] px-6 text-sm font-semibold text-white transition hover:bg-[var(--sage)] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <Plus size={17} />
-            Add Item
-          </button>
         </div>
       )}
 
-      {/* Selected Items */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-          <div>
-            <h3 className="font-semibold text-[var(--sage-dark)]">
-              Selected Services
-            </h3>
+      {/* Loading */}
+      {loading ? (
+        <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-[var(--border)] bg-white">
+          <div className="flex items-center gap-3 text-sm text-[var(--taupe)]">
+            <Loader2
+              size={20}
+              className="animate-spin"
+            />
 
-            <p className="mt-1 text-xs text-[var(--taupe)]">
-              Adjust quantity and price for each item.
-            </p>
+            Loading available services...
           </div>
-
-          <span className="text-sm font-semibold text-[var(--sage-dark)]">
-            {formatCurrency(subtotal)}
-          </span>
         </div>
+      ) : services.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white px-6 py-14 text-center">
+          <p className="text-base font-semibold text-[var(--sage-dark)]">
+            No services are currently available
+          </p>
 
-        {formData.services.length === 0 ? (
-          <div className="px-5 py-12 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--ivory)]">
-              <Plus
-                size={22}
-                className="text-[var(--sage)]"
-              />
+          <p className="mt-2 text-sm text-[var(--taupe)]">
+            Please contact the event manager
+            for available services.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Categories */}
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-[var(--sage-dark)]">
+                  Service Categories
+                </h3>
+
+                <p className="mt-1 text-xs text-[var(--taupe)]">
+                  Select a category to browse
+                  available services.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-[var(--ivory)] px-3 py-1.5 text-xs font-medium text-[var(--taupe)]">
+                {formData.services.length}{" "}
+                {formData.services.length ===
+                1
+                  ? "item"
+                  : "items"}
+              </span>
             </div>
 
-            <h4 className="mt-4 text-sm font-semibold text-gray-900">
-              No services added
-            </h4>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {categories.map(
+                (category) => {
+                  const Icon =
+                    category.icon;
 
-            <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[var(--taupe)]">
-              Select a service category above and
-              click Add to include it in the estimate.
-            </p>
+                  const isSelected =
+                    selectedCategory ===
+                    category.id;
+
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() =>
+                        setSelectedCategory(
+                          category.id,
+                        )
+                      }
+                      className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                        isSelected
+                          ? "bg-[var(--sage)] text-white"
+                          : "bg-[var(--ivory)] text-[var(--sage-dark)] hover:bg-[var(--sage-light)]"
+                      }`}
+                    >
+                      <Icon size={17} />
+
+                      {category.name}
+                    </button>
+                  );
+                },
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="divide-y divide-[var(--border)]">
-            {formData.services.map((item) => {
-              const itemTotal =
-                item.quantity * item.unitPrice;
 
-              return (
-                <div
-                  key={item.id}
-                  className="p-4 sm:p-5"
-                >
-                  <div className="flex gap-3">
-                    {/* Item icon */}
-                    <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--ivory)] sm:flex">
-                      <Warehouse
-                        size={19}
-                        className="text-[var(--sage)]"
-                      />
-                    </div>
+          {/* Available Services */}
+          <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
+            <div className="mb-4">
+              <h3 className="font-semibold text-[var(--sage-dark)]">
+                Available Services
+              </h3>
 
-                    {/* Item details */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {item.name}
-                          </p>
+              <p className="mt-1 text-xs text-[var(--taupe)]">
+                Select a service to add it to
+                your estimate.
+              </p>
+            </div>
 
-                          <p className="mt-1 text-xs text-[var(--taupe)]">
-                            {item.description ||
-                              item.category}
-                          </p>
-                        </div>
+            {visibleServices.length ===
+            0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--border)] px-5 py-8 text-center">
+                <p className="text-sm text-[var(--taupe)]">
+                  No services available in
+                  this category.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {visibleServices.map(
+                  (service) => {
+                    const isSelected =
+                      formData.services.some(
+                        (item) =>
+                          item.serviceId ===
+                          service._id,
+                      );
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeItem(item.id)
-                          }
-                          aria-label={`Remove ${item.name}`}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-500"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                    return (
+                      <button
+                        key={
+                          service._id
+                        }
+                        type="button"
+                        disabled={
+                          isSelected ||
+                          addingServiceId ===
+                            service._id
+                        }
+                        onClick={() => {
+                          setAddingServiceId(
+                            service._id,
+                          );
 
-                      {/* Controls */}
-                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                        {/* Quantity */}
-                        <div>
-                          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                            Quantity
-                          </label>
+                          addService(
+                            service,
+                          );
 
-                          <div className="flex h-10 overflow-hidden rounded-lg border border-[var(--border)]">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateItem(
-                                  item.id,
-                                  "quantity",
-                                  item.quantity - 1,
-                                )
+                          setTimeout(
+                            () =>
+                              setAddingServiceId(
+                                null,
+                              ),
+                            150,
+                          );
+                        }}
+                        className={`rounded-xl border p-4 text-left transition ${
+                          isSelected
+                            ? "border-[var(--sage)]/30 bg-[var(--sage-light)]/40"
+                            : "border-[var(--border)] hover:border-[var(--sage)]/40 hover:bg-[var(--ivory)]/50"
+                        } disabled:cursor-not-allowed`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="font-medium text-[var(--sage-dark)]">
+                              {
+                                service.name
                               }
-                              disabled={
-                                item.quantity <= 1
-                              }
-                              className="w-10 text-gray-500 transition hover:bg-[var(--ivory)] disabled:opacity-30"
-                            >
-                              −
-                            </button>
+                            </p>
 
-                            <input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(event) =>
-                                updateItem(
-                                  item.id,
-                                  "quantity",
-                                  Number(
-                                    event.target.value,
-                                  ) || 1,
-                                )
-                              }
-                              className="min-w-0 flex-1 border-x border-[var(--border)] text-center text-sm font-semibold outline-none"
-                            />
+                            {service.description && (
+                              <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--taupe)]">
+                                {
+                                  service.description
+                                }
+                              </p>
+                            )}
+                          </div>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateItem(
-                                  item.id,
-                                  "quantity",
-                                  item.quantity + 1,
-                                )
-                              }
-                              className="w-10 text-gray-500 transition hover:bg-[var(--ivory)]"
-                            >
-                              +
-                            </button>
+                          <div className="shrink-0">
+                            {isSelected ? (
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sage)] text-white">
+                                <Check
+                                  size={
+                                    16
+                                  }
+                                />
+                              </span>
+                            ) : (
+                              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[var(--sage)]">
+                                {addingServiceId ===
+                                service._id ? (
+                                  <Loader2
+                                    size={
+                                      16
+                                    }
+                                    className="animate-spin"
+                                  />
+                                ) : (
+                                  <Plus
+                                    size={
+                                      16
+                                    }
+                                  />
+                                )}
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        {/* Unit Price */}
-                        <div>
-                          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                            Unit Price
-                          </label>
-
-                          <div className="flex h-10 items-center overflow-hidden rounded-lg border border-[var(--border)]">
-                            <span className="pl-3 text-xs text-[var(--taupe)]">
-                              ₹
-                            </span>
-
-                            <input
-                              type="number"
-                              min="0"
-                              value={item.unitPrice}
-                              onChange={(event) =>
-                                updateItem(
-                                  item.id,
-                                  "unitPrice",
-                                  Number(
-                                    event.target.value,
-                                  ) || 0,
-                                )
-                              }
-                              className="min-w-0 flex-1 px-2 text-sm outline-none"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Total */}
-                        <div>
-                          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-[var(--taupe)]">
-                            Total
-                          </label>
-
-                          <div className="flex h-10 items-center rounded-lg bg-[var(--ivory)] px-3">
-                            <span className="text-sm font-semibold text-[var(--sage-dark)]">
+                        <div className="mt-4 flex items-end justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--sage-dark)]">
                               {formatCurrency(
-                                itemTotal,
+                                service.basePrice,
                               )}
+
+                              {service.pricingType !==
+                                "FIXED" && (
+                                <span className="ml-1 text-xs font-normal text-[var(--taupe)]">
+                                  /{" "}
+                                  {service.unitLabel ||
+                                    "unit"}
+                                </span>
+                              )}
+                            </p>
+
+                            <p className="mt-1 text-[10px] uppercase tracking-wide text-[var(--taupe)]">
+                              {
+                                pricingLabels[
+                                  service
+                                    .pricingType
+                                ]
+                              }
+                            </p>
+                          </div>
+
+                          {service.options?.length >
+                            0 && (
+                            <span className="rounded-full bg-[var(--ivory)] px-2.5 py-1 text-[10px] font-medium text-[var(--taupe)]">
+                              {
+                                service
+                                  .options
+                                  .filter(
+                                    (
+                                      option,
+                                    ) =>
+                                      option.active,
+                                  ).length
+                              }{" "}
+                              options
                             </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Selected Services */}
+          {formData.services.length >
+            0 && (
+            <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-5">
+                <h3 className="font-semibold text-[var(--sage-dark)]">
+                  Selected Services
+                </h3>
+
+                <p className="mt-1 text-xs text-[var(--taupe)]">
+                  Adjust quantities as needed.
+                  Prices are controlled by the
+                  event manager.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {formData.services.map(
+                  (item) => {
+                    const service =
+                      services.find(
+                        (service) =>
+                          service._id ===
+                          item.serviceId,
+                      );
+
+                    const activeOptions =
+                      service?.options?.filter(
+                        (option) =>
+                          option.active,
+                      ) || [];
+
+                    const pricingType =
+                      item.pricingType ||
+                      service?.pricingType ||
+                      "FIXED";
+
+                    const quantityLabel =
+                      getQuantityLabel(
+                        pricingType,
+                        item.unitLabel ||
+                          service?.unitLabel,
+                      );
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--ivory)]/30 p-4"
+                      >
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          {/* Service info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--sage-light)] text-[var(--sage-dark)]">
+                                <Check
+                                  size={
+                                    17
+                                  }
+                                />
+                              </div>
+
+                              <div className="min-w-0">
+                                <h4 className="font-medium text-[var(--sage-dark)]">
+                                  {
+                                    item.name
+                                  }
+                                </h4>
+
+                                {item.description && (
+                                  <p className="mt-1 text-xs leading-5 text-[var(--taupe)]">
+                                    {
+                                      item.description
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Option */}
+                            {service &&
+                              activeOptions.length >
+                                0 && (
+                                <div className="mt-4 max-w-md">
+                                  <label className="mb-2 block text-xs font-medium text-[var(--sage-dark)]">
+                                    Service
+                                    Option
+                                  </label>
+
+                                  <div className="relative">
+                                    <select
+                                      value={
+                                        item.optionId ||
+                                        ""
+                                      }
+                                      onChange={(
+                                        event,
+                                      ) =>
+                                        selectOption(
+                                          item.id,
+                                          service,
+                                          event
+                                            .target
+                                            .value,
+                                        )
+                                      }
+                                      className="w-full appearance-none rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 pr-9 text-sm text-[var(--sage-dark)] outline-none focus:border-[var(--sage)] focus:ring-2 focus:ring-[var(--sage)]/20"
+                                    >
+                                      <option value="">
+                                        Select an option
+                                      </option>
+
+                                      {activeOptions.map(
+                                        (
+                                          option,
+                                        ) => (
+                                          <option
+                                            key={
+                                              option._id
+                                            }
+                                            value={
+                                              option._id
+                                            }
+                                          >
+                                            {
+                                              option.name
+                                            }{" "}
+                                            —{" "}
+                                            {formatCurrency(
+                                              option.price,
+                                            )}
+                                            {option.pricingType !==
+                                              "FIXED" &&
+                                              ` / ${
+                                                option.unitLabel ||
+                                                "unit"
+                                              }`}
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+
+                                    <ChevronDown
+                                      size={
+                                        16
+                                      }
+                                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--taupe)]"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                          </div>
+
+                          {/* Quantity + price */}
+                          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                            {pricingType !==
+                              "FIXED" && (
+                              <div className="w-full sm:w-28">
+                                <label className="mb-2 block text-xs font-medium text-[var(--sage-dark)]">
+                                  {
+                                    quantityLabel
+                                  }
+                                </label>
+
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={getQuantityFromItem(
+                                    item,
+                                  )}
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    updateQuantity(
+                                      item.id,
+                                      Number(
+                                        event
+                                          .target
+                                          .value,
+                                      ),
+                                    )
+                                  }
+                                  className="w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--sage-dark)] outline-none focus:border-[var(--sage)] focus:ring-2 focus:ring-[var(--sage)]/20"
+                                />
+                              </div>
+                            )}
+
+                            {/* Price - display only */}
+                            <div className="min-w-[130px]">
+                              <p className="mb-2 text-xs font-medium text-[var(--sage-dark)]">
+                                Price
+                              </p>
+
+                              <div className="rounded-xl border border-[var(--border)] bg-white px-3 py-2.5">
+                                <p className="text-sm font-semibold text-[var(--sage-dark)]">
+                                  {formatCurrency(
+                                    Number(
+                                      item.unitPrice ||
+                                        0,
+                                    ),
+                                  )}
+                                </p>
+
+                                <p className="mt-0.5 text-[10px] text-[var(--taupe)]">
+                                  {pricingType ===
+                                  "FIXED"
+                                    ? "Fixed"
+                                    : `per ${
+                                        item.unitLabel ||
+                                        "unit"
+                                      }`}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Remove */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                removeService(
+                                  item.id,
+                                )
+                              }
+                              className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 transition hover:bg-red-50"
+                              aria-label={`Remove ${item.name}`}
+                            >
+                              <Trash2
+                                size={
+                                  17
+                                }
+                              />
+                            </button>
                           </div>
                         </div>
+
+                        {/* Line total */}
+                        <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3">
+                          <span className="text-xs text-[var(--taupe)]">
+                            Line total
+                          </span>
+
+                          <span className="text-sm font-semibold text-[var(--sage-dark)]">
+                            {formatCurrency(
+                              pricingType ===
+                                "FIXED"
+                                ? Number(
+                                    item.unitPrice ||
+                                      0,
+                                  )
+                                : Number(
+                                    item.unitPrice ||
+                                      0,
+                                  ) *
+                                    getQuantityFromItem(
+                                      item,
+                                    ),
+                            )}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  },
+                )}
+              </div>
+
+              {/* Subtotal */}
+              <div className="mt-5 flex items-center justify-between border-t border-[var(--border)] pt-5">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[var(--taupe)]">
+                    Current Subtotal
+                  </p>
+
+                  <p className="mt-1 text-xs text-[var(--taupe)]">
+                    Final pricing will be
+                    recalculated by the server.
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Bottom subtotal */}
-        {formData.services.length > 0 && (
-          <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--ivory)] px-5 py-4">
-            <span className="text-sm font-medium text-gray-700">
-              Current Subtotal
-            </span>
-
-            <span className="text-lg font-bold text-[var(--sage-dark)]">
-              {formatCurrency(subtotal)}
-            </span>
-          </div>
-        )}
-      </div>
+                <p className="text-xl font-semibold text-[var(--sage-dark)]">
+                  {formatCurrency(
+                    displaySubtotal,
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
