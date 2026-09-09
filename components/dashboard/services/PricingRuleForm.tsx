@@ -98,7 +98,7 @@ export default function PricingRuleForm({
       <div>
         <label
           htmlFor="pricingType"
-          className="mb-2 block text-sm font-medium text-[var(--ink)]"
+          className="mb-2 block text-sm font-medium text-[#5F6062]"
         >
           Pricing Type
         </label>
@@ -112,7 +112,7 @@ export default function PricingRuleForm({
               event.target.value as PricingType,
             )
           }
-          className="w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-11 w-full cursor-pointer rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pricingTypes.map((type) => (
             <option
@@ -125,10 +125,11 @@ export default function PricingRuleForm({
         </select>
 
         {selectedPricingType && (
-          <div className="mt-2 flex items-start gap-2 text-xs text-[var(--muted)]">
+          <div className="mt-2.5 flex items-start gap-2 text-xs leading-5 text-[#85868A]">
             <Info
               size={14}
-              className="mt-0.5 shrink-0"
+              strokeWidth={2}
+              className="mt-0.5 shrink-0 text-[#8A8B8F]"
             />
 
             <span>
@@ -144,7 +145,7 @@ export default function PricingRuleForm({
         <div>
           <label
             htmlFor="servicePrice"
-            className="mb-2 block text-sm font-medium text-[var(--ink)]"
+            className="mb-2 block text-sm font-medium text-[#5F6062]"
           >
             Price
           </label>
@@ -152,7 +153,8 @@ export default function PricingRuleForm({
           <div className="relative">
             <DollarSign
               size={17}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+              strokeWidth={2}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8B8F]"
             />
 
             <input
@@ -167,12 +169,12 @@ export default function PricingRuleForm({
                   Number(event.target.value),
                 )
               }
-              className="w-full rounded-xl border border-[var(--line)] bg-white py-3 pl-10 pr-4 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] py-2.5 pl-10 pr-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
               placeholder="0.00"
             />
           </div>
 
-          <p className="mt-1.5 text-xs text-[var(--muted)]">
+          <p className="mt-1.5 text-xs text-[#85868A]">
             This rate is controlled by Admin.
           </p>
         </div>
@@ -181,7 +183,7 @@ export default function PricingRuleForm({
         <div>
           <label
             htmlFor="unitLabel"
-            className="mb-2 block text-sm font-medium text-[var(--ink)]"
+            className="mb-2 block text-sm font-medium text-[#5F6062]"
           >
             Unit Label
           </label>
@@ -196,31 +198,33 @@ export default function PricingRuleForm({
                 event.target.value,
               )
             }
-            className="w-full rounded-xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
             placeholder={
               selectedPricingType?.defaultUnit ||
               "unit"
             }
           />
 
-          <p className="mt-1.5 text-xs text-[var(--muted)]">
+          <p className="mt-1.5 text-xs text-[#85868A]">
             Example: guest, hour, reel, unit
           </p>
         </div>
       </div>
 
       {/* Preview */}
-      <div className="rounded-xl border border-[var(--gold)]/20 bg-[var(--gold)]/5 p-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">
+      <div className="rounded-xl border border-[#E5E7EB] bg-[#F3F4F8] p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8B8F]">
           Pricing Preview
         </p>
 
-        <p className="mt-1 text-sm font-medium text-[var(--ink)]">
+        <p className="mt-1.5 text-sm font-semibold text-[#5F6062]">
           ₹{Number(price || 0).toLocaleString("en-IN")}
           {pricingType !== "FIXED" && (
             <>
               {" "}
-              / {unitLabel || selectedPricingType?.defaultUnit}
+              <span className="font-normal text-[#85868A]">
+                / {unitLabel || selectedPricingType?.defaultUnit}
+              </span>
             </>
           )}
         </p>
