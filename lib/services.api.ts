@@ -4,106 +4,91 @@ import {
   UpdateServiceData,
 } from "@/types/service";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import {
+  get,
+  post,
+  put,
+  del,
+  ApiResponse,
+} from "./api";
+
+// ==========================================
+// GET ALL SERVICES
+// GET /api/services
+// ==========================================
 
 export async function getServices(
   includeInactive = false,
 ): Promise<Service[]> {
-  const url = includeInactive
-    ? `${API_URL}/services?all=true`
-    : `${API_URL}/services`;
+  const endpoint = includeInactive
+    ? "/services?all=true"
+    : "/services";
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
+  const result =
+    await get<ApiResponse<Service[]>>(endpoint);
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to fetch services",
-    );
-  }
-
-  return data.data;
+  return result.data;
 }
+
+// ==========================================
+// CREATE SERVICE
+// POST /api/services
+// ==========================================
 
 export async function createService(
   service: CreateServiceData,
 ): Promise<Service> {
-  const response = await fetch(
-    `${API_URL}/services`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(service),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to create service",
+  const result =
+    await post<ApiResponse<Service>>(
+      "/services",
+      service,
     );
-  }
 
-  return data.data;
+  return result.data;
 }
+
+// ==========================================
+// UPDATE SERVICE
+// PUT /api/services/:id
+// ==========================================
 
 export async function updateService(
   id: string,
   service: UpdateServiceData,
 ): Promise<Service> {
-  const response = await fetch(
-    `${API_URL}/services/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(service),
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
+  if (!id) {
     throw new Error(
-      data.message || "Failed to update service",
+      "Service ID is required",
     );
   }
 
-  return data.data;
+  const result =
+    await put<ApiResponse<Service>>(
+      `/services/${id}`,
+      service,
+    );
+
+  return result.data;
 }
+
+// ==========================================
+// DELETE / DEACTIVATE SERVICE
+// DELETE /api/services/:id
+// ==========================================
 
 export async function deleteService(
   id: string,
 ): Promise<Service> {
-  const response = await fetch(
-    `${API_URL}/services/${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
+  if (!id) {
     throw new Error(
-      data.message || "Failed to deactivate service",
+      "Service ID is required",
     );
   }
 
-  return data.data;
+  const result =
+    await del<ApiResponse<Service>>(
+      `/services/${id}`,
+    );
+
+  return result.data;
 }

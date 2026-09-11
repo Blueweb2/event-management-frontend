@@ -1,20 +1,23 @@
 "use client";
 
-import {
-  useEffect,
-  useId,
-  type ReactNode,
+import type {
+  HTMLAttributes,
+  ReactNode,
 } from "react";
-import { X } from "lucide-react";
 
-interface ModalProps {
+import { useEffect } from "react";
+
+interface ModalProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   description?: string;
   children: ReactNode;
+  footer?: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   closeOnOverlayClick?: boolean;
+  showCloseButton?: boolean;
 }
 
 export default function Modal({
@@ -23,156 +26,175 @@ export default function Modal({
   title,
   description,
   children,
+  footer,
   size = "md",
   closeOnOverlayClick = true,
+  showCloseButton = true,
+  className = "",
+  ...props
 }: ModalProps) {
-  const titleId = useId();
-  const descriptionId = useId();
-
-  /*
-   * Close modal with Escape key
-   */
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
       }
     };
 
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener(
+      "keydown",
+      handleKeyDown,
+    );
 
-    return () => {
-      document.removeEventListener(
-        "keydown",
-        handleEscape
-      );
-    };
-  }, [isOpen, onClose]);
-
-  /*
-   * Prevent background scrolling
-   */
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const originalOverflow = document.body.style.overflow;
+    const originalOverflow =
+      document.body.style.overflow;
 
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isOpen]);
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
 
-  /*
-   * Don't render when closed
-   */
-  if (!isOpen) return null;
+      document.body.style.overflow =
+        originalOverflow;
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) {
+    return null;
+  }
 
   const sizes = {
     sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
+    md: "max-w-lg",
+    lg: "max-w-2xl",
+    xl: "max-w-4xl",
+  };
+
+  const handleOverlayClick = (
+    event: React.MouseEvent<HTMLDivElement>,
+  ) => {
+    if (
+      closeOnOverlayClick &&
+      event.target === event.currentTarget
+    ) {
+      onClose();
+    }
   };
 
   return (
     <div
-      className={[
-        "fixed inset-0 z-50",
-        "flex items-end justify-center",
-        "bg-[var(--sage-dark)]/45",
-        "backdrop-blur-[2px]",
-        "sm:items-center sm:p-4",
-      ].join(" ")}
-      onMouseDown={(event) => {
-        if (
-          closeOnOverlayClick &&
-          event.target === event.currentTarget
-        ) {
-          onClose();
-        }
-      }}
+      className="
+        fixed
+        inset-0
+        z-50
+        flex
+        items-center
+        justify-center
+        bg-[#1F2023]/45
+        p-4
+        backdrop-blur-[2px]
+      "
+      onMouseDown={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={
+        title ? "modal-title" : undefined
+      }
     >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? titleId : undefined}
-        aria-describedby={
-          description ? descriptionId : undefined
-        }
-        className={[
-          "w-full",
-          "bg-[var(--cream)]",
-          "border border-[var(--border)]",
-          "shadow-2xl",
-          "rounded-t-3xl sm:rounded-2xl",
-          "max-h-[90vh] overflow-y-auto",
-          sizes[size],
-          "animate-in fade-in zoom-in-95 duration-200",
-        ].join(" ")}
-        onMouseDown={(event) => {
-          event.stopPropagation();
-        }}
+        className={`
+          relative
+          flex
+          max-h-[90vh]
+          w-full
+          flex-col
+          overflow-hidden
+          rounded-2xl
+          border
+          border-[#E5E1D8]
+          bg-white
+          shadow-[0_20px_60px_rgba(31,32,35,0.18)]
+          ${sizes[size]}
+          ${className}
+        `}
+        {...props}
       >
         {/* Header */}
-        {(title || description) && (
-          <div
-            className={[
-              "flex items-start justify-between gap-4",
-              "border-b border-[var(--border)]",
-              "p-5 sm:p-6",
-            ].join(" ")}
-          >
-            {/* Title & Description */}
-            <div className="min-w-0">
+        {(title || description || showCloseButton) && (
+          <div className="flex shrink-0 items-start justify-between border-b border-[#EEEAE2] px-5 py-4 sm:px-6 sm:py-5">
+            <div className="min-w-0 pr-4">
               {title && (
                 <h2
-                  id={titleId}
-                  className="text-xl font-semibold text-[var(--sage-dark)]"
+                  id="modal-title"
+                  className="text-lg font-semibold tracking-[-0.01em] text-[#1F2023]"
                 >
                   {title}
                 </h2>
               )}
 
               {description && (
-                <p
-                  id={descriptionId}
-                  className="mt-1.5 text-sm leading-6 text-[var(--taupe)]"
-                >
+                <p className="mt-1 text-sm leading-5 text-[#77746D]">
                   {description}
                 </p>
               )}
             </div>
 
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close modal"
-              className={[
-                "shrink-0",
-                "rounded-full p-2",
-                "text-[var(--taupe)]",
-                "transition-all duration-200",
-                "hover:bg-[var(--sage-light)]",
-                "hover:text-[var(--sage-dark)]",
-                "focus:outline-none",
-                "focus:ring-2 focus:ring-[var(--sage)]",
-                "active:scale-95",
-              ].join(" ")}
-            >
-              <X size={20} strokeWidth={1.8} />
-            </button>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close modal"
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-lg
+                  text-[#77746D]
+                  transition-colors
+                  hover:bg-[#F3F1EC]
+                  hover:text-[#1F2023]
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-[#B49A6A]/30
+                "
+              >
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
         {/* Content */}
-        <div className="p-5 sm:p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
           {children}
         </div>
+
+        {/* Footer */}
+        {footer && (
+          <div className="shrink-0 border-t border-[#EEEAE2] bg-[#FCFBF8] px-5 py-4 sm:px-6">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

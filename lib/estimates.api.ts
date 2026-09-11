@@ -129,13 +129,13 @@ export type Estimate = {
 // API Response Types
 // ==========================================
 
-type ApiResponse<T> = {
+export type ApiResponse<T> = {
   success: boolean;
   message?: string;
   data: T;
 };
 
-type EstimatesResponse = {
+export type EstimatesResponse = {
   success: boolean;
   data: Estimate[];
   pagination: {
@@ -147,30 +147,152 @@ type EstimatesResponse = {
 };
 
 // ==========================================
-// Helper
+// API ERROR
 // ==========================================
 
-const handleResponse = async <T>(
-  response: Response
-): Promise<T> => {
-  let result: any;
+export class ApiError extends Error {
+  status: number;
+  data?: unknown;
+
+  constructor(
+    message: string,
+    status: number,
+    data?: unknown
+  ) {
+    super(message);
+
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
+// ==========================================
+// API REQUEST HELPER
+// ==========================================
+
+export async function api<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(
+    `${API_URL}${endpoint}`,
+    {
+      ...options,
+
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+
+      credentials: "include",
+
+      cache:
+        options.cache || "no-store",
+    }
+  );
+
+  let result: any = null;
 
   try {
     result = await response.json();
   } catch {
-    throw new Error(
-      "Invalid response from server"
-    );
+    if (!response.ok) {
+      throw new ApiError(
+        "Invalid response from server",
+        response.status
+      );
+    }
+
+    return undefined as T;
   }
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       result?.message ||
-        "Something went wrong"
+        result?.error ||
+        "Something went wrong",
+      response.status,
+      result
     );
   }
 
-  return result;
+  return result as T;
+}
+
+// ==========================================
+// GET
+// ==========================================
+
+export const get = <T>(
+  endpoint: string
+): Promise<T> => {
+  return api<T>(endpoint, {
+    method: "GET",
+  });
+};
+
+// ==========================================
+// POST
+// ==========================================
+
+export const post = <T>(
+  endpoint: string,
+  body?: unknown
+): Promise<T> => {
+  return api<T>(endpoint, {
+    method: "POST",
+    body:
+      body !== undefined
+        ? JSON.stringify(body)
+        : undefined,
+  });
+};
+
+// ==========================================
+// PUT
+// ==========================================
+
+export const put = <T>(
+  endpoint: string,
+  body?: unknown
+): Promise<T> => {
+  return api<T>(endpoint, {
+    method: "PUT",
+    body:
+      body !== undefined
+        ? JSON.stringify(body)
+        : undefined,
+  });
+};
+
+// ==========================================
+// PATCH
+// ==========================================
+
+export const patch = <T>(
+  endpoint: string,
+  body?: unknown
+): Promise<T> => {
+  return api<T>(endpoint, {
+    method: "PATCH",
+    body:
+      body !== undefined
+        ? JSON.stringify(body)
+        : undefined,
+  });
+};
+
+// ==========================================
+// DELETE
+// ==========================================
+
+export const del = <T>(
+  endpoint: string
+): Promise<T> => {
+  return api<T>(endpoint, {
+    method: "DELETE",
+  });
 };
 
 // ==========================================
@@ -181,25 +303,11 @@ const handleResponse = async <T>(
 export const createEstimate = async (
   payload: CreateEstimatePayload
 ): Promise<Estimate> => {
-  const response = await fetch(
-    `${API_URL}/estimates`,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      credentials: "include",
-
-      body: JSON.stringify(payload),
-    }
-  );
-
   const result =
-    await handleResponse<
-      ApiResponse<Estimate>
-    >(response);
+    await post<ApiResponse<Estimate>>(
+      "/estimates",
+      payload
+    );
 
   return result.data;
 };
@@ -209,11 +317,13 @@ export const createEstimate = async (
 // GET /api/estimates
 // ==========================================
 
-export const getEstimates = async (params?: {
-  status?: EstimateStatus;
-  page?: number;
-  limit?: number;
-}): Promise<EstimatesResponse> => {
+export const getEstimates = async (
+  params?: {
+    status?: EstimateStatus;
+    page?: number;
+    limit?: number;
+  }
+): Promise<EstimatesResponse> => {
   const searchParams =
     new URLSearchParams();
 
@@ -241,21 +351,10 @@ export const getEstimates = async (params?: {
   const query =
     searchParams.toString();
 
-  const response = await fetch(
-    `${API_URL}/estimates${
+  return get<EstimatesResponse>(
+    `/estimates${
       query ? `?${query}` : ""
-    }`,
-    {
-      method: "GET",
-
-      credentials: "include",
-
-      cache: "no-store",
-    }
-  );
-
-  return handleResponse<EstimatesResponse>(
-    response
+    }`
   );
 };
 
@@ -273,21 +372,10 @@ export const getEstimateById = async (
     );
   }
 
-  const response = await fetch(
-    `${API_URL}/estimates/${id}`,
-    {
-      method: "GET",
-
-      credentials: "include",
-
-      cache: "no-store",
-    }
-  );
-
   const result =
-    await handleResponse<
-      ApiResponse<Estimate>
-    >(response);
+    await get<ApiResponse<Estimate>>(
+      `/estimates/${id}`
+    );
 
   return result.data;
 };
@@ -308,28 +396,13 @@ export const updateEstimateStatus =
       );
     }
 
-    const response = await fetch(
-      `${API_URL}/estimates/${id}/status`,
-      {
-        method: "PATCH",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        credentials: "include",
-
-        body: JSON.stringify({
-          status,
-        }),
-      }
-    );
-
     const result =
-      await handleResponse<
-        ApiResponse<Estimate>
-      >(response);
+      await patch<ApiResponse<Estimate>>(
+        `/estimates/${id}/status`,
+        {
+          status,
+        }
+      );
 
     return result.data;
   };

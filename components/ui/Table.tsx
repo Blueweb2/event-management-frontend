@@ -1,136 +1,199 @@
-import type { ReactNode } from "react";
-import Loading from "./Loading";
+import type {
+  HTMLAttributes,
+  ReactNode,
+  TableHTMLAttributes,
+} from "react";
 
-export interface TableColumn<T> {
-  key: keyof T | string;
-  header: string;
-  className?: string;
-  render?: (item: T) => ReactNode;
+interface TableProps
+  extends TableHTMLAttributes<HTMLTableElement> {
+  children: ReactNode;
 }
 
-interface TableProps<T> {
-  columns: TableColumn<T>[];
-  data: T[];
-  emptyMessage?: string;
-  loading?: boolean;
+interface TableContainerProps
+  extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
 }
 
-export default function Table<T>({
-  columns,
-  data,
-  emptyMessage = "No records found.",
-  loading = false,
-}: TableProps<T>) {
+interface TableHeaderProps
+  extends HTMLAttributes<HTMLTableSectionElement> {
+  children: ReactNode;
+}
+
+interface TableRowProps
+  extends HTMLAttributes<HTMLTableRowElement> {
+  children: ReactNode;
+  clickable?: boolean;
+}
+
+interface TableHeadProps
+  extends HTMLAttributes<HTMLTableCellElement> {
+  children: ReactNode;
+}
+
+interface TableBodyProps
+  extends HTMLAttributes<HTMLTableSectionElement> {
+  children: ReactNode;
+}
+
+interface TableCellProps
+  extends HTMLAttributes<HTMLTableCellElement> {
+  children: ReactNode;
+}
+
+export function TableContainer({
+  children,
+  className = "",
+  ...props
+}: TableContainerProps) {
   return (
     <div
-      className={[
-        "w-full overflow-hidden",
-        "rounded-2xl",
-        "border border-[var(--border)]",
-        "bg-[var(--cream)]",
-        "shadow-sm",
-      ].join(" ")}
+      className={`
+        w-full
+        overflow-x-auto
+        rounded-2xl
+        border
+        border-[#E5E1D8]
+        bg-white
+        ${className}
+      `}
+      {...props}
     >
-      {/* Horizontal scroll for mobile */}
-      <div className="w-full overflow-x-auto">
-        <table className="w-full min-w-[700px] text-left text-sm">
-          {/* Table Header */}
-          <thead
-            className={[
-              "border-b border-[var(--border)]",
-              "bg-[var(--sage-light)]/60",
-            ].join(" ")}
-          >
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={String(column.key)}
-                  scope="col"
-                  className={[
-                    "whitespace-nowrap",
-                    "px-4 py-3.5",
-                    "text-xs font-semibold uppercase tracking-wide",
-                    "text-[var(--sage-dark)]",
-                    column.className ?? "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {column.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          {/* Table Body */}
-          <tbody
-            className={[
-              "divide-y divide-[var(--border)]",
-              "bg-[var(--cream)]",
-            ].join(" ")}
-          >
-            {/* Loading */}
-            {loading ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center"
-                >
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <Loading size="md" />
-
-                    <span className="text-sm text-[var(--taupe)]">
-                      Loading...
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            ) : data.length === 0 ? (
-              /* Empty State */
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-12 text-center"
-                >
-                  <span className="text-sm text-[var(--taupe)]">
-                    {emptyMessage}
-                  </span>
-                </td>
-              </tr>
-            ) : (
-              /* Data Rows */
-              data.map((item, index) => (
-                <tr
-                  key={index}
-                  className={[
-                    "transition-colors duration-150",
-                    "hover:bg-[var(--sage-light)]/40",
-                  ].join(" ")}
-                >
-                  {columns.map((column) => (
-                    <td
-                      key={String(column.key)}
-                      className={[
-                        "px-4 py-3.5",
-                        "text-[var(--foreground)]",
-                        column.className ?? "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      {column.render
-                        ? column.render(item)
-                        : String(
-                            item[column.key as keyof T] ?? ""
-                          )}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {children}
     </div>
+  );
+}
+
+export default function Table({
+  children,
+  className = "",
+  ...props
+}: TableProps) {
+  return (
+    <table
+      className={`
+        w-full
+        min-w-[720px]
+        border-collapse
+        text-left
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </table>
+  );
+}
+
+export function TableHeader({
+  children,
+  className = "",
+  ...props
+}: TableHeaderProps) {
+  return (
+    <thead
+      className={`
+        bg-[#FCFBF8]
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </thead>
+  );
+}
+
+export function TableHead({
+  children,
+  className = "",
+  ...props
+}: TableHeadProps) {
+  return (
+    <th
+      className={`
+        border-b
+        border-[#EAE6DE]
+        px-4
+        py-3.5
+        text-xs
+        font-semibold
+        uppercase
+        tracking-[0.04em]
+        text-[#77746D]
+        first:pl-5
+        last:pr-5
+        sm:px-5
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </th>
+  );
+}
+
+export function TableBody({
+  children,
+  className = "",
+  ...props
+}: TableBodyProps) {
+  return (
+    <tbody
+      className={`
+        divide-y
+        divide-[#EEEAE2]
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </tbody>
+  );
+}
+
+export function TableRow({
+  children,
+  clickable = false,
+  className = "",
+  ...props
+}: TableRowProps) {
+  return (
+    <tr
+      className={`
+        group
+        bg-white
+        transition-colors
+        duration-150
+        hover:bg-[#FCFBF8]
+        ${clickable ? "cursor-pointer" : ""}
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </tr>
+  );
+}
+
+export function TableCell({
+  children,
+  className = "",
+  ...props
+}: TableCellProps) {
+  return (
+    <td
+      className={`
+        px-4
+        py-4
+        text-sm
+        text-[#3F4044]
+        first:pl-5
+        last:pr-5
+        sm:px-5
+        ${className}
+      `}
+      {...props}
+    >
+      {children}
+    </td>
   );
 }

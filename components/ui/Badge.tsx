@@ -1,82 +1,111 @@
 import type { ReactNode } from "react";
 
+type BadgeVariant =
+  | "default"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "gold"
+  | "purple"
+  | "dark";
+
+type BadgeSize = "sm" | "md" | "lg";
+
 interface BadgeProps {
   children: ReactNode;
-  variant?:
-    | "default"
-    | "success"
-    | "warning"
-    | "danger"
-    | "info";
-  size?: "sm" | "md";
+  variant?: BadgeVariant;
+  size?: BadgeSize;
   dot?: boolean;
+  icon?: ReactNode;
+  className?: string;
 }
 
 export default function Badge({
   children,
   variant = "default",
-  size = "md",
+  size = "sm",
   dot = false,
+  icon,
+  className = "",
 }: BadgeProps) {
-  const variants = {
-    default: {
-      container:
-        "bg-[#eeebe3] text-[var(--sage-dark)]",
-      dot: "bg-[var(--taupe)]",
-    },
+  const variants: Record<BadgeVariant, string> = {
+    default:
+      "bg-[#F1F0EC] text-[#5F5D57]",
 
-    success: {
-      container:
-        "bg-[var(--sage-light)] text-[var(--sage-dark)]",
-      dot: "bg-[var(--sage)]",
-    },
+    success:
+      "bg-[#EAF7EE] text-[#19713A]",
 
-    warning: {
-      container:
-        "bg-[#f3ead5] text-[#806c3f]",
-      dot: "bg-[var(--gold)]",
-    },
+    warning:
+      "bg-[#FFF4D9] text-[#946A12]",
 
-    danger: {
-      container:
-        "bg-[#f2dfdb] text-[var(--rose)]",
-      dot: "bg-[var(--rose)]",
-    },
+    danger:
+      "bg-[#FDECEC] text-[#B42318]",
 
-    info: {
-      container:
-        "bg-[#e8ebe1] text-[var(--sage-dark)]",
-      dot: "bg-[var(--sage)]",
-    },
+    info:
+      "bg-[#EAF3FB] text-[#24658F]",
+
+    gold:
+      "bg-[#F3EBDD] text-[#80683D]",
+
+    purple:
+      "bg-[#F0EBFA] text-[#6846A5]",
+
+    dark:
+      "bg-[#1F2023] text-white",
   };
 
-  const sizes = {
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-2.5 py-1 text-xs",
+  const dots: Record<BadgeVariant, string> = {
+    default: "bg-[#85827B]",
+    success: "bg-[#2E9B57]",
+    warning: "bg-[#C69222]",
+    danger: "bg-[#D92D20]",
+    info: "bg-[#3688BA]",
+    gold: "bg-[#B49A6A]",
+    purple: "bg-[#7956B5]",
+    dark: "bg-white",
   };
 
-  const current = variants[variant];
+  const sizes: Record<BadgeSize, string> = {
+    sm: "min-h-6 px-2.5 text-xs gap-1.5",
+    md: "min-h-7 px-3 text-xs gap-1.5",
+    lg: "min-h-8 px-3.5 text-sm gap-2",
+  };
 
   return (
     <span
-      className={[
-        "inline-flex items-center gap-1.5",
-        "rounded-full font-medium",
-        "whitespace-nowrap",
-        current.container,
-        sizes[size],
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={`
+        inline-flex
+        items-center
+        justify-center
+        whitespace-nowrap
+        rounded-full
+        font-medium
+        ${variants[variant]}
+        ${sizes[size]}
+        ${className}
+      `}
     >
       {dot && (
         <span
+          className={`
+            h-1.5
+            w-1.5
+            shrink-0
+            rounded-full
+            ${dots[variant]}
+          `}
           aria-hidden="true"
-          className={[
-            "h-1.5 w-1.5 shrink-0 rounded-full",
-            current.dot,
-          ].join(" ")}
         />
+      )}
+
+      {icon && (
+        <span
+          className="flex shrink-0 items-center"
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
       )}
 
       <span>{children}</span>

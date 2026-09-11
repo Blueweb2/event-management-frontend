@@ -8,128 +8,104 @@ interface InputProps
   label?: string;
   error?: string;
   helperText?: string;
+  required?: boolean;
   leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
+  rightElement?: ReactNode;
 }
 
 export default function Input({
   label,
   error,
   helperText,
+  required = false,
   leftIcon,
-  rightIcon,
+  rightElement,
   className = "",
   id,
   ...props
 }: InputProps) {
+  const inputId =
+    id ||
+    (label
+      ? label
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+      : undefined);
+
   return (
     <div className="w-full">
-      {/* Label */}
       {label && (
         <label
-          htmlFor={id}
-          className="mb-2 block text-sm font-medium text-[var(--sage-dark)]"
+          htmlFor={inputId}
+          className="mb-2 block text-sm font-medium text-[#292A2D]"
         >
           {label}
 
-          {props.required && (
-            <span
-              className="ml-1 text-[var(--rose)]"
-              aria-hidden="true"
-            >
+          {required && (
+            <span className="ml-1 text-[#B42318]">
               *
             </span>
           )}
         </label>
       )}
 
-      {/* Input Wrapper */}
       <div className="relative">
-        {/* Left Icon */}
         {leftIcon && (
-          <div
-            className={[
-              "pointer-events-none absolute inset-y-0 left-0",
-              "flex items-center pl-3.5",
-              "text-[var(--taupe)]",
-            ].join(" ")}
-          >
+          <div className="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center justify-center text-[#77746D]">
             {leftIcon}
           </div>
         )}
 
-        {/* Input */}
         <input
-          id={id}
-          className={[
-            "w-full rounded-xl border",
-            "bg-[var(--cream)]",
-            "px-3.5 py-3",
-            "text-sm text-[var(--foreground)]",
-            "placeholder:text-[var(--taupe)]",
-            "outline-none",
-            "transition-all duration-200",
+          id={inputId}
+          className={`
+            h-11
+            w-full
+            rounded-xl
+            border
+            bg-white
+            px-3.5
+            text-sm
+            text-[#1F2023]
+            outline-none
+            transition-all
+            duration-200
 
-            // Normal border
-            error
-              ? [
-                  "border-[var(--rose)]",
-                  "focus:border-[var(--rose)]",
-                  "focus:ring-2",
-                  "focus:ring-[#ead5d0]",
-                ].join(" ")
-              : [
-                  "border-[var(--border)]",
-                  "focus:border-[var(--sage)]",
-                  "focus:ring-2",
-                  "focus:ring-[var(--sage-light)]",
-                ].join(" "),
+            placeholder:text-[#A3A09A]
 
-            // Icons
-            leftIcon ? "pl-10" : "",
-            rightIcon ? "pr-10" : "",
+            ${
+              error
+                ? "border-[#D92D20] focus:border-[#D92D20] focus:ring-2 focus:ring-[#D92D20]/10"
+                : "border-[#DEDAD1] focus:border-[#B49A6A] focus:ring-2 focus:ring-[#B49A6A]/15"
+            }
 
-            // Disabled
-            "disabled:cursor-not-allowed",
-            "disabled:bg-[#f1eee6]",
-            "disabled:text-[var(--taupe)]",
-            "disabled:opacity-70",
+            disabled:cursor-not-allowed
+            disabled:bg-[#F3F1EC]
+            disabled:text-[#99968F]
 
-            // Read only
-            "read-only:bg-[#f5f2ea]",
+            ${leftIcon ? "pl-10" : ""}
 
-            className,
-          ]
-            .filter(Boolean)
-            .join(" ")}
+            ${rightElement ? "pr-11" : ""}
+
+            ${className}
+          `}
           {...props}
         />
 
-        {/* Right Icon */}
-        {rightIcon && (
-          <div
-            className={[
-              "pointer-events-none absolute inset-y-0 right-0",
-              "flex items-center pr-3.5",
-              "text-[var(--taupe)]",
-            ].join(" ")}
-          >
-            {rightIcon}
+        {rightElement && (
+          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center">
+            {rightElement}
           </div>
         )}
       </div>
 
-      {/* Error Message */}
       {error ? (
-        <p
-          className="mt-1.5 text-xs text-[var(--rose)]"
-          role="alert"
-        >
+        <p className="mt-1.5 text-xs text-[#B42318]">
           {error}
         </p>
       ) : helperText ? (
-        /* Helper Text */
-        <p className="mt-1.5 text-xs leading-5 text-[var(--taupe)]">
+        <p className="mt-1.5 text-xs text-[#77746D]">
           {helperText}
         </p>
       ) : null}

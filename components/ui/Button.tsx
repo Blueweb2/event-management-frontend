@@ -1,23 +1,22 @@
-import type {
-  ButtonHTMLAttributes,
-  ReactNode,
-} from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-import Loading from "./Loading";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "gold";
+
+type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?:
-    | "primary"
-    | "secondary"
-    | "outline"
-    | "danger"
-    | "ghost";
-  size?: "sm" | "md" | "lg";
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
-  icon?: ReactNode;
 }
 
 export default function Button({
@@ -26,72 +25,60 @@ export default function Button({
   size = "md",
   loading = false,
   fullWidth = false,
-  icon,
+  disabled,
   className = "",
-  disabled = false,
-  type = "button",
   ...props
 }: ButtonProps) {
-  const variants = {
+  const baseStyles =
+    "inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#B49A6A]/30 disabled:cursor-not-allowed disabled:opacity-50";
+
+  const variants: Record<ButtonVariant, string> = {
     primary:
-      "bg-[var(--sage-dark)] text-white hover:bg-[var(--sage)] focus:ring-[var(--sage)]",
+      "bg-[#1F2023] text-white hover:bg-[#2A2B2F] active:bg-[#17181A]",
 
     secondary:
-      "bg-[var(--sage-light)] text-[var(--sage-dark)] hover:bg-[#dde2d5] focus:ring-[var(--sage)]",
+      "bg-white text-[#1F2023] border border-[#E5E1D8] hover:bg-[#F8F7F3] active:bg-[#F0EEE8]",
 
     outline:
-      "border border-[var(--sage)] bg-white text-[var(--sage-dark)] hover:bg-[var(--sage-light)] focus:ring-[var(--sage)]",
-
-    danger:
-      "bg-[var(--rose)] text-white hover:bg-[#a87e76] focus:ring-[var(--rose)]",
+      "bg-transparent text-[#1F2023] border border-[#D8D3C8] hover:bg-[#F8F7F3] active:bg-[#EFEBE3]",
 
     ghost:
-      "bg-transparent text-[var(--sage-dark)] hover:bg-[var(--sage-light)] focus:ring-[var(--sage)]",
+      "bg-transparent text-[#55565A] hover:bg-[#F3F1EC] hover:text-[#1F2023] active:bg-[#EBE8E1]",
+
+    danger:
+      "bg-[#B42318] text-white hover:bg-[#981B12] active:bg-[#7F160F]",
+
+    gold:
+      "bg-[#B49A6A] text-white hover:bg-[#A58C5F] active:bg-[#927A50]",
   };
 
-  const sizes = {
-    sm: "min-h-9 px-3 text-sm",
-    md: "min-h-10 px-4 text-sm",
-    lg: "min-h-12 px-6 text-base",
+  const sizes: Record<ButtonSize, string> = {
+    sm: "h-9 px-3 text-sm rounded-lg",
+    md: "h-11 px-4 text-sm rounded-xl",
+    lg: "h-12 px-6 text-base rounded-xl",
+    icon: "h-10 w-10 rounded-xl p-0",
   };
+
+  const widthClass = fullWidth ? "w-full" : "";
 
   return (
     <button
-      type={type}
+      type="button"
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${className}`}
       disabled={disabled || loading}
-      aria-disabled={disabled || loading}
-      className={[
-        "inline-flex items-center justify-center gap-2",
-        "rounded-full",
-        "font-medium",
-        "transition-all duration-200",
-        "focus:outline-none focus:ring-2 focus:ring-offset-1",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        "active:scale-[0.98]",
-        variants[variant],
-        sizes[size],
-        fullWidth ? "w-full" : "",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
       {...props}
     >
       {loading ? (
         <>
-          <Loading size="sm" />
+          <span
+            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+            aria-hidden="true"
+          />
+
           <span>Loading...</span>
         </>
       ) : (
-        <>
-          {icon && (
-            <span className="flex shrink-0 items-center">
-              {icon}
-            </span>
-          )}
-
-          <span>{children}</span>
-        </>
+        children
       )}
     </button>
   );

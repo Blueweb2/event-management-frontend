@@ -1,336 +1,212 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
+import {
+  get,
+  post,
+  put,
+  patch,
+  ApiResponse,
+} from "./api";
 
-export type EmploymentType =
-  | "full-time"
-  | "part-time"
-  | "contract"
-  | "temporary";
+import type {
+  Staff,
+  CreateStaffPayload,
+  UpdateStaffPayload,
+  StaffListResponse,
+  StaffStatusFilter,
+  ResetStaffPasswordResponse,
+} from "@/types/staff";
 
-export type Staff = {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
-  location: string;
+// ==========================================
+// CREATE STAFF
+// POST /api/users/staff
+// ==========================================
 
-  employeeId: string;
-  department: string;
-
-  employmentType: EmploymentType;
-
-  role: "admin" | "staff";
-
-  emergencyContact: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-
-  isActive: boolean;
-  status: "Active" | "Inactive";
-
-  createdBy?: string | null;
-
-  joinedDate: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type CreateStaffPayload = {
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-
-  phone?: string;
-  location?: string;
-
-  employeeId?: string;
-  department?: string;
-
-  employmentType?: EmploymentType;
-
-  emergencyContact?: {
-    name?: string;
-    phone?: string;
-    relationship?: string;
-  };
-};
-
-export type UpdateStaffPayload = {
-  name?: string;
-  username?: string;
-  email?: string;
-  phone?: string;
-  location?: string;
-
-  employeeId?: string;
-  department?: string;
-
-  employmentType?: EmploymentType;
-
-  emergencyContact?: {
-    name?: string;
-    phone?: string;
-    relationship?: string;
-  };
-};
-
-type ApiResponse<T> = {
-  success: boolean;
-  message?: string;
-  data: T;
-};
-
-type StaffListResponse = {
-  success: boolean;
-  data: Staff[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-};
-
-const handleResponse = async <T>(
-  response: Response
-): Promise<T> => {
-  let result: any;
-
-  try {
-    result = await response.json();
-  } catch {
-    throw new Error(
-      "Invalid response from server"
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      result?.message ||
-        "Something went wrong"
-    );
-  }
-
-  return result;
-};
-
-/**
- * Create staff
- */
 export const createStaff = async (
   payload: CreateStaffPayload,
-  token: string
+  token: string,
 ): Promise<Staff> => {
-  const response = await fetch(
-    `${API_URL}/users/staff`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    }
+  const result = await post<
+    ApiResponse<{ staff: Staff }>
+  >(
+    "/users/staff",
+    payload,
+    token,
   );
-
-  const result =
-    await handleResponse<
-      ApiResponse<{ staff: Staff }>
-    >(response);
 
   return result.data.staff;
 };
 
-/**
- * Get staff
- */
+// ==========================================
+// GET STAFF
+// GET /api/users/staff
+// ==========================================
+
 export const getStaff = async (
   token: string,
   params?: {
     search?: string;
-    status?: "all" | "active" | "inactive";
+    status?: StaffStatusFilter;
     department?: string;
     page?: number;
     limit?: number;
-  }
+  },
 ): Promise<StaffListResponse> => {
-  const searchParams =
-    new URLSearchParams();
+  const searchParams = new URLSearchParams();
 
   if (params?.search) {
     searchParams.set(
       "search",
-      params.search
+      params.search,
     );
   }
 
   if (params?.status) {
     searchParams.set(
       "status",
-      params.status
+      params.status,
     );
   }
 
   if (params?.department) {
     searchParams.set(
       "department",
-      params.department
+      params.department,
     );
   }
 
   if (params?.page !== undefined) {
     searchParams.set(
       "page",
-      String(params.page)
+      String(params.page),
     );
   }
 
   if (params?.limit !== undefined) {
     searchParams.set(
       "limit",
-      String(params.limit)
+      String(params.limit),
     );
   }
 
-  const query =
-    searchParams.toString();
+  const query = searchParams.toString();
 
-  const response = await fetch(
-    `${API_URL}/users/staff${
-      query ? `?${query}` : ""
-    }`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    }
-  );
+  const endpoint = query
+    ? `/users/staff?${query}`
+    : "/users/staff";
 
-  return handleResponse<StaffListResponse>(
-    response
+  return get<StaffListResponse>(
+    endpoint,
+    token,
   );
 };
 
-/**
- * Get staff by ID
- */
+// ==========================================
+// GET STAFF BY ID
+// GET /api/users/staff/:id
+// ==========================================
+
 export const getStaffById = async (
   id: string,
-  token: string
+  token: string,
 ): Promise<Staff> => {
   if (!id) {
     throw new Error(
-      "Staff ID is required"
+      "Staff ID is required",
     );
   }
 
-  const response = await fetch(
-    `${API_URL}/users/staff/${id}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    }
+  const result = await get<
+    ApiResponse<{ staff: Staff }>
+  >(
+    `/users/staff/${id}`,
+    token,
   );
-
-  const result =
-    await handleResponse<
-      ApiResponse<{ staff: Staff }>
-    >(response);
 
   return result.data.staff;
 };
 
-/**
- * Update staff
- */
+// ==========================================
+// UPDATE STAFF
+// PUT /api/users/staff/:id
+// ==========================================
+
 export const updateStaff = async (
   id: string,
   payload: UpdateStaffPayload,
-  token: string
+  token: string,
 ): Promise<Staff> => {
-  const response = await fetch(
-    `${API_URL}/users/staff/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    }
-  );
+  if (!id) {
+    throw new Error(
+      "Staff ID is required",
+    );
+  }
 
-  const result =
-    await handleResponse<
-      ApiResponse<{ staff: Staff }>
-    >(response);
+  const result = await put<
+    ApiResponse<{ staff: Staff }>
+  >(
+    `/users/staff/${id}`,
+    payload,
+    token,
+  );
 
   return result.data.staff;
 };
 
-/**
- * Activate / deactivate staff
- */
-export const updateStaffStatus =
-  async (
-    id: string,
-    isActive: boolean,
-    token: string
-  ): Promise<Staff> => {
-    const response = await fetch(
-      `${API_URL}/users/staff/${id}/status`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          isActive,
-        }),
-      }
+// ==========================================
+// UPDATE STAFF STATUS
+// PATCH /api/users/staff/:id/status
+// ==========================================
+
+export const updateStaffStatus = async (
+  id: string,
+  isActive: boolean,
+  token: string,
+): Promise<Staff> => {
+  if (!id) {
+    throw new Error(
+      "Staff ID is required",
     );
+  }
 
-    const result =
-      await handleResponse<
-        ApiResponse<{ staff: Staff }>
-      >(response);
+  const result = await patch<
+    ApiResponse<{ staff: Staff }>
+  >(
+    `/users/staff/${id}/status`,
+    { isActive },
+    token,
+  );
 
-    return result.data.staff;
-  };
+  return result.data.staff;
+};
 
-/**
- * Reset staff password
- */
-export const resetStaffPassword =
-  async (
-    id: string,
-    newPassword: string,
-    token: string
-  ) => {
-    const response = await fetch(
-      `${API_URL}/users/staff/${id}/password`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          newPassword,
-        }),
-      }
+// ==========================================
+// RESET STAFF PASSWORD
+// PATCH /api/users/staff/:id/password
+// ==========================================
+
+export const resetStaffPassword = async (
+  id: string,
+  newPassword: string,
+  token: string,
+): Promise<ResetStaffPasswordResponse> => {
+  if (!id) {
+    throw new Error(
+      "Staff ID is required",
     );
+  }
 
-    return handleResponse(response);
-  };
+  if (!newPassword) {
+    throw new Error(
+      "New password is required",
+    );
+  }
+
+  const result = await patch<
+    ApiResponse<ResetStaffPasswordResponse>
+  >(
+    `/users/staff/${id}/password`,
+    { newPassword },
+    token,
+  );
+
+  return result.data;
+};
