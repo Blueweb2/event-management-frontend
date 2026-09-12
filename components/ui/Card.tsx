@@ -10,7 +10,7 @@ interface CardProps
   children: ReactNode;
   padding?: CardPadding;
   hoverable?: boolean;
-  title?: ReactNode;
+  title?: string;
   description?: ReactNode;
 }
 

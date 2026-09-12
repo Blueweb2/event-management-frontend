@@ -172,7 +172,7 @@ function Info({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: string | undefined;
 }) {
   return (
     <div className="flex gap-3 rounded-xl bg-[#fbf8f4] p-3">
