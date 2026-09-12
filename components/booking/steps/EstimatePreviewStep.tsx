@@ -27,21 +27,37 @@ type EstimatePreviewStepProps = {
     field: keyof BookingFormData,
     value: string,
   ) => void;
+  estimate?: Estimate | null;
+  onEstimateCreated?: (estimate: Estimate) => void;
+  isCreating?: boolean;
+  onCreateEstimate?: () => Promise<void>;
 };
 
 export default function EstimatePreviewStep({
   formData,
   updateField,
+  estimate: propEstimate,
+  onEstimateCreated,
+  isCreating: propIsCreating,
+  onCreateEstimate,
 }: EstimatePreviewStepProps) {
   // ==========================================
   // State
   // ==========================================
 
-  const [estimate, setEstimate] =
+  const [internalEstimate, setInternalEstimate] =
     useState<Estimate | null>(null);
 
-  const [isCreating, setIsCreating] =
+  const [internalIsCreating, setInternalIsCreating] =
     useState(false);
+
+  const estimate =
+    propEstimate !== undefined ? propEstimate : internalEstimate;
+  const setEstimate = setInternalEstimate;
+
+  const isCreating =
+    propIsCreating !== undefined ? propIsCreating : internalIsCreating;
+  const setIsCreating = setInternalIsCreating;
 
   const [error, setError] =
     useState("");
@@ -168,6 +184,10 @@ export default function EstimatePreviewStep({
         return;
       }
 
+      if (onCreateEstimate) {
+        return onCreateEstimate();
+      }
+
       setError("");
       setShareMessage("");
       setIsCreating(true);
@@ -259,6 +279,10 @@ export default function EstimatePreviewStep({
         // --------------------------------------
 
         setEstimate(
+          createdEstimate,
+        );
+
+        onEstimateCreated?.(
           createdEstimate,
         );
       } catch (err) {

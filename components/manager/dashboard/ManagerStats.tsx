@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Users,
   CalendarDays,
@@ -8,32 +9,95 @@ import {
 } from "lucide-react";
 
 import ManagerStatCard from "./ManagerStatCard";
+import { api } from "@/lib/api";
 
 export default function ManagerStats() {
+  const [counts, setCounts] = useState({
+    totalStaff: 0,
+    upcomingEvents: 0,
+    availableStaff: 0,
+    pendingTasks: 0,
+    loaded: false,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchStats() {
+      try {
+        const [eventsRes, staffRes, assignmentsRes] = await Promise.allSettled([
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/events"),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/users/staff"),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments"),
+        ]);
+
+        let eventCount = 0;
+        let staffCount = 0;
+        let assignmentCount = 0;
+
+        if (eventsRes.status === "fulfilled" && eventsRes.value) {
+          eventCount =
+            eventsRes.value.pagination?.total ??
+            (Array.isArray(eventsRes.value.data) ? eventsRes.value.data.length : 0);
+        }
+
+        if (staffRes.status === "fulfilled" && staffRes.value) {
+          staffCount =
+            staffRes.value.pagination?.total ??
+            (Array.isArray(staffRes.value.data) ? staffRes.value.data.length : 0);
+        }
+
+        if (assignmentsRes.status === "fulfilled" && assignmentsRes.value) {
+          assignmentCount =
+            assignmentsRes.value.pagination?.total ??
+            (Array.isArray(assignmentsRes.value.data) ? assignmentsRes.value.data.length : 0);
+        }
+
+        if (isMounted) {
+          setCounts({
+            totalStaff: staffCount,
+            upcomingEvents: eventCount,
+            availableStaff: Math.max(staffCount - assignmentCount, 0),
+            pendingTasks: assignmentCount,
+            loaded: true,
+          });
+        }
+      } catch (err) {
+        console.warn("Could not fetch live dashboard stats", err);
+      }
+    }
+
+    fetchStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const stats = [
     {
       label: "Total Staff",
-      value: "24",
+      value: counts.loaded ? String(counts.totalStaff) : "...",
       icon: Users,
-      description: "Active staff members",
+      description: "Registered team members",
     },
     {
       label: "Upcoming Events",
-      value: "8",
+      value: counts.loaded ? String(counts.upcomingEvents) : "...",
       icon: CalendarDays,
       description: "Events scheduled",
     },
     {
       label: "Available Today",
-      value: "18",
+      value: counts.loaded ? String(counts.availableStaff) : "...",
       icon: UserCheck,
-      description: "Staff available",
+      description: "Staff ready for duty",
     },
     {
-      label: "Pending Tasks",
-      value: "6",
+      label: "Active Assignments",
+      value: counts.loaded ? String(counts.pendingTasks) : "...",
       icon: ClipboardList,
-      description: "Need attention",
+      description: "Scheduled assignments",
     },
   ];
 
@@ -52,7 +116,7 @@ export default function ManagerStats() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((stat) => (
           <ManagerStatCard
             key={stat.label}

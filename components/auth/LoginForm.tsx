@@ -50,19 +50,19 @@ export default function LoginForm() {
     setError("");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          identifier: email.trim(),
+          password,
+        }),
+      });
 
       const result: LoginResponse = await response.json();
 
@@ -79,31 +79,19 @@ export default function LoginForm() {
       const { user, token } = result.data;
 
       // Store token based on "Remember me"
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify(user)
-        );
+      const storage = rememberMe ? localStorage : sessionStorage;
+      const otherStorage = rememberMe ? sessionStorage : localStorage;
 
-        // Remove any old session token
-        sessionStorage.removeItem("token");
-        sessionStorage.removeItem("user");
-      } else {
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem(
-          "user",
-          JSON.stringify(user)
-        );
+      otherStorage.removeItem("token");
+      otherStorage.removeItem("user");
 
-        // Remove any old persistent token
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
+      storage.setItem("token", token);
+      storage.setItem("user", JSON.stringify(user));
 
-      // Redirect based on role
-      if (user.role === "admin") {
-        router.push("/admin");
+      // Redirect based on role (manager/admin -> /manager, staff -> /staff)
+      const role = (user.role || "").toLowerCase();
+      if (role === "admin" || role === "manager") {
+        router.push("/manager");
       } else {
         router.push("/staff");
       }
@@ -270,15 +258,37 @@ export default function LoginForm() {
               className="mt-0.5 shrink-0 text-[#6B5B95]"
             />
 
-            <div>
+            <div className="w-full">
               <p className="text-sm font-semibold text-gray-800">
                 Manager & Staff Access
               </p>
 
               <p className="mt-1 text-xs leading-5 text-gray-500">
-                Your account will automatically open the
-                appropriate dashboard based on your role.
+                Click below to auto-fill credentials for testing:
               </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@eventmanagement.com");
+                    setPassword("admin123");
+                  }}
+                  className="rounded-lg bg-[#6B5B95]/10 px-2.5 py-1 text-xs font-medium text-[#6B5B95] transition hover:bg-[#6B5B95]/20"
+                >
+                  Manager: admin@eventmanagement.com
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("staff@eventmanagement.com");
+                    setPassword("staff123");
+                  }}
+                  className="rounded-lg bg-[#6B5B95]/10 px-2.5 py-1 text-xs font-medium text-[#6B5B95] transition hover:bg-[#6B5B95]/20"
+                >
+                  Staff: staff@eventmanagement.com
+                </button>
+              </div>
             </div>
           </div>
         </div>

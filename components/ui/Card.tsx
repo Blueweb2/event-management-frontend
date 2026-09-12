@@ -10,6 +10,8 @@ interface CardProps
   children: ReactNode;
   padding?: CardPadding;
   hoverable?: boolean;
+  title?: ReactNode;
+  description?: ReactNode;
 }
 
 interface CardHeaderProps {
@@ -35,6 +37,8 @@ export default function Card({
   children,
   padding = "none",
   hoverable = false,
+  title,
+  description,
   className = "",
   ...props
 }: CardProps) {
@@ -66,6 +70,14 @@ export default function Card({
       `}
       {...props}
     >
+      {title && (
+        <div className="border-b border-[#E5E1D8] px-5 py-4 sm:px-6">
+          <h3 className="text-base font-semibold text-[#1F2023]">{title}</h3>
+          {description && (
+            <p className="mt-1 text-xs text-[#77746D]">{description}</p>
+          )}
+        </div>
+      )}
       {children}
     </div>
   );

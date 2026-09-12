@@ -11,6 +11,7 @@ interface InputProps
   required?: boolean;
   leftIcon?: ReactNode;
   rightElement?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export default function Input({
@@ -20,10 +21,12 @@ export default function Input({
   required = false,
   leftIcon,
   rightElement,
+  rightIcon,
   className = "",
   id,
   ...props
 }: InputProps) {
+  const rightContent = rightElement || rightIcon;
   const inputId =
     id ||
     (label
@@ -93,9 +96,9 @@ export default function Input({
           {...props}
         />
 
-        {rightElement && (
+        {rightContent && (
           <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center">
-            {rightElement}
+            {rightContent}
           </div>
         )}
       </div>

@@ -635,11 +635,10 @@ function getItemsForDate(
       items.push({
         id: event.id,
         type: "event",
-        title: event.name,
+        title: event.title,
         date: date,
         time: event.time,
         location: event.location,
-        guests: event.guests,
         status: event.status,
       });
     }
@@ -647,7 +646,7 @@ function getItemsForDate(
 
   staffDuties.forEach((duty) => {
     const dutyDate = parseDisplayDate(
-      duty.eventDate
+      duty.date
     );
 
     if (dutyDate === date) {
@@ -656,7 +655,7 @@ function getItemsForDate(
         type: "duty",
         title: duty.title,
         date: date,
-        time: duty.eventTime,
+        time: duty.time,
         location: duty.location,
         status: duty.status,
       });

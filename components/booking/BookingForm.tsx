@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import BookingProgress from "./BookingProgress";
 import BookingNavigation from "./BookingNavigation";
@@ -11,6 +12,7 @@ import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
 
 import type { BookingFormData } from "./types";
+import { createEstimate, type Estimate } from "@/lib/estimates.api";
 
 // ==========================================
 // INITIAL FORM DATA
@@ -58,6 +60,8 @@ const initialFormData: BookingFormData = {
 // ==========================================
 
 export default function BookingForm() {
+  const router = useRouter();
+
   // ========================================
   // State
   // ========================================
@@ -72,6 +76,12 @@ export default function BookingForm() {
 
   const [error, setError] =
     useState("");
+
+  const [createdEstimate, setCreatedEstimate] =
+    useState<Estimate | null>(null);
+
+  const [isCreatingEstimate, setIsCreatingEstimate] =
+    useState(false);
 
   // ========================================
   // Update Field
@@ -388,17 +398,61 @@ export default function BookingForm() {
   };
 
   // ==========================================
+  // CREATE ESTIMATE
+  // ==========================================
+
+  const handleCreateEstimate = async () => {
+    if (isCreatingEstimate || createdEstimate) {
+      return;
+    }
+
+    if (!validateStep()) {
+      return;
+    }
+
+    setError("");
+    setIsCreatingEstimate(true);
+
+    try {
+      const result = await createEstimate({
+        eventName: formData.eventName.trim(),
+        eventType: formData.eventType.trim(),
+        eventDate: formData.eventDate,
+        eventTime: formData.eventTime.trim(),
+        guests: Number(formData.guests),
+        location: formData.location.trim(),
+        description: formData.description.trim(),
+        client: {
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim().toLowerCase(),
+          message: formData.message?.trim() || "",
+        },
+        services: formData.services.map((item) => ({
+          serviceId: item.serviceId,
+          optionId: item.optionId ?? null,
+          quantity: Number(item.quantity || 1),
+        })),
+        discountType: formData.discountType || "percentage",
+        discountValue: Number(formData.discountValue || 0),
+        additionalCharges: Number(formData.additionalCharges || 0),
+      });
+
+      setCreatedEstimate(result);
+    } catch (err) {
+      console.error("Failed to create estimate:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create estimate. Please try again."
+      );
+    } finally {
+      setIsCreatingEstimate(false);
+    }
+  };
+
+  // ==========================================
   // SUBMIT
-  //
-  // IMPORTANT:
-  //
-  // EstimatePreviewStep handles the actual
-  // estimate creation.
-  //
-  // We intentionally do NOT call the API here,
-  // otherwise clicking "Create Estimate" in
-  // the preview and the navigation button could
-  // create duplicate estimates.
   // ==========================================
 
   const submitBooking = () => {
@@ -406,10 +460,17 @@ export default function BookingForm() {
       return;
     }
 
-    // Step 4 handles estimate creation.
     if (currentStep === 4) {
+      if (createdEstimate) {
+        router.push("/manager/estimates");
+        return;
+      }
+
+      handleCreateEstimate();
       return;
     }
+
+    nextStep();
   };
 
   // ==========================================
@@ -476,6 +537,10 @@ export default function BookingForm() {
             <EstimatePreviewStep
               formData={formData}
               updateField={updateField}
+              estimate={createdEstimate}
+              onEstimateCreated={setCreatedEstimate}
+              isCreating={isCreatingEstimate}
+              onCreateEstimate={handleCreateEstimate}
             />
           )}
 
@@ -504,7 +569,14 @@ export default function BookingForm() {
             onBack={previousStep}
             onNext={nextStep}
             onSubmit={submitBooking}
-            loading={false}
+            loading={isCreatingEstimate}
+            submitLabel={
+              currentStep === 4
+                ? createdEstimate
+                  ? "View in Estimates"
+                  : "Create Estimate"
+                : undefined
+            }
           />
         </div>
       </section>

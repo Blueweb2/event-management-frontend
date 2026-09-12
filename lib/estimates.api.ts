@@ -175,6 +175,14 @@ export async function api<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  let activeToken: string | undefined = undefined;
+  if (typeof window !== "undefined") {
+    activeToken =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      undefined;
+  }
+
   const response = await fetch(
     `${API_URL}${endpoint}`,
     {
@@ -182,6 +190,7 @@ export async function api<T>(
 
       headers: {
         "Content-Type": "application/json",
+        ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
         ...(options.headers || {}),
       },
 
@@ -406,3 +415,44 @@ export const updateEstimateStatus =
 
     return result.data;
   };
+
+// ==========================================
+// CONVERT ESTIMATE TO BOOKING + EVENT
+// POST /api/estimates/:id/convert
+// ==========================================
+
+export type ConvertEstimateData = {
+  booking: {
+    _id: string;
+    eventName: string;
+    eventType: string;
+    eventDate: string;
+    eventTime: string;
+    guests: number;
+    location: string;
+    total: number;
+    currency: string;
+    status: string;
+  };
+  event: {
+    _id: string;
+    eventName: string;
+    eventType: string;
+    eventDate: string;
+    status: string;
+  };
+};
+
+export const convertEstimateToBooking = async (
+  id: string
+): Promise<ConvertEstimateData> => {
+  if (!id) {
+    throw new Error("Estimate ID is required");
+  }
+
+  const result = await post<ApiResponse<ConvertEstimateData>>(
+    `/estimates/${id}/convert`
+  );
+
+  return result.data;
+};

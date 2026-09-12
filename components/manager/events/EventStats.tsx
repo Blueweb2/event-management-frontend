@@ -1,91 +1,67 @@
-import {
-  CalendarDays,
-  CheckCircle2,
-  Clock3,
-  LayoutList,
-  type LucideIcon,
-} from "lucide-react";
-
-interface EventStatsData {
+interface EventsStatsProps {
   total: number;
   upcoming: number;
-  confirmed: number;
-  pending: number;
+  ongoing: number;
+  completed: number;
 }
 
-interface EventStatsProps {
-  stats: EventStatsData;
-}
+// ==========================================
+// Events Stats
+// ==========================================
 
-interface EventStat {
-  title: string;
-  value: number;
-  description: string;
-  icon: LucideIcon;
-}
-
-export default function EventStats({
-  stats,
-}: EventStatsProps) {
-  const eventStats: EventStat[] = [
-    {
-      title: "Total Events",
-      value: stats.total,
-      description: "All scheduled events",
-      icon: LayoutList,
-    },
-    {
-      title: "Upcoming",
-      value: stats.upcoming,
-      description: "Events coming soon",
-      icon: CalendarDays,
-    },
-    {
-      title: "Confirmed",
-      value: stats.confirmed,
-      description: "Confirmed events",
-      icon: CheckCircle2,
-    },
-    {
-      title: "Pending",
-      value: stats.pending,
-      description: "Awaiting confirmation",
-      icon: Clock3,
-    },
-  ];
-
+export default function EventsStats({
+  total,
+  upcoming,
+  ongoing,
+  completed,
+}: EventsStatsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {eventStats.map((stat) => {
-        const Icon = stat.icon;
+    <div className="grid grid-cols-2 gap-3">
+      <StatCard
+        label="Total"
+        value={total}
+      />
 
-        return (
-          <div
-            key={stat.title}
-            className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-[#756d64]">
-                  {stat.title}
-                </p>
+      <StatCard
+        label="Upcoming"
+        value={upcoming}
+      />
 
-                <p className="mt-2 text-2xl font-bold tracking-tight text-[#29241f]">
-                  {stat.value}
-                </p>
+      <StatCard
+        label="Ongoing"
+        value={ongoing}
+      />
 
-                <p className="mt-1 text-xs text-[#9b938a]">
-                  {stat.description}
-                </p>
-              </div>
+      <StatCard
+        label="Completed"
+        value={completed}
+      />
+    </div>
+  );
+}
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
-                <Icon size={21} />
-              </div>
-            </div>
-          </div>
-        );
-      })}
+// ==========================================
+// Stat Card
+// ==========================================
+
+interface StatCardProps {
+  label: string;
+  value: number;
+}
+
+function StatCard({
+  label,
+  value,
+}: StatCardProps) {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <p className="text-2xl font-bold tracking-tight text-[#252525]">
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs font-medium text-gray-500">
+        {label}
+      </p>
     </div>
   );
 }

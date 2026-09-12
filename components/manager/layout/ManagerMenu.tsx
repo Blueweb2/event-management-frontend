@@ -14,6 +14,8 @@ LogOut,
 ChevronRight,
 } from "lucide-react";
 
+import { useAuth } from "@/hooks/useAuth";
+
 interface ManagerMenuProps {
 isOpen: boolean;
 onClose: () => void;
@@ -59,6 +61,7 @@ onClose,
 onLogout,
 }: ManagerMenuProps) {
 const pathname = usePathname();
+const { user } = useAuth();
 
 if (!isOpen) {
 return null;
@@ -85,18 +88,18 @@ return (
     <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 px-5">
       <div className="flex items-center gap-3">
         {/* Manager Avatar */}
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm font-semibold text-white">
-          M
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6B5B95] text-sm font-semibold text-white">
+          {user?.name ? user.name.charAt(0).toUpperCase() : "M"}
         </div>
 
         {/* Manager Info */}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-gray-900">
-            Manager
+            {user?.name || "Manager"}
           </p>
 
           <p className="truncate text-xs text-gray-500">
-            Management Panel
+            {user?.email || "Management Panel"}
           </p>
         </div>
       </div>

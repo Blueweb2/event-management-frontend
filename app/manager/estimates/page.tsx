@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
+  ArrowRight,
   CalendarDays,
+  CheckCircle2,
   Eye,
   FileText,
+  Loader2,
   RefreshCw,
   Search,
 } from "lucide-react";
+
+import {
+  getEstimates,
+  convertEstimateToBooking,
+} from "@/lib/estimates.api";
 
 type EstimateStatus =
   | "DRAFT"
@@ -46,10 +55,6 @@ type Estimate = {
   createdAt: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000/api";
-
 const statusStyles: Record<
   EstimateStatus,
   string
@@ -84,6 +89,8 @@ const statusLabels: Record<
 };
 
 export default function EstimatesPage() {
+  const router = useRouter();
+
   const [estimates, setEstimates] =
     useState<Estimate[]>([]);
 
@@ -102,6 +109,50 @@ export default function EstimatesPage() {
   const [statusFilter, setStatusFilter] =
     useState<"ALL" | EstimateStatus>("ALL");
 
+  // Track which estimate is currently being converted
+  const [convertingId, setConvertingId] =
+    useState<string | null>(null);
+
+  const [convertSuccess, setConvertSuccess] =
+    useState<string | null>(null);
+
+  const [convertError, setConvertError] =
+    useState<string | null>(null);
+
+  const handleConvert = async (
+    estimateId: string,
+    estimateName: string,
+  ) => {
+    if (convertingId) return;
+
+    setConvertingId(estimateId);
+    setConvertError(null);
+    setConvertSuccess(null);
+
+    try {
+      await convertEstimateToBooking(
+        estimateId,
+      );
+
+      setConvertSuccess(
+        `"${estimateName}" converted to event successfully.`,
+      );
+
+      // Navigate to events list after a brief delay
+      setTimeout(() => {
+        router.push("/manager/events");
+      }, 1200);
+    } catch (err) {
+      setConvertError(
+        err instanceof Error
+          ? err.message
+          : "Failed to convert estimate. Please try again.",
+      );
+    } finally {
+      setConvertingId(null);
+    }
+  };
+
   const loadEstimates = async (
     refresh = false,
   ) => {
@@ -114,27 +165,8 @@ export default function EstimatesPage() {
 
       setError("");
 
-      const response = await fetch(
-        `${API_URL}/estimates`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          cache: "no-store",
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to load estimates",
-        );
-      }
-
-      setEstimates(data.data || []);
+      const result = await getEstimates();
+      setEstimates(result.data || []);
     } catch (err) {
       setError(
         err instanceof Error
@@ -333,6 +365,32 @@ export default function EstimatesPage() {
                 <p className="mt-1">
                   {error}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Convert success banner */}
+          {convertSuccess && (
+            <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <CheckCircle2
+                size={18}
+                className="shrink-0 text-green-600"
+              />
+              <p className="font-medium">{convertSuccess}</p>
+              <p className="text-green-600">Redirecting to Events…</p>
+            </div>
+          )}
+
+          {/* Convert error banner */}
+          {convertError && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <AlertCircle
+                size={18}
+                className="mt-0.5 shrink-0"
+              />
+              <div>
+                <p className="font-medium">Conversion failed</p>
+                <p className="mt-1">{convertError}</p>
               </div>
             </div>
           )}
@@ -581,16 +639,53 @@ export default function EstimatesPage() {
 
                           {/* Action */}
                           <td className="px-5 py-4 text-right">
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
-                            >
-                              <Eye
-                                size={15}
-                              />
+                            {estimate.status ===
+                            "ACCEPTED" ? (
+                              <button
+                                type="button"
+                                id={`convert-estimate-${estimate._id}`}
+                                disabled={
+                                  convertingId ===
+                                  estimate._id
+                                }
+                                onClick={() =>
+                                  handleConvert(
+                                    estimate._id,
+                                    estimate.eventName,
+                                  )
+                                }
+                                className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                              >
+                                {convertingId ===
+                                estimate._id ? (
+                                  <>
+                                    <Loader2
+                                      size={14}
+                                      className="animate-spin"
+                                    />
+                                    Converting…
+                                  </>
+                                ) : (
+                                  <>
+                                    <ArrowRight
+                                      size={14}
+                                    />
+                                    Convert to Event
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
+                              >
+                                <Eye
+                                  size={15}
+                                />
 
-                              View
-                            </button>
+                                View
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ),

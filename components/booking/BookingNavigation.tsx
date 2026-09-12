@@ -13,6 +13,8 @@ interface BookingNavigationProps {
   onNext: () => void;
   onSubmit: () => void;
   loading?: boolean;
+  submitLabel?: string;
+  submitIcon?: React.ReactNode;
 }
 
 export default function BookingNavigation({
@@ -22,6 +24,8 @@ export default function BookingNavigation({
   onNext,
   onSubmit,
   loading = false,
+  submitLabel,
+  submitIcon,
 }: BookingNavigationProps) {
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
@@ -52,9 +56,9 @@ export default function BookingNavigation({
           onClick={onSubmit}
           loading={loading}
           disabled={loading}
-          icon={<Check size={17} />}
+          icon={submitIcon || <Check size={17} />}
         >
-          Submit Booking
+          {submitLabel || "Submit Booking"}
         </Button>
       ) : (
         <Button

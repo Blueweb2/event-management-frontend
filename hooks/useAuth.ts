@@ -10,8 +10,8 @@ type AuthState = {
   loading: boolean;
 };
 
-const TOKEN_KEY = "auth_token";
-const USER_KEY = "auth_user";
+const TOKEN_KEY = "token";
+const USER_KEY = "user";
 
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
@@ -27,10 +27,12 @@ export const useAuth = () => {
   useEffect(() => {
     try {
       const token =
-        localStorage.getItem(TOKEN_KEY);
+        localStorage.getItem(TOKEN_KEY) ||
+        sessionStorage.getItem(TOKEN_KEY);
 
       const storedUser =
-        localStorage.getItem(USER_KEY);
+        localStorage.getItem(USER_KEY) ||
+        sessionStorage.getItem(USER_KEY);
 
       const user = storedUser
         ? (JSON.parse(storedUser) as AuthUser)
@@ -58,16 +60,16 @@ export const useAuth = () => {
     (
       token: string,
       user: AuthUser,
+      remember = true,
     ) => {
-      localStorage.setItem(
-        TOKEN_KEY,
-        token,
-      );
+      const storage = remember ? localStorage : sessionStorage;
+      const otherStorage = remember ? sessionStorage : localStorage;
 
-      localStorage.setItem(
-        USER_KEY,
-        JSON.stringify(user),
-      );
+      otherStorage.removeItem(TOKEN_KEY);
+      otherStorage.removeItem(USER_KEY);
+
+      storage.setItem(TOKEN_KEY, token);
+      storage.setItem(USER_KEY, JSON.stringify(user));
 
       setState({
         user,
@@ -83,13 +85,10 @@ export const useAuth = () => {
   // ==========================================
 
   const logout = useCallback(() => {
-    localStorage.removeItem(
-      TOKEN_KEY,
-    );
-
-    localStorage.removeItem(
-      USER_KEY,
-    );
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
 
     setState({
       user: null,

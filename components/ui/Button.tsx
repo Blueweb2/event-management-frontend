@@ -17,6 +17,8 @@ interface ButtonProps
   size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
+  icon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export default function Button({
@@ -25,6 +27,8 @@ export default function Button({
   size = "md",
   loading = false,
   fullWidth = false,
+  icon,
+  rightIcon,
   disabled,
   className = "",
   ...props
@@ -78,7 +82,11 @@ export default function Button({
           <span>Loading...</span>
         </>
       ) : (
-        children
+        <>
+          {icon}
+          {children}
+          {rightIcon}
+        </>
       )}
     </button>
   );

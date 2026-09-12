@@ -2,267 +2,175 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import DashboardHeader from "@/components/manager/DashboardHeader";
-import EventStats from "@/components/manager/events/EventStats";
+import {
+  getEvents,
+  type Event,
+  type EventStatus,
+} from "@/lib/event.api";
+
+import EventsHeader from "@/components/manager/events/EventsHeader";
+import EventsStats from "@/components/manager/events/EventStats";
 import EventFilters from "@/components/manager/events/EventFilters";
-import EventsTable from "@/components/manager/events/EventsTable";
-import EventCard from "@/components/manager/events/EventCard";
+import EventSearch from "@/components/manager/events/EventSearch";
+import EventList from "@/components/manager/events/EventList";
+import EmptyEvents from "@/components/manager/events/EmptyEvents";
+import ErrorMessage from "@/components/common/ErrorMessage";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
-export interface ManagerEvent {
-  id: string;
-  name: string;
-  type: string;
-  customer?: {
-    _id: string;
-    name: string;
-    email: string;
-    phone?: string;
-  } | null;
-  date: string;
-  time: string;
-  location: string;
-  guests: number;
-  package: string;
-  amount: number;
-  status:
-    | "Pending"
-    | "Confirmed"
-    | "Completed"
-    | "Cancelled";
-  description?: string;
-  assignedStaff?: {
-    staff: {
-      _id: string;
-      name: string;
-      email: string;
-      phone?: string;
-    };
-    status: "Pending" | "Confirmed";
-  }[];
-}
+// ==========================================
+// Page
+// ==========================================
 
-interface EventsResponse {
-  success: boolean;
-  data?: {
-    events: ManagerEvent[];
-  };
-  message?: string;
-}
+export default function ManagerEventsPage() {
+  // ==========================================
+  // State
+  // ==========================================
 
-interface StatsResponse {
-  success: boolean;
-  data?: {
-    stats: {
-      total: number;
-      upcoming: number;
-      confirmed: number;
-      pending: number;
-    };
-  };
-  message?: string;
-}
-
-export default function EventsPage() {
-  const [events, setEvents] = useState<ManagerEvent[]>(
-    []
-  );
-
-  const [stats, setStats] = useState({
-    total: 0,
-    upcoming: 0,
-    confirmed: 0,
-    pending: 0,
-  });
+  const [events, setEvents] = useState<Event[]>([]);
 
   const [search, setSearch] = useState("");
-  const [eventType, setEventType] = useState(
-    "All Event Types"
-  );
-  const [status, setStatus] = useState(
-    "All Statuses"
-  );
-  const [date, setDate] = useState("");
+
+  const [status, setStatus] = useState<EventStatus | "All">("All");
 
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
+
+  // ==========================================
+  // Fetch Events
+  // ==========================================
 
   const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const token =
-        localStorage.getItem("token") ||
-        sessionStorage.getItem("token");
-
-      if (!token) {
-        setError("You are not logged in.");
-        return;
-      }
-
-      const params = new URLSearchParams();
-
-      if (search.trim()) {
-        params.set("search", search.trim());
-      }
-
-      if (eventType !== "All Event Types") {
-        params.set("type", eventType);
-      }
-
-      if (status !== "All Statuses") {
-        params.set("status", status);
-      }
-
-      if (date) {
-        params.set("date", date);
-      }
-
-      const queryString = params.toString();
-
-      const url =
-        `${process.env.NEXT_PUBLIC_API_URL}/events` +
-        (queryString ? `?${queryString}` : "");
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await getEvents({
+        search: search.trim() || undefined,
+        status: status === "All" ? undefined : status,
+        page: 1,
+        limit: 100,
       });
 
-      const result: EventsResponse =
-        await response.json();
+      setEvents(response.data);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to load events";
 
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.message || "Failed to load events"
-        );
-      }
-
-      setEvents(result.data?.events || []);
-    } catch (error) {
-      console.error("Events error:", error);
-
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to load events"
-      );
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [search, eventType, status, date]);
+  }, [search, status]);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const token =
-        localStorage.getItem("token") ||
-        sessionStorage.getItem("token");
-
-      if (!token) {
-        return;
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/events/stats`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const result: StatsResponse =
-        await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.message ||
-            "Failed to load event statistics"
-        );
-      }
-
-      setStats(
-        result.data?.stats || {
-          total: 0,
-          upcoming: 0,
-          confirmed: 0,
-          pending: 0,
-        }
-      );
-    } catch (error) {
-      console.error("Event stats error:", error);
-    }
-  }, []);
+  // ==========================================
+  // Initial Load + Filters
+  // ==========================================
 
   useEffect(() => {
-    fetchEvents();
+    const timeout = setTimeout(() => {
+      fetchEvents();
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [fetchEvents]);
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  // ==========================================
+  // Stats
+  // ==========================================
+
+  const totalEvents = events.length;
+
+  const upcomingEvents = events.filter(
+    (event) => event.status === "Upcoming"
+  ).length;
+
+  const ongoingEvents = events.filter(
+    (event) => event.status === "Ongoing"
+  ).length;
+
+  const completedEvents = events.filter(
+    (event) => event.status === "Completed"
+  ).length;
+
+  // ==========================================
+  // Render
+  // ==========================================
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <DashboardHeader role="manager" />
+    <main className="min-h-screen bg-[#F8F7F3]">
+      <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-5 sm:px-6">
+        {/* ======================================
+            Header
+        ====================================== */}
 
-      {/* Event Statistics */}
-      <EventStats stats={stats} />
+        <EventsHeader />
 
-      {/* Filters */}
-      <EventFilters
-        search={search}
-        eventType={eventType}
-        status={status}
-        date={date}
-        onSearchChange={setSearch}
-        onEventTypeChange={setEventType}
-        onStatusChange={setStatus}
-        onDateChange={setDate}
-      />
+        {/* ======================================
+            Stats
+        ====================================== */}
 
-      {loading ? (
-        <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-[#e8e1d8] bg-white">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#e8e1d8] border-t-[#a7773f]" />
+        <section className="mt-5">
+          <EventsStats
+            total={totalEvents}
+            upcoming={upcomingEvents}
+            ongoing={ongoingEvents}
+            completed={completedEvents}
+          />
+        </section>
 
-            <p className="mt-3 text-sm text-[#756d64]">
-              Loading events...
-            </p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-          <p className="text-sm font-semibold text-red-700">
-            Unable to load events
-          </p>
+        {/* ======================================
+            Search
+        ====================================== */}
 
-          <p className="mt-1 text-sm text-red-600">
-            {error}
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Desktop Table */}
-          <div className="hidden md:block">
-            <EventsTable events={events} />
-          </div>
+        <section className="mt-6">
+          <EventSearch
+            value={search}
+            onChange={setSearch}
+          />
+        </section>
 
-          {/* Mobile Cards */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {events.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+        {/* ======================================
+            Filters
+        ====================================== */}
+
+        <section className="mt-4">
+          <EventFilters
+            value={status}
+            onChange={setStatus}
+          />
+        </section>
+
+        {/* ======================================
+            Content
+        ====================================== */}
+
+        <section className="mt-6">
+          {loading ? (
+            <div className="flex min-h-[240px] items-center justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <ErrorMessage message={error} />
+
+              <button
+                type="button"
+                onClick={fetchEvents}
+                className="mt-4 min-h-11 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : events.length === 0 ? (
+            <EmptyEvents />
+          ) : (
+            <EventList events={events} />
+          )}
+        </section>
+      </div>
+    </main>
   );
 }

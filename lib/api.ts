@@ -17,11 +17,19 @@ export async function api<T>(
 ): Promise<T> {
   const { token, headers, ...fetchOptions } = options;
 
+  let activeToken = token;
+  if (!activeToken && typeof window !== "undefined") {
+    activeToken =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      undefined;
+  }
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...fetchOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(activeToken ? { Authorization: `Bearer ${activeToken}` } : {}),
       ...headers,
     },
   });

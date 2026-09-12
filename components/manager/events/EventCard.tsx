@@ -1,154 +1,247 @@
-import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarDays,
-  Clock3,
-  MapPin,
-  Users,
-} from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+
+import type { Event } from "@/lib/event.api";
 
 import EventStatusBadge from "./EventStatusBadge";
-import type { ManagerEvent } from "@/types/event";
 
 interface EventCardProps {
-  event: ManagerEvent;
+  event: Event;
 }
 
-function formatDate(date: string) {
-  if (!date) return "Not available";
-
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatAmount(amount: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+// ==========================================
+// Event Card
+// ==========================================
 
 export default function EventCard({
   event,
 }: EventCardProps) {
+  const router = useRouter();
+
+  const clientName =
+    typeof event.client === "object"
+      ? event.client.name
+      : "Client";
+
   return (
-    <article className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-      {/* Top */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#9a6c37]">
-            {event.type}
-          </p>
+    <button
+      type="button"
+      onClick={() =>
+        router.push(`/manager/events/${event._id}`)
+      }
+      className="w-full text-left"
+    >
+      <article className="rounded-2xl bg-white p-5 shadow-sm transition active:scale-[0.99]">
+        {/* ======================================
+            Top Row
+        ====================================== */}
 
-          <h3 className="mt-1 truncate text-base font-bold text-[#29241f]">
-            {event.name}
-          </h3>
-
-          <p className="mt-1 text-xs text-[#8d847b]">
-            {event.customer?.name || "No customer assigned"}
-          </p>
-        </div>
-
-        <EventStatusBadge status={event.status} />
-      </div>
-
-      {/* Event details */}
-      <div className="mt-5 grid gap-3">
-        {/* Date */}
-        <div className="flex items-center gap-3 text-sm text-[#5f574f]">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
-            <CalendarDays size={16} />
-          </span>
-
-          <div>
-            <p className="text-[11px] text-[#9b938a]">
-              Date
-            </p>
-
-            <p className="font-medium">
-              {formatDate(event.date)}
-            </p>
-          </div>
-        </div>
-
-        {/* Time */}
-        <div className="flex items-center gap-3 text-sm text-[#5f574f]">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
-            <Clock3 size={16} />
-          </span>
-
-          <div>
-            <p className="text-[11px] text-[#9b938a]">
-              Time
-            </p>
-
-            <p className="font-medium">
-              {event.time}
-            </p>
-          </div>
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center gap-3 text-sm text-[#5f574f]">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
-            <MapPin size={16} />
-          </span>
-
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] text-[#9b938a]">
-              Location
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#8C7A55]">
+              {event.eventType}
             </p>
 
-            <p className="truncate font-medium">
-              {event.location}
-            </p>
+            <h3 className="mt-1 truncate text-base font-bold text-[#252525]">
+              {event.eventName}
+            </h3>
           </div>
+
+          <EventStatusBadge
+            status={event.status}
+          />
         </div>
 
-        {/* Guests */}
-        <div className="flex items-center gap-3 text-sm text-[#5f574f]">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f7efe4] text-[#a7773f]">
-            <Users size={16} />
-          </span>
+        {/* ======================================
+            Event Details
+        ====================================== */}
 
-          <div>
-            <p className="text-[11px] text-[#9b938a]">
-              Guests
-            </p>
+        <div className="mt-5 space-y-3">
+          <InfoRow
+            icon={<CalendarIcon />}
+            value={formatDate(event.eventDate)}
+          />
 
-            <p className="font-medium">
-              {event.guests} guests
-            </p>
-          </div>
+          <InfoRow
+            icon={<ClockIcon />}
+            value={event.eventTime}
+          />
+
+          <InfoRow
+            icon={<LocationIcon />}
+            value={event.location}
+          />
+
+          <InfoRow
+            icon={<UsersIcon />}
+            value={`${event.guests} guests`}
+          />
         </div>
-      </div>
 
-      {/* Footer */}
-      <div className="mt-5 flex items-center justify-between border-t border-[#eee8e1] pt-4">
-        <div>
-          <p className="text-[11px] text-[#9b938a]">
-            {event.package
-              ? `${event.package} Package`
-              : "Package not specified"}
+        {/* ======================================
+            Client
+        ====================================== */}
+
+        <div className="mt-5 border-t border-gray-100 pt-4">
+          <p className="text-xs text-gray-400">
+            Client
           </p>
 
-          <p className="mt-1 text-sm font-bold text-[#29241f]">
-            {formatAmount(event.amount)}
+          <p className="mt-1 text-sm font-semibold text-[#252525]">
+            {clientName}
           </p>
         </div>
+      </article>
+    </button>
+  );
+}
 
-        <Link
-          href={`/dashboard/events/${event._id}`}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#ded5cb] px-3.5 py-2 text-xs font-semibold text-[#5f574f] transition hover:border-[#b8894b] hover:bg-[#f8f3ec] hover:text-[#8a6435]"
-        >
-          View Details
-          <ArrowRight size={14} />
-        </Link>
-      </div>
-    </article>
+// ==========================================
+// Info Row
+// ==========================================
+
+interface InfoRowProps {
+  icon: React.ReactNode;
+  value: string;
+}
+
+function InfoRow({
+  icon,
+  value,
+}: InfoRowProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#8C7A55]">
+        {icon}
+      </span>
+
+      <span className="truncate text-sm text-gray-600">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// ==========================================
+// Date Formatter
+// ==========================================
+
+function formatDate(date: string) {
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return date;
+  }
+
+  return parsedDate.toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// ==========================================
+// Icons
+// ==========================================
+
+function CalendarIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="17"
+        rx="2"
+      />
+
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h18" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+      />
+
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function LocationIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+
+      <circle
+        cx="12"
+        cy="10"
+        r="2.5"
+      />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+
+      <circle
+        cx="9"
+        cy="7"
+        r="4"
+      />
+
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
   );
 }
