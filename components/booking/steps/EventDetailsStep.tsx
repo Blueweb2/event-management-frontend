@@ -32,7 +32,7 @@ export default function EventDetailsStep({
       description="Tell us the basic details of your event."
       className="border-[#e8e1d8] shadow-sm"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 mt-5">
 
         {/* Event Name */}
         <Input
@@ -49,7 +49,7 @@ export default function EventDetailsStep({
           required
         />
         {/* Event Type */}
-        <div>
+        <div className="px-3">
           <label
             htmlFor="eventType"
             className="mb-2 block text-sm font-semibold text-[#403a34]"
@@ -172,7 +172,7 @@ export default function EventDetailsStep({
         />
 
         {/* Event Description */}
-        <div>
+        <div className="px-3">
           <label
             htmlFor="description"
             className="mb-2 block text-sm font-semibold text-[#403a34]"

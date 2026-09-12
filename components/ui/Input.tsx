@@ -37,7 +37,7 @@ export default function Input({
       : undefined);
 
   return (
-    <div className="w-full">
+    <div className="w-full px-3">
       {label && (
         <label
           htmlFor={inputId}
@@ -104,11 +104,11 @@ export default function Input({
       </div>
 
       {error ? (
-        <p className="mt-1.5 text-xs text-[#B42318]">
+        <p className="mt-1.5 text-xs text-[#B42318] px-3">
           {error}
         </p>
       ) : helperText ? (
-        <p className="mt-1.5 text-xs text-[#77746D]">
+        <p className="mt-1.5 text-xs text-[#77746D] px-3">
           {helperText}
         </p>
       ) : null}
