@@ -76,7 +76,7 @@ export default function ManagerStats() {
 
   const stats = [
     {
-      label: "Total Staff",
+      label: "Staff Members",
       value: counts.loaded ? String(counts.totalStaff) : "...",
       icon: Users,
       description: "Registered team members",
@@ -88,13 +88,13 @@ export default function ManagerStats() {
       description: "Events scheduled",
     },
     {
-      label: "Available Today",
+      label: "Revenue",
       value: counts.loaded ? String(counts.availableStaff) : "...",
       icon: UserCheck,
       description: "Staff ready for duty",
     },
     {
-      label: "Active Assignments",
+      label: "Events",
       value: counts.loaded ? String(counts.pendingTasks) : "...",
       icon: ClipboardList,
       description: "Scheduled assignments",

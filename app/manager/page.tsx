@@ -27,11 +27,11 @@ export default function ManagerDashboardPage() {
       {/* Upcoming Events */}
       <UpcomingEvents />
 
-      {/* Today's Schedule */}
-      <TodaySchedule />
+      {/* Today's Schedule
+      <TodaySchedule /> */}
 
-      {/* Recent Activity */}
-      <RecentActivity />
+      {/* Recent Activity
+      <RecentActivity /> */}
     </div>
   );
 }

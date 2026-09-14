@@ -1,5 +1,11 @@
 import type { PricingType } from "@/types/service";
 
+import type { FoodMenuSelection } from "@/lib/food.api";
+
+/* ============================================================
+   SERVICE ITEM
+============================================================ */
+
 export type ServiceItem = {
   id: string;
   serviceId: string;
@@ -13,8 +19,15 @@ export type ServiceItem = {
   unitLabel?: string;
 };
 
+/* ============================================================
+   BOOKING FORM DATA
+============================================================ */
+
 export type BookingFormData = {
-  // Event Details
+  /* ==========================================================
+     EVENT DETAILS
+  ========================================================== */
+
   eventName: string;
   eventType: string;
   eventDate: string;
@@ -23,16 +36,32 @@ export type BookingFormData = {
   location: string;
   description: string;
 
-  // Client Details
+  /* ==========================================================
+     CLIENT DETAILS
+  ========================================================== */
+
   name: string;
   phone: string;
   email: string;
-  message: string;
+   message: string;
+  address: string;
 
-  // Services & Items
+  /* ==========================================================
+     FOOD & CATERING MENU
+  ========================================================== */
+
+  foodMenu: FoodMenuSelection;
+
+  /* ==========================================================
+     SERVICES & ITEMS
+  ========================================================== */
+
   services: ServiceItem[];
 
-  // Pricing
+  /* ==========================================================
+     PRICING
+  ========================================================== */
+
   discountType: "percentage" | "fixed";
   discountValue: string;
   additionalCharges: string;

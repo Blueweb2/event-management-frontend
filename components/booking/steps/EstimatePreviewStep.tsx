@@ -12,6 +12,7 @@ import {
   Phone,
   Share2,
   Users,
+  Utensils,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -92,7 +93,12 @@ export default function EstimatePreviewStep({
   // Create Estimate is clicked.
   // ==========================================
 
-  const previewSubtotal =
+  const guestCount = Math.max(Number(formData.guests) || 1, 1);
+  const previewFoodAmount = formData.foodMenu?.included
+    ? Number(formData.foodMenu.ratePerGuest || 0) * guestCount
+    : 0;
+
+  const previewServicesTotal =
     formData.services.reduce(
       (total, item) =>
         total +
@@ -100,6 +106,8 @@ export default function EstimatePreviewStep({
           Number(item.unitPrice || 0),
       0,
     );
+
+  const previewSubtotal = previewServicesTotal + previewFoodAmount;
 
   const previewDiscountValue = Number(
     formData.discountValue || 0,
@@ -256,6 +264,8 @@ export default function EstimatePreviewStep({
                     ),
                 }),
               ),
+
+            foodMenu: formData.foodMenu,
 
             discountType:
               formData.discountType ||
@@ -793,6 +803,65 @@ export default function EstimatePreviewStep({
             />
           </div>
         </div>
+
+        {/* ==================================== */}
+        {/* Food & Catering Menu */}
+        {/* ==================================== */}
+
+        {formData.foodMenu?.included && (
+          <div className="border-b border-[var(--border)] px-5 py-6 sm:px-8">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <Utensils
+                  size={17}
+                  className="text-[var(--sage)]"
+                />
+                <h3 className="font-semibold text-[var(--sage-dark)]">
+                  Customized Food & Catering Menu
+                </h3>
+              </div>
+
+              <div className="rounded-xl bg-[#f4ecdc] px-3.5 py-1.5 text-xs font-bold text-[#8C7A55]">
+                ₹{Number(formData.foodMenu.ratePerGuest || 0)} / guest × {guestCount} guests = {formatCurrency(previewFoodAmount)}
+              </div>
+            </div>
+
+            {/* Selected items pills */}
+            {formData.foodMenu.items && formData.foodMenu.items.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {formData.foodMenu.items.map((dish, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--ivory)] px-3 py-1.5 text-xs text-gray-800"
+                  >
+                    <span
+                      className={`text-[8px] ${
+                        dish.dietary === "veg"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      ●
+                    </span>
+                    <span className="font-medium">{dish.name}</span>
+                    <span className="text-[10px] text-gray-400">({dish.category})</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs italic text-gray-500">
+                Custom catering package included.
+              </p>
+            )}
+
+            {formData.foodMenu.notes && (
+              <p className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--ivory)] p-3 text-xs text-gray-600">
+                <strong className="text-gray-800">Catering / Dietary Notes:</strong>{" "}
+                {formData.foodMenu.notes}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* ==================================== */}
         {/* Services */}

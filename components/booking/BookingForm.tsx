@@ -8,6 +8,7 @@ import BookingNavigation from "./BookingNavigation";
 
 import EventDetailsStep from "./steps/EventDetailsStep";
 import ClientDetailsStep from "./steps/ClientDetailsStep";
+import FoodMenuStep from "./steps/FoodMenuStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
 
@@ -39,6 +40,20 @@ const initialFormData: BookingFormData = {
   phone: "",
   email: "",
   message: "",
+  address: "",
+
+  // ========================================
+  // Food & Catering Menu
+  // ========================================
+
+  foodMenu: {
+    included: true,
+    servingType: "PER_GUEST",
+    ratePerGuest: 500,
+    totalFoodAmount: 0,
+    notes: "",
+    items: [],
+  },
 
   // ========================================
   // Services & Items
@@ -250,10 +265,24 @@ export default function BookingForm() {
     }
 
     // ========================================
-    // STEP 3 - SERVICES & ITEMS
+    // STEP 3 - FOOD MENU
     // ========================================
 
     if (currentStep === 3) {
+      if (formData.foodMenu?.included) {
+        const rate = Number(formData.foodMenu.ratePerGuest);
+        if (!Number.isFinite(rate) || rate < 0) {
+          setError("Please enter a valid rate per guest for catering.");
+          return false;
+        }
+      }
+    }
+
+    // ========================================
+    // STEP 4 - SERVICES & ITEMS
+    // ========================================
+
+    if (currentStep === 4) {
       if (
         formData.services.length === 0
       ) {
@@ -300,10 +329,10 @@ export default function BookingForm() {
     }
 
     // ========================================
-    // STEP 4 - ESTIMATE PREVIEW
+    // STEP 5 - ESTIMATE PREVIEW
     // ========================================
 
-    if (currentStep === 4) {
+    if (currentStep === 5) {
       const discount = Number(
         formData.discountValue,
       );
@@ -362,7 +391,7 @@ export default function BookingForm() {
       return;
     }
 
-    if (currentStep >= 4) {
+    if (currentStep >= 5) {
       return;
     }
 
@@ -433,6 +462,7 @@ export default function BookingForm() {
           optionId: item.optionId ?? null,
           quantity: Number(item.quantity || 1),
         })),
+        foodMenu: formData.foodMenu,
         discountType: formData.discountType || "percentage",
         discountValue: Number(formData.discountValue || 0),
         additionalCharges: Number(formData.additionalCharges || 0),
@@ -460,9 +490,26 @@ export default function BookingForm() {
       return;
     }
 
-    if (currentStep === 4) {
+    if (currentStep === 5) {
       if (createdEstimate) {
-        router.push("/manager/estimates");
+        // ======================================
+        // Redirect to customer success page
+        // ======================================
+
+        const params = new URLSearchParams({
+          ref: createdEstimate.estimateNumber || "",
+          event: createdEstimate.eventName || "",
+          date: createdEstimate.eventDate || "",
+          time: createdEstimate.eventTime || "",
+          guests: String(createdEstimate.guests || ""),
+          location: createdEstimate.location || "",
+          name: createdEstimate.client?.name || "",
+          email: createdEstimate.client?.email || "",
+          phone: createdEstimate.client?.phone || "",
+          total: String(createdEstimate.total || ""),
+        });
+
+        router.push(`/booking/success?${params.toString()}`);
         return;
       }
 
@@ -517,10 +564,21 @@ export default function BookingForm() {
           )}
 
           {/* ====================================
-              STEP 3 - SERVICES & ITEMS
+              STEP 3 - FOOD & CATERING MENU
           ==================================== */}
 
           {currentStep === 3 && (
+            <FoodMenuStep
+              formData={formData}
+              updateField={updateField}
+            />
+          )}
+
+          {/* ====================================
+              STEP 4 - SERVICES & ITEMS
+          ==================================== */}
+
+          {currentStep === 4 && (
             <ServicesItemsStep
               formData={formData}
               updateServices={
@@ -530,10 +588,10 @@ export default function BookingForm() {
           )}
 
           {/* ====================================
-              STEP 4 - ESTIMATE PREVIEW
+              STEP 5 - ESTIMATE PREVIEW
           ==================================== */}
 
-          {currentStep === 4 && (
+          {currentStep === 5 && (
             <EstimatePreviewStep
               formData={formData}
               updateField={updateField}
@@ -565,15 +623,15 @@ export default function BookingForm() {
 
           <BookingNavigation
             currentStep={currentStep}
-            totalSteps={4}
+            totalSteps={5}
             onBack={previousStep}
             onNext={nextStep}
             onSubmit={submitBooking}
             loading={isCreatingEstimate}
             submitLabel={
-              currentStep === 4
+              currentStep === 5
                 ? createdEstimate
-                  ? "View in Estimates"
+                  ? "View Confirmation"
                   : "Create Estimate"
                 : undefined
             }

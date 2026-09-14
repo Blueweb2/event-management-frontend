@@ -6,6 +6,7 @@ import {
   ReceiptText,
   Send,
   UserRound,
+  Utensils,
 } from "lucide-react";
 
 type BookingProgressProps = {
@@ -25,11 +26,16 @@ const steps = [
   },
   {
     number: 3,
+    title: "Food & Menu",
+    icon: Utensils,
+  },
+  {
+    number: 4,
     title: "Services & Items",
     icon: ReceiptText,
   },
   {
-    number: 4,
+    number: 5,
     title: "Estimate Preview",
     icon: Send,
   },

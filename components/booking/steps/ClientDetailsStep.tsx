@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Mail,
-  MessageSquare,
-  Phone,
-  User,
-} from "lucide-react";
+import { Mail, MapPin, Phone, User } from "lucide-react";
 
 import Card from "@/components/ui/Card";
 
@@ -25,7 +20,9 @@ export default function ClientDetailsStep({
 }: ClientDetailsStepProps) {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ============================================================
+          HEADER
+      ============================================================ */}
       <div>
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">
           Client Details
@@ -36,9 +33,12 @@ export default function ClientDetailsStep({
         </p>
       </div>
 
-      {/* Contact Information */}
+      {/* ============================================================
+          CONTACT INFORMATION
+      ============================================================ */}
       <Card>
         <div className="space-y-6">
+          {/* Section Heading */}
           <div>
             <h3 className="text-lg font-medium text-neutral-900">
               Contact Information
@@ -50,8 +50,11 @@ export default function ClientDetailsStep({
             </p>
           </div>
 
+          {/* Contact Fields */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {/* Full Name */}
+            {/* ========================================================
+                FULL NAME
+            ======================================================== */}
             <div>
               <label
                 htmlFor="name"
@@ -69,6 +72,7 @@ export default function ClientDetailsStep({
 
                 <input
                   id="name"
+                  name="name"
                   type="text"
                   value={formData.name}
                   onChange={(event) =>
@@ -81,7 +85,9 @@ export default function ClientDetailsStep({
               </div>
             </div>
 
-            {/* Phone */}
+            {/* ========================================================
+                PHONE NUMBER
+            ======================================================== */}
             <div>
               <label
                 htmlFor="phone"
@@ -99,6 +105,7 @@ export default function ClientDetailsStep({
 
                 <input
                   id="phone"
+                  name="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(event) =>
@@ -111,7 +118,9 @@ export default function ClientDetailsStep({
               </div>
             </div>
 
-            {/* Email */}
+            {/* ========================================================
+                EMAIL ADDRESS
+            ======================================================== */}
             <div className="md:col-span-2">
               <label
                 htmlFor="email"
@@ -129,6 +138,7 @@ export default function ClientDetailsStep({
 
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   value={formData.email}
                   onChange={(event) =>
@@ -144,41 +154,50 @@ export default function ClientDetailsStep({
         </div>
       </Card>
 
-      {/* Additional Requirements */}
+      {/* ============================================================
+          EVENT ADDRESS
+      ============================================================ */}
       <Card>
         <div className="space-y-5">
+          {/* Section Heading */}
           <div>
             <h3 className="text-lg font-medium text-neutral-900">
-              Additional Requirements
+              Event Address
             </h3>
 
-            <p className="mt-1 text-sm text-neutral-500">
-              Share anything else you'd like our team to know.
+            <p className="mt-1 text-sm leading-5 text-neutral-500">
+              Please provide the complete address where the event will take
+              place.
             </p>
           </div>
 
+          {/* Address Field */}
           <div className="relative">
-            <MessageSquare
+            <MapPin
               size={18}
               strokeWidth={1.8}
               className="pointer-events-none absolute left-3 top-4 text-neutral-400"
             />
 
             <textarea
-              id="message"
-              value={formData.message}
+              id="address"
+              name="address"
+              value={formData.address}
               onChange={(event) =>
-                updateField("message", event.target.value)
+                updateField("address", event.target.value)
               }
-              placeholder="Tell us about any special requirements, preferences, or questions..."
+              placeholder="Enter the complete event address..."
               rows={5}
-              className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-11 py-3 text-sm leading-5 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b49a6a] focus:ring-1 focus:ring-[#b49a6a]"
+              required
+              className="w-full resize-none rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 text-sm leading-5 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b49a6a] focus:ring-1 focus:ring-[#b49a6a]"
             />
           </div>
         </div>
       </Card>
 
-      {/* Privacy / Contact Note */}
+      {/* ============================================================
+          PRIVACY / CONTACT NOTE
+      ============================================================ */}
       <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
         <p className="text-sm leading-6 text-neutral-600">
           Your contact information will be used only to communicate with you

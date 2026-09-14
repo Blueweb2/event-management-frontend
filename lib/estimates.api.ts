@@ -2,6 +2,8 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api";
 
+import type { FoodMenuSelection } from "./food.api";
+
 // ==========================================
 // Types
 // ==========================================
@@ -46,6 +48,7 @@ export type CreateEstimatePayload = {
   };
 
   services: CreateEstimateService[];
+  foodMenu?: FoodMenuSelection | null;
 
   discountType?: "percentage" | "fixed";
   discountValue?: number;
@@ -90,6 +93,7 @@ export type Estimate = {
   };
 
   items: EstimateItem[];
+  foodMenu?: FoodMenuSelection | null;
 
   subtotal: number;
 
