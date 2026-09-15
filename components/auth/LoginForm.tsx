@@ -36,7 +36,6 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,15 +77,11 @@ export default function LoginForm() {
 
       const { user, token } = result.data;
 
-      // Store token based on "Remember me"
-      const storage = rememberMe ? localStorage : sessionStorage;
-      const otherStorage = rememberMe ? sessionStorage : localStorage;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-      otherStorage.removeItem("token");
-      otherStorage.removeItem("user");
-
-      storage.setItem("token", token);
-      storage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("user", JSON.stringify(user));
 
       // Redirect based on role (manager/admin -> /manager, staff -> /staff)
       const role = (user.role || "").toLowerCase();
@@ -207,33 +202,7 @@ export default function LoginForm() {
             required
             autoComplete="current-password"
           />
-
-          {/* Remember + Forgot */}
-          <div className="flex items-center justify-between gap-4">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(event) =>
-                  setRememberMe(event.target.checked)
-                }
-                className="h-4 w-4 rounded border-gray-300 accent-[#6B5B95]"
-              />
-
-              <span className="text-sm text-gray-600">
-                Remember me
-              </span>
-            </label>
-
-            <Link
-              href="/forgot-password"
-              className="text-sm font-medium text-[#6B5B95] transition hover:text-[#57497D]"
-            >
-              Forgot password?
-            </Link>
-          </div>
-
-          {/* Submit */}
+          
           <Button
             type="submit"
             className="w-full bg-[#6B5B95] hover:bg-[#57497D]"
