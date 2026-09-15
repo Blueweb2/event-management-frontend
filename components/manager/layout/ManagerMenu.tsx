@@ -96,6 +96,11 @@ const menuItems = [
     icon: ClipboardList,
   },
   {
+    label: "Tasks",
+    href: "/manager/tasks",
+    icon: ClipboardList,
+  },
+  {
     label: "Schedule",
     href: "/manager/schedule",
     icon: CalendarDays,

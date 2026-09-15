@@ -18,6 +18,7 @@ interface ButtonProps
   loading?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
+  leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
@@ -28,6 +29,7 @@ export default function Button({
   loading = false,
   fullWidth = false,
   icon,
+  leftIcon,
   rightIcon,
   disabled,
   className = "",
@@ -83,7 +85,7 @@ export default function Button({
         </>
       ) : (
         <>
-          {icon}
+          {leftIcon || icon}
           {children}
           {rightIcon}
         </>
