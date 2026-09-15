@@ -13,13 +13,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useAttendance } from "@/hooks/useAttendance";
+import { useAuth } from "@/hooks/useAuth";
 import type { Attendance } from "@/types/attendance";
 
 export default function ManagerAttendancePage() {
-  const [token] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token") || sessionStorage.getItem("token");
-  });
+  const { token } = useAuth();
 
   const {
     attendance,

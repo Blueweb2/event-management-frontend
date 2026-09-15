@@ -10,23 +10,17 @@ import ScheduleFilters, {
 import ScheduleLegend from "@/components/manager/schedule/ScheduleLegend";
 
 import { useAssignments } from "@/hooks/useAssignments";
+import { useAuth } from "@/hooks/useAuth";
 
 import type { Assignment } from "@/types/assignment";
 import type { ScheduleEventData } from "@/components/manager/schedule/ScheduleEvent";
 
 export default function SchedulePage() {
   const router = useRouter();
+  const { token } = useAuth();
 
   const [activeFilter, setActiveFilter] =
     useState<ScheduleFilter>("All");
-
-  const [token] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return localStorage.getItem("token");
-  });
 
   const {
     assignments,

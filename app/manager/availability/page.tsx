@@ -12,12 +12,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useAvailability } from "@/hooks/useAvailability";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ManagerAvailabilityPage() {
-  const [token] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token") || sessionStorage.getItem("token");
-  });
+  const { token } = useAuth();
 
   const {
     availability,

@@ -7,6 +7,7 @@ import AssignmentForm from "@/components/manager/assignments/AssignmentForm";
 import DeleteAssignmentModal from "@/components/manager/assignments/DeleteAssignmentModal";
 
 import { useAssignments } from "@/hooks/useAssignments";
+import { useAuth } from "@/hooks/useAuth";
 
 import type {
   Assignment,
@@ -16,13 +17,7 @@ import type {
 } from "@/types/assignment";
 
 export default function AssignmentsPage() {
-  const [token] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return localStorage.getItem("token");
-  });
+  const { token } = useAuth();
 
   const [showForm, setShowForm] =
     useState(false);

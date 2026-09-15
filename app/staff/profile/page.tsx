@@ -7,6 +7,7 @@ import {
   Phone,
   UserRound,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StaffProfile {
   id: string;
@@ -21,6 +22,7 @@ interface StaffProfile {
 }
 
 export default function StaffProfilePage() {
+  const { token } = useAuth();
   const [profile, setProfile] =
     useState<StaffProfile | null>(null);
 
@@ -30,10 +32,6 @@ export default function StaffProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token =
-          localStorage.getItem("token") ||
-          sessionStorage.getItem("token");
-
         if (!token) {
           setError("You are not logged in.");
           return;
@@ -72,7 +70,7 @@ export default function StaffProfilePage() {
     };
 
     fetchProfile();
-  }, []);
+  }, [token]);
 
   // Loading state
   if (loading) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import StaffProfile from "@/components/manager/staff/StaffProfile";
@@ -8,6 +8,7 @@ import LoadingState from "@/components/ui/Loading";
 import ErrorMessage from "@/components/common/ErrorMessage";
 
 import { useStaff } from "@/hooks/useStaff";
+import { useAuth } from "@/hooks/useAuth";
 
 import type {
   ResetStaffPasswordResponse,
@@ -18,15 +19,9 @@ import type {
 export default function StaffProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const { token } = useAuth();
 
   const staffId = params.id as string;
-
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-  }, []);
 
   const {
     selectedStaff,
