@@ -37,7 +37,7 @@ export default function ClientDetailsStep({
           CONTACT INFORMATION
       ============================================================ */}
       <Card>
-        <div className="space-y-6">
+        <div className="space-y-6 p-3">
           {/* Section Heading */}
           <div>
             <h3 className="text-lg font-medium text-neutral-900">
@@ -158,7 +158,7 @@ export default function ClientDetailsStep({
           EVENT ADDRESS
       ============================================================ */}
       <Card>
-        <div className="space-y-5">
+        <div className="space-y-5 p-3">
           {/* Section Heading */}
           <div>
             <h3 className="text-lg font-medium text-neutral-900">
