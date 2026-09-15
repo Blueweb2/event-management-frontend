@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Loader2, UserPlus } from "lucide-react";
 
 import {
   getEventById,
@@ -10,6 +11,11 @@ import {
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import { useAssignments } from "@/hooks/useAssignments";
+import { useAuth } from "@/hooks/useAuth";
+import { useStaff } from "@/hooks/useStaff";
+
+import type { CreateAssignmentPayload } from "@/types/assignment";
 
 // ==========================================
 // Page
@@ -18,6 +24,7 @@ import ErrorMessage from "@/components/common/ErrorMessage";
 export default function ManagerEventDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const { token } = useAuth();
 
   const eventId =
     typeof params.id === "string"
@@ -33,6 +40,39 @@ export default function ManagerEventDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
+
+  const [assignmentForm, setAssignmentForm] = useState({
+    staff: "",
+    dutyTitle: "",
+    role: "",
+    dutyDate: "",
+    startTime: "",
+    endTime: "",
+    notes: "",
+  });
+
+  const [assignmentError, setAssignmentError] = useState("");
+
+  const {
+    assignments,
+    loading: assignmentsLoading,
+    error: assignmentsError,
+    fetchAssignments,
+    addAssignment,
+  } = useAssignments({
+    token,
+    autoFetch: false,
+  });
+
+  const {
+    staff,
+    loading: staffLoading,
+    error: staffError,
+    fetchStaff,
+  } = useStaff({
+    token,
+    autoFetch: false,
+  });
 
   // ==========================================
   // Fetch Event
@@ -69,8 +109,103 @@ export default function ManagerEventDetailsPage() {
   // ==========================================
 
   useEffect(() => {
-    fetchEvent();
+    const timeout = setTimeout(() => {
+      void fetchEvent();
+    }, 0);
+
+    return () => clearTimeout(timeout);
   }, [fetchEvent]);
+
+  useEffect(() => {
+    if (!token || !eventId) return;
+
+    void fetchAssignments({
+      event: eventId,
+      page: 1,
+      limit: 100,
+    });
+    void fetchStaff({
+      status: "active",
+      page: 1,
+      limit: 100,
+    });
+  }, [eventId, fetchAssignments, fetchStaff, token]);
+
+  const handleAssignmentChange = (
+    field: keyof typeof assignmentForm,
+    value: string,
+  ) => {
+    setAssignmentForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+    setAssignmentError("");
+  };
+
+  const handleAssignStaff = async (
+    submitEvent: React.FormEvent<HTMLFormElement>,
+  ) => {
+    submitEvent.preventDefault();
+
+    if (!eventId) return;
+
+    const dutyDate =
+      assignmentForm.dutyDate || event?.eventDate.slice(0, 10) || "";
+    const startTime =
+      assignmentForm.startTime || event?.eventTime || "";
+
+    const requiredFields = [
+      assignmentForm.staff,
+      assignmentForm.dutyTitle,
+      dutyDate,
+      startTime,
+      assignmentForm.endTime,
+    ];
+
+    if (requiredFields.some((value) => !value.trim())) {
+      setAssignmentError("Staff, duty, date, start time, and end time are required.");
+      return;
+    }
+
+    if (assignmentForm.endTime <= startTime) {
+      setAssignmentError("End time must be later than start time.");
+      return;
+    }
+
+    const payload: CreateAssignmentPayload = {
+      event: eventId,
+      staff: assignmentForm.staff,
+      dutyTitle: assignmentForm.dutyTitle.trim(),
+      role: assignmentForm.role.trim() || undefined,
+      dutyDate,
+      startTime,
+      endTime: assignmentForm.endTime,
+      notes: assignmentForm.notes.trim() || undefined,
+    };
+
+    try {
+      await addAssignment(payload);
+      await fetchAssignments({
+        event: eventId,
+        page: 1,
+        limit: 100,
+      });
+      setAssignmentForm((current) => ({
+        ...current,
+        staff: "",
+        dutyTitle: "",
+        role: "",
+        notes: "",
+      }));
+      setAssignmentError("");
+    } catch (err) {
+      setAssignmentError(
+        err instanceof Error
+          ? err.message
+          : "Failed to assign staff member.",
+      );
+    }
+  };
 
   // ==========================================
   // Loading
@@ -279,6 +414,131 @@ export default function ManagerEventDetailsPage() {
             </p>
           </section>
         )}
+
+        {/* ======================================
+            Staff Assignments
+        ====================================== */}
+
+        <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F4EBDD] text-[#9A7B4F]">
+              <UserPlus size={18} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#252525]">
+                Assign Staff
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Assign staff members one at a time for this event.
+              </p>
+            </div>
+          </div>
+
+          {(assignmentError || assignmentsError || staffError) && (
+            <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {assignmentError || assignmentsError || staffError}
+            </div>
+          )}
+
+          <form onSubmit={handleAssignStaff} className="mt-5 space-y-4">
+            <div>
+              <label htmlFor="event-assignment-staff" className="mb-1.5 block text-xs font-medium text-gray-700">
+                Staff member
+              </label>
+              <select
+                id="event-assignment-staff"
+                value={assignmentForm.staff}
+                onChange={(formEvent) => handleAssignmentChange("staff", formEvent.target.value)}
+                disabled={staffLoading || assignmentsLoading}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-[#252525] outline-none focus:border-[#B89563] focus:ring-2 focus:ring-[#B89563]/10"
+              >
+                <option value="">{staffLoading ? "Loading staff..." : "Select a staff member"}</option>
+                {staff.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} · {member.department}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <input
+                aria-label="Duty title"
+                value={assignmentForm.dutyTitle}
+                onChange={(formEvent) => handleAssignmentChange("dutyTitle", formEvent.target.value)}
+                placeholder="Duty title"
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+              <input
+                aria-label="Role"
+                value={assignmentForm.role}
+                onChange={(formEvent) => handleAssignmentChange("role", formEvent.target.value)}
+                placeholder="Role (optional)"
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+              <input
+                aria-label="Duty date"
+                type="date"
+                value={assignmentForm.dutyDate || event?.eventDate.slice(0, 10) || ""}
+                onChange={(formEvent) => handleAssignmentChange("dutyDate", formEvent.target.value)}
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+              <input
+                aria-label="Start time"
+                type="time"
+                value={assignmentForm.startTime || event?.eventTime || ""}
+                onChange={(formEvent) => handleAssignmentChange("startTime", formEvent.target.value)}
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+              <input
+                aria-label="End time"
+                type="time"
+                value={assignmentForm.endTime}
+                onChange={(formEvent) => handleAssignmentChange("endTime", formEvent.target.value)}
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+              <input
+                aria-label="Assignment notes"
+                value={assignmentForm.notes}
+                onChange={(formEvent) => handleAssignmentChange("notes", formEvent.target.value)}
+                placeholder="Notes (optional)"
+                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={assignmentsLoading || staffLoading}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {assignmentsLoading && <Loader2 size={16} className="animate-spin" />}
+              {assignmentsLoading ? "Assigning..." : "Assign Staff Member"}
+            </button>
+          </form>
+
+          {assignments.length > 0 && (
+            <div className="mt-6 border-t border-gray-100 pt-5">
+              <h3 className="text-sm font-semibold text-[#252525]">Assigned to this event</h3>
+              <div className="mt-3 space-y-2">
+                {assignments.map((assignment) => (
+                  <div key={assignment._id} className="flex items-center justify-between gap-3 rounded-xl bg-[#F8F7F3] px-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-[#252525]">
+                        {typeof assignment.staff === "object" ? assignment.staff.name : assignment.staff}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">
+                        {assignment.dutyTitle} · {assignment.startTime} - {assignment.endTime}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase text-gray-500">
+                      {assignment.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* ======================================
             Actions

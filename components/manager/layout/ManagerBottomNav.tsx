@@ -26,11 +26,6 @@ href: "/manager/staff",
 icon: Users,
 },
 {
-label: "Assignments",
-href: "/manager/assignments",
-icon: ClipboardList,
-},
-{
 label: "Tasks",
 href: "/manager/tasks",
 icon: ClipboardList,

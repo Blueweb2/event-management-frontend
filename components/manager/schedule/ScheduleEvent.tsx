@@ -10,6 +10,7 @@ export interface ScheduleEventData {
   startTime: string;
   endTime: string;
   eventName: string;
+  dutyDate: string;
 }
 
 interface ScheduleEventProps {

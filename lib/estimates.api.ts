@@ -3,6 +3,7 @@ const API_URL =
   "http://localhost:5000/api";
 
 import type { FoodMenuSelection } from "./food.api";
+import { getAuthToken } from "@/lib/auth-storage";
 
 // ==========================================
 // Types
@@ -181,10 +182,7 @@ export async function api<T>(
 ): Promise<T> {
   let activeToken: string | undefined = undefined;
   if (typeof window !== "undefined") {
-    activeToken =
-      localStorage.getItem("token") ||
-      sessionStorage.getItem("token") ||
-      undefined;
+    activeToken = getAuthToken();
   }
 
   const response = await fetch(

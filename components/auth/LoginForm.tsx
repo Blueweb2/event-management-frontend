@@ -15,19 +15,13 @@ import {
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import { writeAuth } from "@/lib/auth-storage";
+import type { AuthResult } from "@/types/auth";
 
 interface LoginResponse {
   success: boolean;
   message: string;
-  data?: {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      role: "admin" | "staff";
-    };
-    token: string;
-  };
+  data?: AuthResult;
 }
 
 export default function LoginForm() {
@@ -77,11 +71,7 @@ export default function LoginForm() {
 
       const { user, token } = result.data;
 
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-
-      sessionStorage.setItem("token", token);
-      sessionStorage.setItem("user", JSON.stringify(user));
+      writeAuth(token, user);
 
       // Redirect based on role (manager/admin -> /manager, staff -> /staff)
       const role = (user.role || "").toLowerCase();

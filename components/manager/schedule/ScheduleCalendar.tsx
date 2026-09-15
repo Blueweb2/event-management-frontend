@@ -85,9 +85,8 @@ export default function ScheduleCalendar({
 
   const selectedEvents = events.filter(
     (event) => {
-      // The current schedule UI accepts
-      // already-filtered events.
-      return true;
+      const eventDate = new Date(event.dutyDate);
+      return !Number.isNaN(eventDate.getTime()) && isSameDate(eventDate, selectedDate);
     },
   );
 

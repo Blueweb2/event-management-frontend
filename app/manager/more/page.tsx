@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   BarChart3,
   CalendarDays,
-  ClipboardList,
   DollarSign,
   Settings,
   Users,
@@ -32,12 +31,6 @@ const menuItems = [
     description: "Manage staff members and profiles",
     href: "/manager/staff",
     icon: Users,
-  },
-  {
-    label: "Assignments",
-    description: "Assign staff to events and duties",
-    href: "/manager/assignments",
-    icon: ClipboardList,
   },
   {
     label: "Expenses",

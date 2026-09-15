@@ -160,6 +160,10 @@ export type AssignmentFilters = {
 
   date?: string;
 
+  startDate?: string;
+
+  endDate?: string;
+
   status?: AssignmentStatus;
 
   page?: number;

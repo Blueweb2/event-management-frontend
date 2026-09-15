@@ -1,3 +1,5 @@
+import { getAuthToken } from "@/lib/auth-storage";
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -19,10 +21,7 @@ export async function api<T>(
 
   let activeToken = token;
   if (!activeToken && typeof window !== "undefined") {
-    activeToken =
-      localStorage.getItem("token") ||
-      sessionStorage.getItem("token") ||
-      undefined;
+    activeToken = getAuthToken();
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {

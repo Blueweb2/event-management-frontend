@@ -3,15 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { AuthUser } from "@/types/auth";
+import {
+  clearAuth,
+  readAuth,
+  writeAuth,
+} from "@/lib/auth-storage";
 
 type AuthState = {
   user: AuthUser | null;
   token: string | null;
   loading: boolean;
 };
-
-const TOKEN_KEY = "token";
-const USER_KEY = "user";
 
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
@@ -25,31 +27,22 @@ export const useAuth = () => {
   // ==========================================
 
   useEffect(() => {
-    try {
-      const token =
-        localStorage.getItem(TOKEN_KEY) ||
-        sessionStorage.getItem(TOKEN_KEY);
+    const storedAuth = readAuth();
 
-      const storedUser =
-        localStorage.getItem(USER_KEY) ||
-        sessionStorage.getItem(USER_KEY);
-
-      const user = storedUser
-        ? (JSON.parse(storedUser) as AuthUser)
-        : null;
-
+    if (storedAuth) {
       setState({
-        user,
-        token,
+        user: storedAuth.user,
+        token: storedAuth.token,
         loading: false,
       });
-    } catch {
-      setState({
-        user: null,
-        token: null,
-        loading: false,
-      });
+      return;
     }
+
+    setState({
+      user: null,
+      token: null,
+      loading: false,
+    });
   }, []);
 
   // ==========================================
@@ -62,14 +55,7 @@ export const useAuth = () => {
       user: AuthUser,
       remember = true,
     ) => {
-      const storage = remember ? localStorage : sessionStorage;
-      const otherStorage = remember ? sessionStorage : localStorage;
-
-      otherStorage.removeItem(TOKEN_KEY);
-      otherStorage.removeItem(USER_KEY);
-
-      storage.setItem(TOKEN_KEY, token);
-      storage.setItem(USER_KEY, JSON.stringify(user));
+        writeAuth(token, user, remember);
 
       setState({
         user,
@@ -85,10 +71,7 @@ export const useAuth = () => {
   // ==========================================
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(USER_KEY);
+    clearAuth();
 
     setState({
       user: null,

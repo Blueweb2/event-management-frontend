@@ -22,6 +22,9 @@ export default function SchedulePage() {
   const [activeFilter, setActiveFilter] =
     useState<ScheduleFilter>("All");
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const {
     assignments,
     loading,
@@ -101,6 +104,8 @@ export default function SchedulePage() {
             (typeof assignment.event === "string"
               ? assignment.event
               : assignment.dutyTitle),
+
+              dutyDate: assignment.dutyDate,
         };
       });
   }, [assignments, activeFilter]);
@@ -112,17 +117,38 @@ export default function SchedulePage() {
     await fetchAssignments({
       page: 1,
       limit: 100,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+  };
+
+  const handleStartDateChange = async (value: string) => {
+    setStartDate(value);
+
+    await fetchAssignments({
+      page: 1,
+      limit: 100,
+      startDate: value || undefined,
+      endDate: endDate || undefined,
+    });
+  };
+
+  const handleEndDateChange = async (value: string) => {
+    setEndDate(value);
+
+    await fetchAssignments({
+      page: 1,
+      limit: 100,
+      startDate: startDate || undefined,
+      endDate: value || undefined,
     });
   };
 
   /*
-   * Add shift.
-   *
-   * Assignments are currently used as shifts,
-   * so redirect to the assignment creation screen.
+   * Event staffing is managed from each event.
    */
   const handleAddShift = () => {
-    router.push("/manager/assignments");
+    router.push("/manager/events");
   };
 
   /*
@@ -193,6 +219,10 @@ export default function SchedulePage() {
       <ScheduleFilters
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={handleStartDateChange}
+        onEndDateChange={handleEndDateChange}
       />
 
       {/* Legend */}

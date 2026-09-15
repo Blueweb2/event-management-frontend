@@ -86,11 +86,6 @@ const menuItems = [
     icon: Users,
   },
   {
-    label: "Assignments",
-    href: "/manager/assignments",
-    icon: ClipboardList,
-  },
-  {
     label: "Duties",
     href: "/manager/duties",
     icon: ClipboardList,
