@@ -43,7 +43,7 @@ onMenuClick,
 const pathname = usePathname();
 
 return ( <nav
-   className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur"
+  className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden"
    aria-label="Manager bottom navigation"
  > <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
 {navigationItems.map((item) => {

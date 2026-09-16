@@ -318,12 +318,12 @@ export default function EstimatesPage() {
 
   return (
     <main className="min-h-screen bg-[var(--ivory)]">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-[var(--ink)]">
+              <h1 className="text-xl font-semibold text-[var(--ink)] sm:text-2xl">
                 Estimates
               </h1>
 
@@ -488,7 +488,7 @@ export default function EstimatesPage() {
                       | EstimateStatus,
                   )
                 }
-                className="rounded-xl border border-[var(--line)] bg-[var(--ivory)]/30 px-4 py-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20"
+                className="w-full rounded-xl border border-[var(--line)] bg-[var(--ivory)]/30 px-4 py-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 lg:w-auto"
               >
                 <option value="ALL">
                   All Statuses
@@ -558,7 +558,8 @@ export default function EstimatesPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[900px]">
                   <thead>
                     <tr className="border-b border-[var(--line)] bg-[var(--ivory)]/40">
@@ -791,7 +792,119 @@ export default function EstimatesPage() {
                     )}
                   </tbody>
                 </table>
-              </div>
+                </div>
+
+                <div className="space-y-3 p-3 md:hidden">
+                {filteredEstimates.map((estimate) => (
+                  <article
+                    key={estimate._id}
+                    className="rounded-xl border border-[var(--line)] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                          {estimate.estimateNumber}
+                        </p>
+                        <h2 className="mt-1 truncate text-base font-semibold text-[var(--ink)]">
+                          {estimate.eventName}
+                        </h2>
+                        <p className="mt-1 truncate text-sm text-[var(--muted)]">
+                          {estimate.client.name}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${statusStyles[estimate.status]}`}
+                      >
+                        {statusLabels[estimate.status]}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3 border-y border-[var(--line)] py-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+                          Event date
+                        </p>
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-[var(--ink)]">
+                          <CalendarDays size={14} className="text-[var(--muted)]" />
+                          {formatDate(estimate.eventDate)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+                          Total
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                          {formatCurrency(estimate.total, estimate.currency)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      {(estimate.status === "DRAFT" ||
+                        estimate.status === "SENT" ||
+                        estimate.status === "VIEWED") && (
+                        <button
+                          type="button"
+                          disabled={
+                            acceptingId === estimate._id ||
+                            Boolean(convertingId)
+                          }
+                          onClick={() =>
+                            handleAccept(estimate._id, estimate.eventName)
+                          }
+                          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+                        >
+                          {acceptingId === estimate._id ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" />
+                              Accepting...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={15} />
+                              Accept estimate
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {estimate.status === "ACCEPTED" ? (
+                        <button
+                          type="button"
+                          disabled={convertingId === estimate._id}
+                          onClick={() =>
+                            handleConvert(estimate._id, estimate.eventName)
+                          }
+                          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                        >
+                          {convertingId === estimate._id ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" />
+                              Converting...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight size={15} />
+                              Convert to event
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedEstimate(estimate)}
+                          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
+                        >
+                          <Eye size={16} />
+                          View details
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                ))}
+                </div>
+              </>
             )}
           </div>
 
