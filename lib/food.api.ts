@@ -1,4 +1,7 @@
 import { get, post, put, del, type ApiResponse } from "./api";
+import { getAuthToken } from "./auth-storage";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // ==========================================
 // Types
@@ -23,6 +26,7 @@ export interface FoodItem {
   dietary: DietaryType;
   defaultRate: number;
   description: string;
+  imageUrl?: string;
   isPopular: boolean;
   active: boolean;
   sortOrder: number;
@@ -36,6 +40,7 @@ export interface CreateFoodItemData {
   dietary: DietaryType;
   defaultRate: number;
   description?: string;
+  imageUrl?: string;
   isPopular?: boolean;
   active?: boolean;
   sortOrder?: number;
@@ -47,6 +52,7 @@ export interface UpdateFoodItemData {
   dietary?: DietaryType;
   defaultRate?: number;
   description?: string;
+  imageUrl?: string;
   isPopular?: boolean;
   active?: boolean;
   sortOrder?: number;
@@ -109,6 +115,31 @@ export async function getFoodItems(params?: {
 export async function getFoodItemById(id: string): Promise<FoodItem> {
   const res = await get<ApiResponse<FoodItem>>(`/food/${id}`);
   return res.data;
+}
+
+export async function uploadFoodImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_URL}/food/upload`, {
+    method: "POST",
+    body: formData,
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.message || "Failed to upload food image");
+  }
+
+  return result.data.imageUrl;
+}
+
+export function getFoodImageUrl(imageUrl?: string): string | undefined {
+  if (!imageUrl) return undefined;
+  if (imageUrl.startsWith("http")) return imageUrl;
+  return `${API_URL.replace(/\/api$/, "")}${imageUrl}`;
 }
 
 export async function createFoodItem(data: CreateFoodItemData): Promise<FoodItem> {

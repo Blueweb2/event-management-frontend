@@ -18,6 +18,7 @@ import {
   type FoodCategory,
   deleteFoodItem,
   updateFoodItem,
+  getFoodImageUrl,
 } from "@/lib/food.api";
 
 interface FoodListProps {
@@ -247,6 +248,13 @@ export default function FoodList({
                       }`}
                     >
                       <div>
+                        {item.imageUrl ? (
+                          <img
+                            src={getFoodImageUrl(item.imageUrl)}
+                            alt={item.name}
+                            className="mb-3 h-36 w-full rounded-xl object-cover"
+                          />
+                        ) : null}
                         {/* Top Meta */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">

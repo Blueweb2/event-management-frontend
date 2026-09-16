@@ -20,6 +20,7 @@ import {
   type DietaryType,
   type SelectedFoodItemSnapshot,
   getFoodItems,
+  getFoodImageUrl,
 } from "@/lib/food.api";
 
 interface FoodMenuStepProps {
@@ -384,6 +385,13 @@ export default function FoodMenuStep({
                     }`}
                   >
                     <div>
+                      {item.imageUrl ? (
+                        <img
+                          src={getFoodImageUrl(item.imageUrl)}
+                          alt={item.name}
+                          className="mb-3 h-52 w-full rounded-xl object-cover"
+                        />
+                      ) : null}
                       {/* Top Row: Dietary + Name + Selection Checkbox */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">

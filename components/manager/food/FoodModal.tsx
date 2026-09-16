@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Utensils } from "lucide-react";
+import { X, Loader2, Utensils, ImagePlus } from "lucide-react";
 import {
   type FoodItem,
   type FoodCategory,
   type DietaryType,
   createFoodItem,
   updateFoodItem,
+  uploadFoodImage,
 } from "@/lib/food.api";
 
 interface FoodModalProps {
@@ -41,6 +42,8 @@ export default function FoodModal({
   const [description, setDescription] = useState("");
   const [isPopular, setIsPopular] = useState(false);
   const [active, setActive] = useState(true);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +57,8 @@ export default function FoodModal({
       setDescription(editingItem.description || "");
       setIsPopular(Boolean(editingItem.isPopular));
       setActive(editingItem.active !== undefined ? editingItem.active : true);
+      setImageUrl(editingItem.imageUrl || "");
+      setImageFile(null);
     } else {
       setName("");
       setCategory("Starters / Appetizers");
@@ -62,6 +67,8 @@ export default function FoodModal({
       setDescription("");
       setIsPopular(false);
       setActive(true);
+      setImageUrl("");
+      setImageFile(null);
     }
     setError("");
   }, [editingItem, isOpen]);
@@ -86,6 +93,7 @@ export default function FoodModal({
     setLoading(true);
 
     try {
+      const savedImageUrl = imageFile ? await uploadFoodImage(imageFile) : imageUrl;
       if (editingItem) {
         const updated = await updateFoodItem(editingItem._id, {
           name: name.trim(),
@@ -95,6 +103,7 @@ export default function FoodModal({
           description: description.trim(),
           isPopular,
           active,
+          imageUrl: savedImageUrl,
         });
         onSuccess(updated);
       } else {
@@ -106,6 +115,7 @@ export default function FoodModal({
           description: description.trim(),
           isPopular,
           active,
+          imageUrl: savedImageUrl,
         });
         onSuccess(created);
       }
@@ -252,6 +262,35 @@ export default function FoodModal({
               placeholder="e.g., Tandoor roasted cottage cheese in spicy marinade..."
               className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
             />
+          </div>
+
+          {/* Food Image */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700">
+              Food Image
+            </label>
+            <label className="mt-1 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 p-3 hover:border-[#6B5B95]">
+              {imageFile || imageUrl ? (
+                <img
+                  src={imageFile ? URL.createObjectURL(imageFile) : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000"}${imageUrl}`}
+                  alt="Food preview"
+                  className="h-16 w-16 rounded-lg object-cover"
+                />
+              ) : (
+                <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+                  <ImagePlus size={22} />
+                </span>
+              )}
+              <span className="text-xs text-gray-500">
+                Choose a JPG, PNG, WEBP, or GIF up to 5 MB.
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+              />
+            </label>
           </div>
 
           {/* Toggles */}
