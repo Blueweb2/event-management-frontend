@@ -15,7 +15,7 @@ import {
 interface AddExpenseModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (expense: Expense) => void;
+  onSave: (expense: Expense) => Promise<void>;
   editingExpense?: Expense | null;
 }
 
@@ -38,9 +38,13 @@ export default function AddExpenseModal({
   editingExpense,
 }: AddExpenseModalProps) {
   const [form, setForm] = useState<Expense>(emptyExpense);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (editingExpense) {
+      // The modal form mirrors the selected record when the dialog opens.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm(editingExpense);
     } else {
       setForm(emptyExpense);
@@ -59,7 +63,7 @@ export default function AddExpenseModal({
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (
@@ -68,6 +72,7 @@ export default function AddExpenseModal({
       !form.date ||
       form.amount <= 0
     ) {
+      setError("Please complete the title, amount, event, and date.");
       return;
     }
 
@@ -81,8 +86,16 @@ export default function AddExpenseModal({
       description: form.description.trim(),
     };
 
-    onSave(expense);
-    onClose();
+    try {
+      setSaving(true);
+      setError("");
+      await onSave(expense);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save expense.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -103,13 +116,15 @@ export default function AddExpenseModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => !saving && onClose()}
             aria-label="Close modal"
             className="flex h-9 w-9 items-center justify-center rounded-full text-[#756d64] hover:bg-[#f7f2ec]"
           >
             <X size={19} />
           </button>
         </div>
+
+        {error && <div role="alert" className="mx-5 mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600 sm:mx-6">{error}</div>}
 
         <form
           onSubmit={handleSubmit}
@@ -284,7 +299,8 @@ export default function AddExpenseModal({
           <div className="flex flex-col-reverse gap-3 border-t border-[#eee8e1] pt-5 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => !saving && onClose()}
+              disabled={saving}
               className="h-11 rounded-xl border border-[#ded5cb] px-5 text-sm font-semibold text-[#403a34] hover:bg-[#f8f4ee]"
             >
               Cancel
@@ -292,9 +308,10 @@ export default function AddExpenseModal({
 
             <button
               type="submit"
+              disabled={saving}
               className="h-11 rounded-xl bg-[#b8894b] px-5 text-sm font-semibold text-white hover:bg-[#a7773f]"
             >
-              {editingExpense
+              {saving ? "Saving..." : editingExpense
                 ? "Save Changes"
                 : "Add Expense"}
             </button>

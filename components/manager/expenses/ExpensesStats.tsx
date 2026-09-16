@@ -5,7 +5,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { expenseStats } from "./constants";
+import type { Expense } from "./constants";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -14,31 +14,35 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-export default function ExpensesStats() {
+export default function ExpensesStats({ expenses }: { expenses: Expense[] }) {
+  const totalAmount = expenses.reduce((total, expense) => total + expense.amount, 0);
+  const paidAmount = expenses.filter((expense) => expense.status === "Paid").reduce((total, expense) => total + expense.amount, 0);
+  const pendingAmount = expenses.filter((expense) => expense.status === "Pending").reduce((total, expense) => total + expense.amount, 0);
+
   const stats = [
     {
       label: "Total Expenses",
-      value: formatCurrency(expenseStats.totalAmount),
-      count: `${expenseStats.total} records`,
+      value: formatCurrency(totalAmount),
+      count: `${expenses.length} records`,
       icon: Receipt,
     },
     {
       label: "Paid",
-      value: formatCurrency(expenseStats.paidAmount),
+      value: formatCurrency(paidAmount),
       count: "Paid expenses",
       icon: Wallet,
     },
     {
       label: "Pending",
-      value: formatCurrency(expenseStats.pendingAmount),
+      value: formatCurrency(pendingAmount),
       count: "Outstanding",
       icon: Clock3,
     },
     {
       label: "Average Expense",
       value: formatCurrency(
-        expenseStats.total
-          ? expenseStats.totalAmount / expenseStats.total
+        expenses.length
+          ? totalAmount / expenses.length
           : 0
       ),
       count: "Per expense",

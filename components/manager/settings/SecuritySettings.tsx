@@ -5,8 +5,11 @@ import {
   KeyRound,
   ShieldCheck,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { changeMyPassword } from "@/lib/user.api";
 
 export default function SecuritySettings() {
+  const { token } = useAuth();
   const [currentPassword, setCurrentPassword] =
     useState("");
 
@@ -18,22 +21,33 @@ export default function SecuritySettings() {
 
   const [twoFactorEnabled, setTwoFactorEnabled] =
     useState(false);
+  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (!currentPassword || !newPassword) {
+      setMessage("Enter your current and new passwords.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
+      setMessage("New passwords do not match.");
       return;
     }
 
-    console.log("Password change requested");
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      if (!token) throw new Error("You are not signed in.");
+      setSaving(true);
+      await changeMyPassword(currentPassword, newPassword, token);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage("Password updated successfully.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to update password.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -102,11 +116,13 @@ export default function SecuritySettings() {
 
             <button
               type="button"
-              onClick={handlePasswordChange}
+              onClick={() => void handlePasswordChange()}
+              disabled={saving}
               className="rounded-xl border border-[#b8894b] px-5 py-2.5 text-sm font-semibold text-[#9a6c37] transition hover:bg-[#f7efe4]"
             >
-              Update Password
+              {saving ? "Updating..." : "Update Password"}
             </button>
+            {message && <p role="status" className="mt-3 text-xs font-medium text-[#557555]">{message}</p>}
           </div>
         </div>
 

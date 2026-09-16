@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import ExpensesHeader from "@/components/manager/expenses/ExpensesHeader";
 import ExpensesStats from "@/components/manager/expenses/ExpensesStats";
@@ -10,16 +10,24 @@ import AddExpenseModal from "@/components/manager/expenses/AddExpenseModal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import {
-  expenses as initialExpenses,
   type Expense,
   type ExpenseCategory,
   type ExpenseStatus,
   type PaymentMethod,
 } from "@/components/manager/expenses/constants";
+import {
+  createExpense,
+  deleteExpense,
+  getExpenses,
+  toggleExpenseStatus,
+  updateExpense,
+  type ExpensePayload,
+} from "@/lib/expense.api";
 
 export default function ExpensesPage() {
-  const [expenseList, setExpenseList] =
-    useState<Expense[]>(initialExpenses);
+  const [expenseList, setExpenseList] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
 
@@ -42,6 +50,23 @@ export default function ExpensesPage() {
 
   const [deletingExpenseId, setDeletingExpenseId] =
     useState<string | null>(null);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setExpenseList(await getExpenses());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load expenses.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchExpenses(), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const filteredExpenses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -91,49 +116,38 @@ export default function ExpensesPage() {
     setModalOpen(true);
   };
 
-  const handleSaveExpense = (expense: Expense) => {
-    setExpenseList((current) => {
-      const exists = current.some(
-        (item) => item.id === expense.id
-      );
+  const handleSaveExpense = async (expense: Expense) => {
+    const payload: ExpensePayload = {
+      title: expense.title,
+      category: expense.category,
+      amount: expense.amount,
+      event: expense.event,
+      date: expense.date,
+      paymentMethod: expense.paymentMethod,
+      status: expense.status,
+      description: expense.description,
+    };
 
-      if (exists) {
-        return current.map((item) =>
-          item.id === expense.id ? expense : item
-        );
-      }
-
-      return [expense, ...current];
-    });
+    if (editingExpense) await updateExpense(editingExpense.id, payload);
+    else await createExpense(payload);
+    await fetchExpenses();
   };
 
   const handleDeleteExpense = (id: string) => {
     setDeletingExpenseId(id);
   };
 
-  const confirmDeleteExpense = () => {
+  const confirmDeleteExpense = async () => {
     if (!deletingExpenseId) return;
 
-    setExpenseList((current) =>
-      current.filter((expense) => expense.id !== deletingExpenseId)
-    );
+    await deleteExpense(deletingExpenseId);
+    await fetchExpenses();
     setDeletingExpenseId(null);
   };
 
-  const handleToggleStatus = (id: string) => {
-    setExpenseList((current) =>
-      current.map((expense) =>
-        expense.id === id
-          ? {
-              ...expense,
-              status:
-                expense.status === "Paid"
-                  ? "Pending"
-                  : "Paid",
-            }
-          : expense
-      )
-    );
+  const handleToggleStatus = async (id: string) => {
+    await toggleExpenseStatus(id);
+    await fetchExpenses();
   };
 
   const clearFilters = () => {
@@ -149,7 +163,9 @@ export default function ExpensesPage() {
         onAddExpense={handleAddExpense}
       />
 
-      <ExpensesStats />
+      {error && <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-medium text-red-600"><span>{error}</span><button type="button" onClick={() => void fetchExpenses()} className="ml-3 font-semibold underline">Retry</button></div>}
+
+      <ExpensesStats expenses={expenseList} />
 
       <ExpensesFilters
         search={search}
@@ -163,12 +179,7 @@ export default function ExpensesPage() {
         onClear={clearFilters}
       />
 
-      <ExpensesList
-        expenses={filteredExpenses}
-        onEdit={handleEditExpense}
-        onDelete={handleDeleteExpense}
-        onToggleStatus={handleToggleStatus}
-      />
+      {loading ? <div className="rounded-2xl border border-[#e8e1d8] bg-white p-12 text-center text-sm text-[#756d64]">Loading expenses...</div> : <ExpensesList expenses={filteredExpenses} onEdit={handleEditExpense} onDelete={handleDeleteExpense} onToggleStatus={(id) => void handleToggleStatus(id)} />}
 
       <ConfirmDialog
         isOpen={Boolean(deletingExpenseId)}
