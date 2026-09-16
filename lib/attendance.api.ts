@@ -6,7 +6,6 @@ import {
 
 import type {
   Attendance,
-  AttendanceStatus,
   CheckInPayload,
   CheckOutPayload,
   MarkAbsentPayload,
