@@ -12,6 +12,7 @@ import {
   Utensils,
   Sparkles,
 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   type FoodItem,
   type FoodCategory,
@@ -50,6 +51,7 @@ export default function FoodList({
   const [selectedDietary, setSelectedDietary] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingItem, setDeletingItem] = useState<FoodItem | null>(null);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -77,14 +79,20 @@ export default function FoodList({
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to remove "${name}" from the menu?`)) {
-      return;
-    }
+    const item = items.find((current) => current._id === id);
+    if (!item) return;
 
-    setDeletingId(id);
+    setDeletingItem(item);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingItem) return;
+
+    setDeletingId(deletingItem._id);
     try {
-      await deleteFoodItem(id);
-      onItemDeleted(id);
+      await deleteFoodItem(deletingItem._id);
+      onItemDeleted(deletingItem._id);
+      setDeletingItem(null);
     } catch (err) {
       console.error("Failed to delete food item:", err);
       alert(err instanceof Error ? err.message : "Failed to delete item");
@@ -348,6 +356,20 @@ export default function FoodList({
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingItem)}
+        onClose={() => setDeletingItem(null)}
+        onConfirm={() => void confirmDelete()}
+        title="Remove menu item?"
+        description={
+          deletingItem
+            ? `Are you sure you want to remove "${deletingItem.name}" from the menu?`
+            : undefined
+        }
+        confirmText="Remove item"
+        loading={Boolean(deletingId)}
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import LoadingState from "@/components/ui/Loading";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignments } from "@/lib/assignment.api";
 import {
@@ -119,6 +120,7 @@ export default function ManagerTasksPage() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "ALL">("ALL");
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
   const [form, setForm] = useState(emptyForm);
 
   const fetchTasks = async () => {
@@ -305,16 +307,17 @@ export default function ManagerTasksPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to cancel "${task.title}"?`,
-    );
+    setDeletingTask(task);
+  };
 
-    if (!confirmed) return;
+  const confirmDelete = async () => {
+    if (!token || !deletingTask) return;
 
     try {
       setLoading(true);
       setError(null);
-      await deleteTask(task._id, token);
+      await deleteTask(deletingTask._id, token);
+      setDeletingTask(null);
       await fetchTasks();
     } catch (err) {
       setError(
@@ -713,6 +716,20 @@ export default function ManagerTasksPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingTask)}
+        onClose={() => setDeletingTask(null)}
+        onConfirm={() => void confirmDelete()}
+        title="Cancel task?"
+        description={
+          deletingTask
+            ? `Are you sure you want to cancel "${deletingTask.title}"?`
+            : undefined
+        }
+        confirmText="Cancel task"
+        loading={loading}
+      />
     </main>
   );
 }

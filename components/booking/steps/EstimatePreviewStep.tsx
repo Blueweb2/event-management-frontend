@@ -93,9 +93,12 @@ export default function EstimatePreviewStep({
   // Create Estimate is clicked.
   // ==========================================
 
-  const guestCount = Math.max(Number(formData.guests) || 1, 1);
   const previewFoodAmount = formData.foodMenu?.included
-    ? Number(formData.foodMenu.ratePerGuest || 0) * guestCount
+    ? formData.foodMenu.items.reduce(
+        (total, item) =>
+          total + Number(item.rate || 0) * Number(item.quantity || 0),
+        0,
+      )
     : 0;
 
   const previewServicesTotal =
@@ -822,7 +825,7 @@ export default function EstimatePreviewStep({
               </div>
 
               <div className="rounded-xl bg-[#f4ecdc] px-3.5 py-1.5 text-xs font-bold text-[#8C7A55]">
-                ₹{Number(formData.foodMenu.ratePerGuest || 0)} / guest × {guestCount} guests = {formatCurrency(previewFoodAmount)}
+                {formatCurrency(previewFoodAmount)} cumulative
               </div>
             </div>
 
@@ -845,6 +848,9 @@ export default function EstimatePreviewStep({
                     </span>
                     <span className="font-medium">{dish.name}</span>
                     <span className="text-[10px] text-gray-400">({dish.category})</span>
+                    <span className="text-[10px] font-semibold text-gray-600">
+                      {dish.quantity} × {formatCurrency(dish.rate)} = {formatCurrency(dish.amount || dish.rate * dish.quantity)}
+                    </span>
                   </span>
                 ))}
               </div>

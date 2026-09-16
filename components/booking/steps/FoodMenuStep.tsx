@@ -54,12 +54,11 @@ export default function FoodMenuStep({
   const [dietaryFilter, setDietaryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  const guestCount = Math.max(Number(formData.guests) || 1, 1);
   const currentMenu = formData.foodMenu || {
     included: true,
-    servingType: "PER_GUEST",
-    ratePerGuest: 500,
-    totalFoodAmount: 500 * guestCount,
+    servingType: "FIXED",
+    ratePerGuest: 0,
+    totalFoodAmount: 0,
     notes: "",
     items: [],
   };
@@ -92,10 +91,13 @@ export default function FoodMenuStep({
       ...updates,
     };
 
-    // Calculate total amount
+    // Food pricing is based on selected quantities, not guest count.
     if (updated.included) {
-      const rate = Number(updated.ratePerGuest || 0);
-      updated.totalFoodAmount = Math.max(0, rate * guestCount);
+      updated.totalFoodAmount = updated.items.reduce(
+        (total, item) =>
+          total + Number(item.rate || 0) * Number(item.quantity || 0),
+        0,
+      );
     } else {
       updated.totalFoodAmount = 0;
     }
@@ -123,6 +125,8 @@ export default function FoodMenuStep({
           category: item.category,
           dietary: item.dietary,
           rate: item.defaultRate,
+          quantity: 1,
+          amount: item.defaultRate,
         },
       ];
     }
@@ -210,57 +214,27 @@ export default function FoodMenuStep({
       {/* Main Content when Catering is Included */}
       {currentMenu.included ? (
         <div className="space-y-6">
-          {/* Rate Customizer Banner */}
+          {/* Catering Total Banner */}
           <div className="rounded-2xl border border-[#d7c4aa] bg-gradient-to-br from-[#fbf8f2] to-[#f5ede0] p-5 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
                   <Receipt size={18} className="text-[#8C7A55]" />
                   <h4 className="text-sm font-bold text-gray-900">
-                    Client Catering Rate Configuration
+                    Food Catering Total
                   </h4>
                 </div>
                 <p className="mt-1 text-xs text-gray-600">
-                  Enter the agreed per-guest plate rate for this customer's customized menu.
+                  Add the required quantity for each selected food. Guest count is not used in this total.
                 </p>
               </div>
 
-              {/* Rate Input + Calculation */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                    Rate / Guest (₹)
-                  </label>
-                  <div className="relative mt-1">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-gray-500">
-                      ₹
-                    </span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="10"
-                      value={currentMenu.ratePerGuest}
-                      onChange={(e) =>
-                        updateFoodMenu({
-                          ratePerGuest: Math.max(0, Number(e.target.value) || 0),
-                        })
-                      }
-                      className="w-32 rounded-xl border border-[#c4b39b] bg-white pl-7 pr-3 py-1.5 text-sm font-bold text-gray-900 shadow-sm focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col justify-end">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                    Total Catering Charge
-                  </span>
-                  <div className="mt-1 rounded-xl bg-white/80 border border-[#c4b39b]/60 px-3 py-1.5 text-sm font-bold text-[#6B5B95]">
-                    ₹{currentMenu.totalFoodAmount.toLocaleString("en-IN")}
-                    <span className="text-[10px] font-normal text-gray-500">
-                      {" "}
-                      ({guestCount} guests)
-                    </span>
-                  </div>
+              <div className="flex flex-col justify-end">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Cumulative Catering Amount
+                </span>
+                <div className="mt-1 rounded-xl border border-[#c4b39b]/60 bg-white/80 px-3 py-1.5 text-sm font-bold text-[#6B5B95]">
+                  ₹{currentMenu.totalFoodAmount.toLocaleString("en-IN")}
                 </div>
               </div>
             </div>
@@ -455,9 +429,75 @@ export default function FoodMenuStep({
                         Base: ₹{item.defaultRate}/plate
                       </span>
                       {isSelected ? (
-                        <span className="text-[11px] font-bold text-[#6B5B95]">
-                          ✓ Selected
-                        </span>
+                        (() => {
+                          const selectedItem = currentMenu.items.find(
+                            (selected) =>
+                              selected.foodItemId === item._id ||
+                              selected.name === item.name,
+                          );
+
+                          if (!selectedItem) return null;
+
+                          const quantity = Number(selectedItem.quantity || 1);
+                          const amount = Number(selectedItem.rate || 0) * quantity;
+
+                          return (
+                            <div
+                              className="flex items-center gap-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <div className="flex items-center rounded-lg border border-[#c4b39b] bg-white">
+                                <button
+                                  type="button"
+                                  aria-label={`Decrease ${item.name} quantity`}
+                                  onClick={() =>
+                                    updateFoodMenu({
+                                      items: currentMenu.items.map((food) =>
+                                        food.foodItemId === item._id || food.name === item.name
+                                          ? {
+                                              ...food,
+                                              quantity: Math.max(1, quantity - 1),
+                                              amount:
+                                                Number(food.rate || 0) * Math.max(1, quantity - 1),
+                                            }
+                                          : food,
+                                      ),
+                                    })
+                                  }
+                                  className="p-1.5 text-gray-600 hover:text-[#6B5B95]"
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span className="min-w-6 text-center text-xs font-bold text-gray-900">
+                                  {quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  aria-label={`Increase ${item.name} quantity`}
+                                  onClick={() =>
+                                    updateFoodMenu({
+                                      items: currentMenu.items.map((food) =>
+                                        food.foodItemId === item._id || food.name === item.name
+                                          ? {
+                                              ...food,
+                                              quantity: quantity + 1,
+                                              amount: Number(food.rate || 0) * (quantity + 1),
+                                            }
+                                          : food,
+                                      ),
+                                    })
+                                  }
+                                  className="p-1.5 text-gray-600 hover:text-[#6B5B95]"
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </div>
+                              <span className="text-[11px] font-bold text-[#6B5B95]">
+                                ₹{amount.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          );
+                        })()
                       ) : (
                         <span className="text-[11px] font-medium text-gray-400 group-hover:text-gray-700">
                           + Add to Menu
@@ -480,7 +520,7 @@ export default function FoodMenuStep({
             Food Catering is Not Included
           </h3>
           <p className="mt-1 text-xs text-gray-500">
-            No catering items or food charges will be added to this estimate. Click "Include" above anytime to add a custom food menu.
+            No catering items or food charges will be added to this estimate. Click &quot;Include&quot; above anytime to add a custom food menu.
           </p>
         </div>
       )}

@@ -7,6 +7,7 @@ import ExpensesStats from "@/components/manager/expenses/ExpensesStats";
 import ExpensesFilters from "@/components/manager/expenses/ExpensesFilters";
 import ExpensesList from "@/components/manager/expenses/ExpensesList";
 import AddExpenseModal from "@/components/manager/expenses/AddExpenseModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import {
   expenses as initialExpenses,
@@ -38,6 +39,9 @@ export default function ExpensesPage() {
 
   const [editingExpense, setEditingExpense] =
     useState<Expense | null>(null);
+
+  const [deletingExpenseId, setDeletingExpenseId] =
+    useState<string | null>(null);
 
   const filteredExpenses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -104,15 +108,16 @@ export default function ExpensesPage() {
   };
 
   const handleDeleteExpense = (id: string) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this expense?"
-    );
+    setDeletingExpenseId(id);
+  };
 
-    if (!confirmed) return;
+  const confirmDeleteExpense = () => {
+    if (!deletingExpenseId) return;
 
     setExpenseList((current) =>
-      current.filter((expense) => expense.id !== id)
+      current.filter((expense) => expense.id !== deletingExpenseId)
     );
+    setDeletingExpenseId(null);
   };
 
   const handleToggleStatus = (id: string) => {
@@ -163,6 +168,15 @@ export default function ExpensesPage() {
         onEdit={handleEditExpense}
         onDelete={handleDeleteExpense}
         onToggleStatus={handleToggleStatus}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingExpenseId)}
+        onClose={() => setDeletingExpenseId(null)}
+        onConfirm={confirmDeleteExpense}
+        title="Delete expense?"
+        description="Are you sure you want to delete this expense?"
+        confirmText="Delete expense"
       />
 
       <AddExpenseModal

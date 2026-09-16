@@ -11,6 +11,7 @@ import {
 
 import ServiceCard from "./ServiceCard";
 import ServiceForm from "./ServiceForm";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import {
   deleteService,
@@ -62,6 +63,9 @@ export default function ServiceList({
 
   const [deactivatingId, setDeactivatingId] =
     useState<string | null>(null);
+
+  const [deactivatingService, setDeactivatingService] =
+    useState<Service | null>(null);
 
   const loadServices = async (
     showRefresh = false,
@@ -172,21 +176,19 @@ export default function ServiceList({
   const handleDeactivate = async (
     service: Service,
   ) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to deactivate "${service.name}"?`,
-    );
+    setDeactivatingService(service);
+  };
 
-    if (!confirmed) {
-      return;
-    }
+  const confirmDeactivate = async () => {
+    if (!deactivatingService) return;
 
     try {
-      setDeactivatingId(service._id);
+      setDeactivatingId(deactivatingService._id);
       setError("");
 
       const updatedService =
         await deleteService(
-          service._id,
+          deactivatingService._id,
         );
 
       setServices((previous) => {
@@ -202,6 +204,7 @@ export default function ServiceList({
 
         return updated;
       });
+      setDeactivatingService(null);
     } catch (err) {
       setError(
         err instanceof Error
@@ -511,6 +514,19 @@ export default function ServiceList({
             )}
         </>
       )}
+      <ConfirmDialog
+        isOpen={Boolean(deactivatingService)}
+        onClose={() => setDeactivatingService(null)}
+        onConfirm={() => void confirmDeactivate()}
+        title="Deactivate service?"
+        description={
+          deactivatingService
+            ? `Are you sure you want to deactivate "${deactivatingService.name}"?`
+            : undefined
+        }
+        confirmText="Deactivate"
+        loading={Boolean(deactivatingId)}
+      />
     </div>
   );
 }

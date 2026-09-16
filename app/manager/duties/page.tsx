@@ -7,6 +7,7 @@ import DutiesFilters from "@/components/manager/duties/DutiesFilters";
 import DutiesHeader from "@/components/manager/duties/DutiesHeader";
 import DutiesList from "@/components/manager/duties/DutiesList";
 import DutiesStats from "@/components/manager/duties/DutiesStats";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import {
   duties as initialDuties,
@@ -27,6 +28,9 @@ export default function DutiesPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [editingDuty, setEditingDuty] =
+    useState<Duty | null>(null);
+
+  const [deletingDuty, setDeletingDuty] =
     useState<Duty | null>(null);
 
   const filteredDuties = useMemo(() => {
@@ -58,15 +62,16 @@ export default function DutiesPage() {
   };
 
   const handleDeleteDuty = (duty: Duty) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${duty.title}"?`
-    );
+    setDeletingDuty(duty);
+  };
 
-    if (!confirmed) return;
+  const confirmDeleteDuty = () => {
+    if (!deletingDuty) return;
 
     setItems((current) =>
-      current.filter((item) => item.id !== duty.id)
+      current.filter((item) => item.id !== deletingDuty.id)
     );
+    setDeletingDuty(null);
   };
 
   const handleStatusChange = (duty: Duty) => {
@@ -127,6 +132,19 @@ export default function DutiesPage() {
         onEdit={handleEditDuty}
         onDelete={handleDeleteDuty}
         onStatusChange={handleStatusChange}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingDuty)}
+        onClose={() => setDeletingDuty(null)}
+        onConfirm={confirmDeleteDuty}
+        title="Delete duty?"
+        description={
+          deletingDuty
+            ? `Are you sure you want to delete "${deletingDuty.title}"?`
+            : undefined
+        }
+        confirmText="Delete duty"
       />
 
       <AddDutyModal

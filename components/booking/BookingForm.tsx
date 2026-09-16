@@ -48,8 +48,8 @@ const initialFormData: BookingFormData = {
 
   foodMenu: {
     included: true,
-    servingType: "PER_GUEST",
-    ratePerGuest: 500,
+    servingType: "FIXED",
+    ratePerGuest: 0,
     totalFoodAmount: 0,
     notes: "",
     items: [],
@@ -270,9 +270,19 @@ export default function BookingForm() {
 
     if (currentStep === 3) {
       if (formData.foodMenu?.included) {
-        const rate = Number(formData.foodMenu.ratePerGuest);
-        if (!Number.isFinite(rate) || rate < 0) {
-          setError("Please enter a valid rate per guest for catering.");
+        const invalidFoodItem = formData.foodMenu.items.some((item) => {
+          const quantity = Number(item.quantity);
+          const rate = Number(item.rate);
+          return (
+            !Number.isInteger(quantity) ||
+            quantity < 1 ||
+            !Number.isFinite(rate) ||
+            rate < 0
+          );
+        });
+
+        if (invalidFoodItem) {
+          setError("Please check the quantity and rate for each food item.");
           return false;
         }
       }

@@ -58,6 +58,8 @@ export interface SelectedFoodItemSnapshot {
   category: string;
   dietary: DietaryType;
   rate: number;
+  quantity: number;
+  amount: number;
 }
 
 export interface FoodMenuSelection {
