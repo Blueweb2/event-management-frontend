@@ -95,6 +95,57 @@ export const useAssignments = ({
   );
 
   // ==========================================
+  // GET ALL ASSIGNMENTS
+  // ==========================================
+
+  const fetchAllAssignments = useCallback(
+    async (customFilters?: AssignmentFilters) => {
+      if (!token) {
+        setError("Authentication required");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const allAssignments: Assignment[] = [];
+        let page = 1;
+        let totalPages = 1;
+
+        do {
+          const result = await getAssignments(token, {
+            ...(customFilters ?? filters),
+            page,
+            limit: 100,
+          });
+
+          allAssignments.push(...result.data);
+          totalPages = result.pagination.totalPages;
+          page += 1;
+        } while (page <= totalPages);
+
+        setAssignments(allAssignments);
+        setPagination({
+          page: 1,
+          limit: allAssignments.length,
+          total: allAssignments.length,
+          totalPages: 1,
+        });
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch assignments",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [token, filters],
+  );
+
+  // ==========================================
   // GET ASSIGNMENT BY ID
   // ==========================================
 
@@ -323,6 +374,7 @@ export const useAssignments = ({
     error,
 
     fetchAssignments,
+    fetchAllAssignments,
     fetchAssignmentById,
 
     addAssignment,

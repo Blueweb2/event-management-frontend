@@ -7,6 +7,7 @@ import DutyCard from "./DutyCard";
 
 interface DutiesListProps {
   duties: Duty[];
+  loading?: boolean;
   onEdit: (duty: Duty) => void;
   onDelete: (duty: Duty) => void;
   onStatusChange: (duty: Duty) => void;
@@ -14,6 +15,7 @@ interface DutiesListProps {
 
 export default function DutiesList({
   duties,
+  loading = false,
   onEdit,
   onDelete,
   onStatusChange,
@@ -31,7 +33,9 @@ export default function DutiesList({
         </p>
       </div>
 
-      {duties.length === 0 ? (
+      {loading ? (
+        <div className="rounded-2xl border border-[#e8e1d8] bg-white px-6 py-14 text-center text-sm text-[#8d847b]">Loading duties...</div>
+      ) : duties.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[#ded5cb] bg-[#fdfbf8] px-6 py-14 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f7efe4] text-[#a7773f]">
             <ClipboardList size={21} />

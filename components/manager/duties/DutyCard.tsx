@@ -30,9 +30,11 @@ export default function DutyCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const statusClasses = {
-    Pending: "bg-[#f8f0df] text-[#9a6c37]",
-    Assigned: "bg-[#edf5ed] text-[#557555]",
-    Completed: "bg-[#eeeae5] text-[#756d64]",
+    ASSIGNED: "bg-[#edf5ed] text-[#557555]",
+    ACCEPTED: "bg-[#e7f1fa] text-[#46708e]",
+    IN_PROGRESS: "bg-[#f8f0df] text-[#9a6c37]",
+    COMPLETED: "bg-[#eeeae5] text-[#756d64]",
+    CANCELLED: "bg-[#fdf1ef] text-[#a15f57]",
   };
 
   return (
@@ -108,7 +110,7 @@ export default function DutyCard({
           <span
             className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusClasses[duty.status]}`}
           >
-            {duty.status}
+            {duty.status.replaceAll("_", " ")}
           </span>
         </div>
       </div>
@@ -128,7 +130,7 @@ export default function DutyCard({
 
             <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9b938a]">
               <Clock3 size={12} />
-              {duty.eventTime}
+              {duty.startTime} – {duty.endTime}
             </p>
           </div>
         </div>
@@ -167,15 +169,13 @@ export default function DutyCard({
       </p>
 
       {/* Action */}
-      {duty.status !== "Completed" && (
+      {["ASSIGNED", "ACCEPTED", "IN_PROGRESS"].includes(duty.status) && (
         <button
           type="button"
           onClick={() => onStatusChange(duty)}
           className="mt-5 w-full rounded-xl border border-[#e3dbd2] bg-[#fdfbf8] px-4 py-2.5 text-xs font-semibold text-[#756d64] transition hover:bg-[#f8f4ee] hover:text-[#29241f]"
         >
-          {duty.status === "Pending"
-            ? "Mark as Assigned"
-            : "Mark as Completed"}
+          {duty.status === "IN_PROGRESS" ? "Mark as Completed" : "Mark as In Progress"}
         </button>
       )}
     </article>

@@ -5,36 +5,40 @@ import {
   UserCheck,
 } from "lucide-react";
 
-import { dutyStats } from "./constants";
+import type { Duty } from "./constants";
 
-const stats = [
+interface DutiesStatsProps {
+  duties: Duty[];
+}
+
+export default function DutiesStats({ duties }: DutiesStatsProps) {
+  const stats = [
   {
     label: "Total Duties",
-    value: dutyStats.total,
+    value: duties.length,
     icon: ClipboardList,
     description: "All event duties",
   },
   {
-    label: "Pending",
-    value: dutyStats.pending,
+    label: "In Progress",
+    value: duties.filter((duty) => duty.status === "IN_PROGRESS").length,
     icon: Clock3,
-    description: "Awaiting assignment",
+    description: "Currently underway",
   },
   {
     label: "Assigned",
-    value: dutyStats.assigned,
+    value: duties.filter((duty) => ["ASSIGNED", "ACCEPTED"].includes(duty.status)).length,
     icon: UserCheck,
     description: "Staff assigned",
   },
   {
     label: "Completed",
-    value: dutyStats.completed,
+    value: duties.filter((duty) => duty.status === "COMPLETED").length,
     icon: CheckCircle2,
     description: "Completed duties",
   },
-];
+  ];
 
-export default function DutiesStats() {
   return (
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {stats.map((stat) => {
