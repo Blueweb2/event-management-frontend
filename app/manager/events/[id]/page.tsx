@@ -259,6 +259,52 @@ export default function ManagerEventDetailsPage() {
     );
   }
 
+  const assignedStaff = assignments.reduce<
+    Array<{
+      id: string;
+      name: string;
+      department: string;
+      assignments: typeof assignments;
+    }>
+  >((members, assignment) => {
+    const populatedStaff =
+      typeof assignment.staff === "object"
+        ? assignment.staff
+        : undefined;
+    const staffId = populatedStaff?.id || (typeof assignment.staff === "string" ? assignment.staff : "");
+    const directoryStaff = staff.find(
+      (member) => member.id === staffId,
+    );
+
+    if (!staffId) {
+      return members;
+    }
+
+    const existingMember = members.find(
+      (member) => member.id === staffId,
+    );
+
+    if (existingMember) {
+      existingMember.assignments.push(assignment);
+      return members;
+    }
+
+    members.push({
+      id: staffId,
+      name:
+        populatedStaff?.name ||
+        directoryStaff?.name ||
+        "Staff member",
+      department:
+        populatedStaff?.department ||
+        directoryStaff?.department ||
+        "",
+      assignments: [assignment],
+    });
+
+    return members;
+  }, []);
+
   // ==========================================
   // Render
   // ==========================================
@@ -516,23 +562,51 @@ export default function ManagerEventDetailsPage() {
             </button>
           </form>
 
-          {assignments.length > 0 && (
+          {assignmentsLoading && assignments.length === 0 && (
+            <p className="mt-5 text-sm text-gray-500">
+              Loading assigned staff...
+            </p>
+          )}
+
+          {!assignmentsLoading && assignments.length === 0 && (
+            <p className="mt-5 rounded-xl bg-[#F8F7F3] px-3 py-3 text-sm text-gray-500">
+              No staff members are assigned to this event yet.
+            </p>
+          )}
+
+          {assignedStaff.length > 0 && (
             <div className="mt-6 border-t border-gray-100 pt-5">
-              <h3 className="text-sm font-semibold text-[#252525]">Assigned to this event</h3>
+              <h3 className="text-sm font-semibold text-[#252525]">
+                Assigned staff ({assignedStaff.length})
+              </h3>
               <div className="mt-3 space-y-2">
-                {assignments.map((assignment) => (
-                  <div key={assignment._id} className="flex items-center justify-between gap-3 rounded-xl bg-[#F8F7F3] px-3 py-3">
+                {assignedStaff.map((member) => (
+                  <div key={member.id} className="rounded-xl bg-[#F8F7F3] px-3 py-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[#252525]">
-                        {typeof assignment.staff === "object" ? assignment.staff.name : assignment.staff}
+                        {member.name}
                       </p>
-                      <p className="truncate text-xs text-gray-500">
-                        {assignment.dutyTitle} · {assignment.startTime} - {assignment.endTime}
-                      </p>
+                      {member.department && (
+                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                          {member.department}
+                        </p>
+                      )}
+                      <div className="mt-2 space-y-1">
+                        {member.assignments.map((assignment) => (
+                          <div
+                            key={assignment._id}
+                            className="flex items-center justify-between gap-3 text-xs text-gray-500"
+                          >
+                            <span className="truncate">
+                              {assignment.dutyTitle} · {assignment.startTime} - {assignment.endTime}
+                            </span>
+                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase text-gray-500">
+                              {assignment.status}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase text-gray-500">
-                      {assignment.status}
-                    </span>
                   </div>
                 ))}
               </div>

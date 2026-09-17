@@ -95,6 +95,7 @@ export type Attendance = {
 
 export type CheckInPayload = {
   duty: string;
+  notes?: string;
 };
 
 // ==========================================
@@ -103,6 +104,7 @@ export type CheckInPayload = {
 
 export type CheckOutPayload = {
   duty: string;
+  notes?: string;
 };
 
 // ==========================================

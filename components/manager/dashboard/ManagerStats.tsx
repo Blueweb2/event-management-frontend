@@ -88,13 +88,13 @@ export default function ManagerStats() {
       description: "Events scheduled",
     },
     {
-      label: "Revenue",
+      label: "Available Staff",
       value: counts.loaded ? String(counts.availableStaff) : "...",
       icon: UserCheck,
       description: "Staff ready for duty",
     },
     {
-      label: "Events",
+      label: "Pending Assignments",
       value: counts.loaded ? String(counts.pendingTasks) : "...",
       icon: ClipboardList,
       description: "Scheduled assignments",

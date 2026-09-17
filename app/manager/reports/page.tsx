@@ -11,12 +11,15 @@ import {
   TrendingUp,
   Wallet,
   Users,
+  Clock,
 } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import { getEvents, type Event } from "@/lib/event.api";
 import { getEstimates, type Estimate, type EstimateStatus } from "@/lib/estimates.api";
 import { getExpenses } from "@/lib/expense.api";
 import type { Expense } from "@/components/manager/expenses/constants";
+import { useReports } from "@/hooks/useReports";
+import { useAuth } from "@/hooks/useAuth";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -36,6 +39,9 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  const { token } = useAuth();
+  const { analytics, fetchAnalytics } = useReports({ token, autoFetch: true });
 
   const loadReports = async () => {
     try {
@@ -54,6 +60,11 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const refreshAll = async () => {
+    loadReports();
+    if (token) fetchAnalytics();
   };
 
   useEffect(() => {
@@ -111,7 +122,7 @@ export default function ReportsPage() {
       <PageHeader
         title="Reports"
         description="Understand event performance, estimate pipeline, guests, and spending."
-        action={<div className="flex gap-2"><button type="button" onClick={() => void loadReports()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#ded5cb] bg-white px-4 py-2.5 text-sm font-semibold text-[#403a34] hover:bg-[#f8f4ee] disabled:opacity-50"><RefreshCw size={16} className={loading ? "animate-spin" : ""} />Refresh</button><button type="button" onClick={exportReport} disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-[#6B5B95] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#57487e] disabled:opacity-50"><Download size={16} />Export CSV</button></div>}
+        action={<div className="flex gap-2"><button type="button" onClick={() => void refreshAll()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-[#ded5cb] bg-white px-4 py-2.5 text-sm font-semibold text-[#403a34] hover:bg-[#f8f4ee] disabled:opacity-50"><RefreshCw size={16} className={loading ? "animate-spin" : ""} />Refresh</button><button type="button" onClick={exportReport} disabled={loading} className="inline-flex items-center gap-2 rounded-xl bg-[#6B5B95] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#57487e] disabled:opacity-50"><Download size={16} />Export CSV</button></div>}
       />
 
       <section className="flex flex-col gap-3 rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm sm:flex-row sm:items-end">
@@ -122,12 +133,13 @@ export default function ReportsPage() {
 
       {error && <div role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>}
       {loading ? <div className="flex min-h-64 items-center justify-center rounded-2xl border border-[#e8e1d8] bg-white"><Loader2 className="animate-spin text-[#6B5B95]" /></div> : <>
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <Metric icon={<TrendingUp size={19} />} label="Event revenue" value={formatCurrency(metrics.revenue)} />
           <Metric icon={<Wallet size={19} />} label="Recorded spending" value={formatCurrency(metrics.spending)} tone="gold" />
           <Metric icon={<BarChart3 size={19} />} label="Estimated margin" value={formatCurrency(metrics.profit)} tone={metrics.profit >= 0 ? "green" : "red"} />
           <Metric icon={<Users size={19} />} label="Event guests" value={metrics.guests.toLocaleString("en-IN")} tone="purple" />
           <Metric icon={<FileText size={19} />} label="Open estimates" value={String(metrics.pendingEstimates)} tone="blue" />
+          <Metric icon={<Clock size={19} />} label="Staff Hours" value={analytics ? `${analytics.totalStaffHours}h` : "0h"} tone="gold" />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
