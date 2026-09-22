@@ -32,6 +32,13 @@ export default function StaffHeader() {
 
       <div className="flex items-center gap-2">
         <Link
+          href="/staff/duties"
+          className="relative flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100"
+          title="Shift Alerts & Duties"
+        >
+          <Bell size={18} />
+        </Link>
+        <Link
           href="/staff/profile"
           className="flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-100"
           title="My Profile"

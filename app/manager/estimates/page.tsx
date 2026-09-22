@@ -12,14 +12,22 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  Sparkles,
   X,
 } from "lucide-react";
 
 import {
   getEstimates,
+  getEstimateById,
   updateEstimateStatus,
   convertEstimateToBooking,
 } from "@/lib/estimates.api";
+import EstimateExportActions from "@/components/estimates/EstimateExportActions";
+import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
+import {
+  type ClientDocumentData,
+  defaultCompanyDetails,
+} from "@/lib/document-formatter";
 
 type EstimateStatus =
   | "DRAFT"
@@ -48,9 +56,24 @@ type Estimate = {
     email: string;
   };
 
+  items?: Array<{
+    _id: string;
+    serviceName: string;
+    category: string;
+    quantity: number;
+    unitLabel?: string;
+    unitPrice: number;
+    total: number;
+  }>;
+  foodMenu?: any;
+
   subtotal: number;
   discount: number;
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
   additionalCharges: number;
+  gstRate?: number;
+  gstAmount?: number;
   total: number;
   currency: string;
 
@@ -58,6 +81,71 @@ type Estimate = {
 
   createdAt: string;
 };
+
+function buildDocumentDataFromEstimate(est: Estimate): ClientDocumentData {
+  return {
+    documentType: est.status === "ACCEPTED" ? "INVOICE" : "ESTIMATE",
+    documentNumber: est.estimateNumber,
+    date: est.createdAt || new Date().toISOString(),
+    status: est.status,
+    company: defaultCompanyDetails,
+    client: {
+      name: est.client?.name || "Client",
+      phone: est.client?.phone || "",
+      email: est.client?.email || "",
+    },
+    event: {
+      name: est.eventName,
+      type: est.eventType,
+      date: est.eventDate,
+      time: est.eventTime,
+      guests: est.guests,
+      location: est.location,
+      description: est.description,
+    },
+    services:
+      Array.isArray(est.items) && est.items.length > 0
+        ? est.items.map((item, idx) => ({
+            id: item._id || String(idx),
+            name: item.serviceName,
+            category: item.category,
+            quantity: item.quantity,
+            unitLabel: item.unitLabel,
+            unitPrice: item.unitPrice,
+            total: item.total,
+          }))
+        : [
+            {
+              id: "1",
+              name: "Full Event Management & Production",
+              quantity: 1,
+              unitPrice: est.subtotal || est.total,
+              total: est.subtotal || est.total,
+            },
+          ],
+    catering:
+      est.foodMenu && est.foodMenu.included
+        ? {
+            included: true,
+            servingType: est.foodMenu.servingType,
+            ratePerGuest: est.foodMenu.ratePerGuest,
+            totalFoodAmount: est.foodMenu.totalFoodAmount,
+            guestCount: est.guests,
+            notes: est.foodMenu.notes,
+            items: est.foodMenu.items,
+          }
+        : undefined,
+    subtotal: est.subtotal || est.total,
+    discount: est.discount || 0,
+    discountType: est.discountType,
+    discountValue: est.discountValue,
+    additionalCharges: est.additionalCharges || 0,
+    gstRate: est.gstRate || 18,
+    gstAmount: est.gstAmount || 0,
+    total: est.total,
+    currency: est.currency || "INR",
+  };
+}
 
 const statusStyles: Record<
   EstimateStatus,
@@ -131,6 +219,33 @@ export default function EstimatesPage() {
 
   const [selectedEstimate, setSelectedEstimate] =
     useState<Estimate | null>(null);
+
+  const [studioModalOpen, setStudioModalOpen] = useState(false);
+  const [studioDocData, setStudioDocData] = useState<ClientDocumentData | null>(null);
+
+  const handleOpenStudio = async (estimate: Estimate) => {
+    try {
+      const full = await getEstimateById(estimate._id);
+      setStudioDocData(buildDocumentDataFromEstimate(full || estimate));
+    } catch {
+      setStudioDocData(buildDocumentDataFromEstimate(estimate));
+    }
+    setStudioModalOpen(true);
+  };
+
+  const handleSelectEstimate = async (estimate: Estimate) => {
+    setSelectedEstimate(estimate);
+    try {
+      const full = await getEstimateById(estimate._id);
+      if (full) {
+        setSelectedEstimate((curr) =>
+          curr && curr._id === estimate._id ? { ...curr, ...full } : curr
+        );
+      }
+    } catch {
+      // Keep existing basic estimate
+    }
+  };
 
   const handleAccept = async (
     estimateId: string,
@@ -333,25 +448,36 @@ export default function EstimatesPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                loadEstimates(true)
-              }
-              disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)] disabled:opacity-50 sm:self-auto"
-            >
-              <RefreshCw
-                size={16}
-                className={
-                  refreshing
-                    ? "animate-spin"
-                    : ""
-                }
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/manager/events")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
+              >
+                <Sparkles size={16} />
+                View Lifecycle Board
+              </button>
 
-              Refresh
-            </button>
+              <button
+                type="button"
+                onClick={() =>
+                  loadEstimates(true)
+                }
+                disabled={refreshing}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)] disabled:opacity-50"
+              >
+                <RefreshCw
+                  size={16}
+                  className={
+                    refreshing
+                      ? "animate-spin"
+                      : ""
+                  }
+                />
+
+                Refresh
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -772,19 +898,25 @@ export default function EstimatesPage() {
                                 )}
                               </button>
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedEstimate(estimate)
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
-                              >
-                                <Eye
-                                  size={15}
-                                />
-
-                                View
-                              </button>
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenStudio(estimate)}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-black transition active:scale-95"
+                                  title="Export Studio (PDF / Invoice)"
+                                >
+                                  <Sparkles size={12} className="text-[#D4AF37]" />
+                                  <span>Export</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectEstimate(estimate)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
+                                >
+                                  <Eye size={14} />
+                                  View
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -891,14 +1023,24 @@ export default function EstimatesPage() {
                           )}
                         </button>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedEstimate(estimate)}
-                          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
-                        >
-                          <Eye size={16} />
-                          View details
-                        </button>
+                        <div className="flex flex-1 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenStudio(estimate)}
+                            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#29241F] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95"
+                          >
+                            <Sparkles size={14} className="text-[#D4AF37]" />
+                            Export
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectEstimate(estimate)}
+                            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
+                          >
+                            <Eye size={16} />
+                            View details
+                          </button>
+                        </div>
                       )}
                     </div>
                   </article>
@@ -1007,6 +1149,56 @@ export default function EstimatesPage() {
               </div>
             </div>
 
+            {/* Detailed Services & Catering Snapshot if loaded */}
+            {selectedEstimate.items && selectedEstimate.items.length > 0 && (
+              <div className="mt-4 rounded-xl border border-[var(--line)] p-4">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#9A6C37] mb-2">
+                  Requested Services ({selectedEstimate.items.length})
+                </p>
+                <div className="space-y-1.5 text-xs">
+                  {selectedEstimate.items.map((it) => (
+                    <div key={it._id} className="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                      <span>{it.serviceName} ({it.quantity} {it.unitLabel || "units"})</span>
+                      <span className="font-semibold">{formatCurrency(it.total, selectedEstimate.currency)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedEstimate.foodMenu && selectedEstimate.foodMenu.included && (
+              <div className="mt-4 rounded-xl border border-[var(--line)] p-4">
+                <div className="flex justify-between items-center mb-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
+                    Catering Package
+                  </p>
+                  <span className="text-xs font-bold">
+                    {formatCurrency(selectedEstimate.foodMenu.totalFoodAmount, selectedEstimate.currency)}
+                  </span>
+                </div>
+                {selectedEstimate.foodMenu.items && selectedEstimate.foodMenu.items.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    Menu items: {selectedEstimate.foodMenu.items.map((i: any) => i.name).join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="mt-5 border-t border-[var(--line)] pt-4">
+              <p className="mb-2 text-xs font-semibold text-[var(--muted)]">Export & Share Options</p>
+              <EstimateExportActions
+                estimateNumber={selectedEstimate.estimateNumber}
+                eventName={selectedEstimate.eventName}
+                clientName={selectedEstimate.client.name}
+                clientPhone={selectedEstimate.client.phone}
+                clientEmail={selectedEstimate.client.email}
+                eventDate={selectedEstimate.eventDate}
+                total={selectedEstimate.total}
+                currency={selectedEstimate.currency}
+                documentData={buildDocumentDataFromEstimate(selectedEstimate)}
+              />
+            </div>
+
             <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -1058,6 +1250,14 @@ export default function EstimatesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {studioDocData && (
+        <ClientDocumentModal
+          open={studioModalOpen}
+          onClose={() => setStudioModalOpen(false)}
+          documentData={studioDocData}
+        />
       )}
     </main>
   );

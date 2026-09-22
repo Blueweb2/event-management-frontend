@@ -6,12 +6,14 @@ interface ManagerHeaderProps {
   title?: string;
   onMenuClick?: () => void;
   onNotificationClick?: () => void;
+  unreadCount?: number;
 }
 
 export default function ManagerHeader({
   title = "Manager",
   onMenuClick,
   onNotificationClick,
+  unreadCount = 0,
 }: ManagerHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
@@ -35,16 +37,21 @@ export default function ManagerHeader({
         <button
           type="button"
           onClick={onNotificationClick}
-          aria-label="Notifications"
+          aria-label={`Notifications (${unreadCount} unread)`}
+          title={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
           className="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 active:scale-95"
         >
           <Bell size={21} strokeWidth={2} />
 
-          {/* Notification indicator */}
-          <span
-            aria-label="Unread notifications"
-            className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"
-          />
+          {/* Dynamic Notification Badge */}
+          {unreadCount > 0 && (
+            <span
+              aria-label={`${unreadCount} unread notifications`}
+              className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-extrabold text-white shadow-sm ring-2 ring-white"
+            >
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </button>
       </div>
     </header>

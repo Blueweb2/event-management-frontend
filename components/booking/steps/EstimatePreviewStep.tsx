@@ -21,6 +21,7 @@ import {
   createEstimate,
   type Estimate,
 } from "@/lib/estimates.api";
+import EstimateExportActions from "@/components/estimates/EstimateExportActions";
 
 type EstimatePreviewStepProps = {
   formData: BookingFormData;
@@ -1176,46 +1177,17 @@ export default function EstimatePreviewStep({
 
         {/* Actions */}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {/* Download */}
-
-          <button
-            type="button"
-            onClick={
-              handleDownload
-            }
-            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-medium text-[var(--sage-dark)] transition hover:bg-[var(--ivory)]"
-          >
-            <Download size={17} />
-
-            Download PDF
-          </button>
-
-          {/* Share */}
-
-          <button
-            type="button"
-            onClick={handleShare}
-            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-medium text-[var(--sage-dark)] transition hover:bg-[var(--ivory)]"
-          >
-            <Share2 size={17} />
-
-            Share Estimate
-          </button>
-
-          {/* Email */}
-
-          <button
-            type="button"
-            onClick={
-              handleEmail
-            }
-            className="flex items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm font-medium text-[var(--sage-dark)] transition hover:bg-[var(--ivory)]"
-          >
-            <Mail size={17} />
-
-            Send by Email
-          </button>
+        <div className="mt-5 flex justify-center">
+          <EstimateExportActions
+            estimateNumber={estimate?.estimateNumber || "DRAFT"}
+            eventName={formData.eventName || "Untitled Event"}
+            clientName={formData.name || "Client"}
+            clientPhone={formData.phone}
+            clientEmail={formData.email}
+            eventDate={formData.eventDate || new Date().toISOString()}
+            total={grandTotal}
+            currency="INR"
+          />
         </div>
 
         {/* ================================== */}

@@ -16,12 +16,14 @@ export async function getExpenses(filters: {
   category?: ExpenseCategory | "All";
   paymentMethod?: PaymentMethod | "All";
   status?: ExpenseStatus | "All";
+  eventId?: string;
 } = {}): Promise<Expense[]> {
   const params = new URLSearchParams();
   if (filters.search) params.set("search", filters.search);
   if (filters.category && filters.category !== "All") params.set("category", filters.category);
   if (filters.paymentMethod && filters.paymentMethod !== "All") params.set("paymentMethod", filters.paymentMethod);
   if (filters.status && filters.status !== "All") params.set("status", filters.status);
+  if (filters.eventId) params.set("eventId", filters.eventId);
   const query = params.toString();
   const result = await get<ExpensesResponse>(`/expenses${query ? `?${query}` : ""}`);
   return (result.data || []).map(normalizeExpense);
@@ -44,4 +46,70 @@ export async function deleteExpense(id: string): Promise<void> {
 export async function toggleExpenseStatus(id: string): Promise<Expense> {
   const result = await patch<ExpenseResponse>(`/expenses/${id}/status`);
   return normalizeExpense(result.data);
+}
+
+export interface EventProfitabilityData {
+  event: {
+    id: string;
+    eventName: string;
+    eventType: string;
+    eventDate: string;
+    eventTime: string;
+    guests: number;
+    location: string;
+    status: string;
+    client?: {
+      name: string;
+      phone: string;
+      email: string;
+    };
+  };
+  revenue: {
+    total: number;
+    cateringRevenue: number;
+    servicesRevenue: number;
+    servicesBreakdown: Array<{
+      name: string;
+      category: string;
+      amount: number;
+      quantity: number;
+      pricingType: string;
+    }>;
+    currency: string;
+  };
+  expenses: {
+    total: number;
+    paid: number;
+    pending: number;
+    cateringExpenses: number;
+    servicesExpenses: number;
+    byCategory: Record<string, number>;
+    distribution: Array<{
+      category: string;
+      amount: number;
+      percentage: number;
+    }>;
+    count: number;
+    list: Expense[];
+  };
+  profitability: {
+    netProfit: number;
+    profitMargin: number;
+    cateringProfit: number;
+    cateringMargin: number;
+    servicesProfit: number;
+    servicesMargin: number;
+    healthStatus: "HEALTHY" | "MODERATE" | "RISK";
+  };
+}
+
+export async function getEventProfitability(
+  eventId: string,
+  token?: string
+): Promise<EventProfitabilityData> {
+  const result = await get<ApiResponse<EventProfitabilityData>>(
+    `/expenses/event/${eventId}/profitability`,
+    token
+  );
+  return result.data;
 }

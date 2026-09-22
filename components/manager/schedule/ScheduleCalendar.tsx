@@ -178,16 +178,16 @@ export default function ScheduleCalendar({
                   onClick={() =>
                     setSelectedDate(date)
                   }
-                  className={`flex min-h-[58px] flex-col items-center justify-center rounded-xl transition ${
+                  className={`flex min-h-[50px] sm:min-h-[58px] p-0.5 sm:p-1 flex-col items-center justify-center rounded-xl transition ${
                     selected
                       ? "bg-[#A88A5A] text-white shadow-sm"
-                      : "bg-white text-[#1F1F1F]"
+                      : "bg-white text-[#1F1F1F] hover:bg-gray-50"
                   }`}
                 >
                   <span
-                    className={`text-[10px] ${
+                    className={`text-[9px] sm:text-[10px] uppercase font-bold ${
                       selected
-                        ? "text-white/80"
+                        ? "text-white/90"
                         : "text-gray-400"
                     }`}
                   >
@@ -199,7 +199,7 @@ export default function ScheduleCalendar({
                     )}
                   </span>
 
-                  <span className="mt-1 text-sm font-semibold">
+                  <span className="mt-0.5 text-xs sm:text-sm font-bold">
                     {date.getDate()}
                   </span>
 

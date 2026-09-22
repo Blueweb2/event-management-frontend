@@ -22,6 +22,7 @@ export interface Expense {
   category: ExpenseCategory;
   amount: number;
   event: string;
+  eventId?: string;
   date: string;
   paymentMethod: PaymentMethod;
   status: ExpenseStatus;

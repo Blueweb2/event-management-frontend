@@ -55,12 +55,16 @@ export function writeAuth(
 
   const storage = getStorage(remember ? "local" : "session");
 
-  if (!storage) {
-    return;
+  if (storage) {
+    storage.setItem(TOKEN_KEY, token);
+    storage.setItem(USER_KEY, JSON.stringify(user));
   }
 
-  storage.setItem(TOKEN_KEY, token);
-  storage.setItem(USER_KEY, JSON.stringify(user));
+  if (typeof document !== "undefined") {
+    const maxAge = remember ? 60 * 60 * 24 * 7 : 60 * 60 * 24; // 7 days or 1 day
+    document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    document.cookie = `user_role=${user.role}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }
 }
 
 export function clearAuth() {
@@ -68,4 +72,9 @@ export function clearAuth() {
   getStorage("local")?.removeItem(USER_KEY);
   getStorage("session")?.removeItem(TOKEN_KEY);
   getStorage("session")?.removeItem(USER_KEY);
+
+  if (typeof document !== "undefined") {
+    document.cookie = "token=; path=/; max-age=0";
+    document.cookie = "user_role=; path=/; max-age=0";
+  }
 }

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import ManagerHeader from "./ManagerHeader";
 import ManagerMenu from "./ManagerMenu";
 import ManagerBottomNav from "./ManagerBottomNav";
+import ManagerNotificationDrawer from "../notifications/ManagerNotificationDrawer";
 import { useAuth } from "@/hooks/useAuth";
+import { useManagerNotifications } from "@/hooks/useManagerNotifications";
 
 interface ManagerLayoutProps {
   children: React.ReactNode;
@@ -17,6 +19,17 @@ export default function ManagerLayout({
   const router = useRouter();
   const { user, token, loading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotifsOpen, setIsNotifsOpen] = useState(false);
+
+  const {
+    notifications,
+    unreadCount,
+    loading: notifsLoading,
+    markAsRead,
+    markAllAsRead,
+    dismissNotification,
+    refresh: refreshNotifs,
+  } = useManagerNotifications();
 
   useEffect(() => {
     if (!loading) {
@@ -58,14 +71,31 @@ export default function ManagerLayout({
 
   return (
     <div className="min-h-screen bg-[#F8F7F3] text-[#1F1F1F]">
-      {/* Header */}
-      <ManagerHeader onMenuClick={openMenu} />
+      {/* Header with Live Notifications Bell */}
+      <ManagerHeader
+        onMenuClick={openMenu}
+        onNotificationClick={() => setIsNotifsOpen(true)}
+        unreadCount={unreadCount}
+      />
 
       {/* Side Menu / Drawer */}
       <ManagerMenu
         isOpen={isMenuOpen}
         onClose={closeMenu}
         onLogout={handleLogout}
+      />
+
+      {/* Slide-over Notifications Drawer */}
+      <ManagerNotificationDrawer
+        open={isNotifsOpen}
+        onClose={() => setIsNotifsOpen(false)}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        loading={notifsLoading}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+        onDismiss={dismissNotification}
+        onRefresh={refreshNotifs}
       />
 
       {/* Page Content */}

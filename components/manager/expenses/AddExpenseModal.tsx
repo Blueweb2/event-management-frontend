@@ -17,6 +17,7 @@ interface AddExpenseModalProps {
   onClose: () => void;
   onSave: (expense: Expense) => Promise<void>;
   editingExpense?: Expense | null;
+  events?: { id: string; name: string }[];
 }
 
 const emptyExpense: Expense = {
@@ -25,6 +26,7 @@ const emptyExpense: Expense = {
   category: "Food",
   amount: 0,
   event: "",
+  eventId: "",
   date: "",
   paymentMethod: "UPI",
   status: "Pending",
@@ -36,6 +38,7 @@ export default function AddExpenseModal({
   onClose,
   onSave,
   editingExpense,
+  events = [],
 }: AddExpenseModalProps) {
   const [form, setForm] = useState<Expense>(emptyExpense);
   const [saving, setSaving] = useState(false);
@@ -198,19 +201,66 @@ export default function AddExpenseModal({
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[#403a34]">
-              Event
+              Associated Event
             </label>
 
-            <input
-              type="text"
-              value={form.event}
-              onChange={(event) =>
-                updateField("event", event.target.value)
-              }
-              placeholder="e.g. Wedding Celebration"
-              className="h-11 w-full rounded-xl border border-[#ded5cb] bg-[#fdfbf8] px-3 text-sm outline-none focus:border-[#b8894b]"
-              required
-            />
+            {events.length > 0 ? (
+              <div className="space-y-2">
+                <select
+                  value={form.eventId || (form.event ? "custom" : "")}
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    if (selectedId === "custom") {
+                      updateField("eventId", "");
+                    } else {
+                      const matched = events.find((ev) => ev.id === selectedId);
+                      if (matched) {
+                        setForm((curr) => ({
+                          ...curr,
+                          eventId: matched.id,
+                          event: matched.name,
+                        }));
+                      } else {
+                        updateField("eventId", "");
+                      }
+                    }
+                  }}
+                  className="h-11 w-full rounded-xl border border-[#ded5cb] bg-[#fdfbf8] px-3 text-sm outline-none focus:border-[#b8894b]"
+                >
+                  <option value="">Select an active event</option>
+                  {events.map((evt) => (
+                    <option key={evt.id} value={evt.id}>
+                      {evt.name}
+                    </option>
+                  ))}
+                  <option value="custom">Other / Custom Event Name</option>
+                </select>
+
+                {(!form.eventId || form.eventId === "custom") && (
+                  <input
+                    type="text"
+                    value={form.event}
+                    onChange={(event) =>
+                      updateField("event", event.target.value)
+                    }
+                    placeholder="Enter custom event name"
+                    className="h-11 w-full rounded-xl border border-[#ded5cb] bg-[#fdfbf8] px-3 text-sm outline-none focus:border-[#b8894b]"
+                    required
+                  />
+                )}
+              </div>
+            ) : (
+              <input
+                type="text"
+                value={form.event}
+                onChange={(event) =>
+                  updateField("event", event.target.value)
+                }
+                placeholder="e.g. Wedding Celebration"
+                className="h-11 w-full rounded-xl border border-[#ded5cb] bg-[#fdfbf8] px-3 text-sm outline-none focus:border-[#b8894b]"
+                required
+              />
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

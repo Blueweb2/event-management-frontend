@@ -5,6 +5,7 @@ import {
   patch,
   del,
 } from "@/lib/api";
+import type { FoodMenuSelection } from "./food.api";
 
 // ==========================================
 // Types
@@ -22,6 +23,20 @@ export interface EventClient {
   country?: string;
 }
 
+export interface BookingServiceSnapshot {
+  _id?: string;
+  serviceId: string | { _id: string; name?: string };
+  optionId?: string | null;
+  serviceName: string;
+  category: string;
+  description?: string;
+  quantity: number;
+  pricingType: string;
+  unitLabel?: string;
+  unitPrice: number;
+  total: number;
+}
+
 export interface EventBooking {
   _id: string;
 
@@ -33,6 +48,15 @@ export interface EventBooking {
   location: string;
 
   description?: string;
+
+  services?: BookingServiceSnapshot[];
+  foodMenu?: FoodMenuSelection;
+
+  subtotal?: number;
+  discountAmount?: number;
+  additionalCharges?: number;
+  gstRate?: number;
+  gstAmount?: number;
 
   total?: number;
   currency?: string;
