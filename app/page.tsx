@@ -6,7 +6,7 @@ export default function HomePage() {
       <section
         className="relative h-full bg-cover bg-center"
         style={{
-          backgroundImage: "url('/images/event-hero.jpg')",
+          backgroundImage: "url('/images/iPhone 16 & 17 Pro Max - 3.jpg.jpeg')",
         }}
       >
         <Link
