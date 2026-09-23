@@ -15,26 +15,26 @@ onMenuClick?: () => void;
 }
 
 const navigationItems = [
-{
-label: "Home",
-href: "/manager",
-icon: LayoutDashboard,
-},
-{
-label: "Staff",
-href: "/manager/staff",
-icon: Users,
-},
-{
-label: "Tasks",
-href: "/manager/tasks",
-icon: ClipboardList,
-},
-{
-label: "Schedule",
-href: "/manager/schedule",
-icon: CalendarDays,
-},
+  {
+    label: "Home",
+    href: "/manager",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Operations",
+    href: "/manager/duties",
+    icon: ClipboardList,
+  },
+  {
+    label: "Events",
+    href: "/manager/events",
+    icon: CalendarDays,
+  },
+  {
+    label: "Staff",
+    href: "/manager/staff",
+    icon: Users,
+  },
 ];
 
 export default function ManagerBottomNav({

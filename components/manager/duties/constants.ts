@@ -15,6 +15,7 @@ export interface Duty {
   staffName: string;
   description: string;
   status: DutyStatus;
+  checklist?: Array<{ _id?: string; text: string; completed: boolean }>;
 }
 
 export const dutyStatuses: DutyStatus[] = [

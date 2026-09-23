@@ -2,6 +2,7 @@ import {
   get,
   post,
   put,
+  patch,
   del,
   type ApiResponse,
 } from "./api";
@@ -221,3 +222,48 @@ export const deleteAssignment =
       token,
     );
   };
+
+// ==========================================
+// ACCEPT ASSIGNMENT (Staff Shift Acceptance)
+// PATCH /api/assignments/:id/accept
+// ==========================================
+
+export const acceptAssignment = async (
+  id: string,
+  token: string
+): Promise<Assignment> => {
+  if (!id) {
+    throw new Error("Assignment ID is required");
+  }
+
+  const result = await patch<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${id}/accept`, {}, token);
+
+  return result.data.assignment;
+};
+
+// ==========================================
+// UPDATE CHECKLIST SUB-TASKS
+// PATCH /api/assignments/:id/checklist
+// ==========================================
+
+export const updateAssignmentChecklist = async (
+  id: string,
+  checklist: Array<{ _id?: string; text: string; completed: boolean }>,
+  token: string
+): Promise<Assignment> => {
+  if (!id) {
+    throw new Error("Assignment ID is required");
+  }
+
+  const result = await patch<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${id}/checklist`, { checklist }, token);
+
+  return result.data.assignment;
+};

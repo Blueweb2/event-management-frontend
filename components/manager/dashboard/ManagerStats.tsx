@@ -6,6 +6,9 @@ import {
   CalendarDays,
   UserCheck,
   ClipboardList,
+  IndianRupee,
+  FileText,
+  Clock,
 } from "lucide-react";
 
 import ManagerStatCard from "./ManagerStatCard";
@@ -17,6 +20,9 @@ export default function ManagerStats() {
     upcomingEvents: 0,
     availableStaff: 0,
     pendingTasks: 0,
+    totalRevenue: 0,
+    pendingEstimates: 0,
+    totalStaffHours: 0,
     loaded: false,
   });
 
@@ -25,20 +31,30 @@ export default function ManagerStats() {
 
     async function fetchStats() {
       try {
-        const [eventsRes, staffRes, assignmentsRes] = await Promise.allSettled([
+        const [eventsRes, staffRes, assignmentsRes, estimatesRes, analyticsRes] = await Promise.allSettled([
           api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/events"),
           api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/users/staff"),
           api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments"),
+          api<{ success: boolean; data?: any[] }>("/estimates"),
+          api<{ success: boolean; data?: { totalStaffHours?: number; totalRevenue?: number } }>("/reports/analytics"),
         ]);
 
         let eventCount = 0;
         let staffCount = 0;
         let assignmentCount = 0;
+        let pendingEstCount = 0;
+        let revenue = 0;
+        let staffHours = 0;
 
         if (eventsRes.status === "fulfilled" && eventsRes.value) {
-          eventCount =
-            eventsRes.value.pagination?.total ??
-            (Array.isArray(eventsRes.value.data) ? eventsRes.value.data.length : 0);
+          const eventsList = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
+          eventCount = eventsRes.value.pagination?.total ?? eventsList.length;
+          
+          // Calculate revenue from confirmed events
+          revenue = eventsList.reduce((sum: number, ev: any) => {
+            const bookingTotal = typeof ev.booking === "object" ? Number(ev.booking?.total || 0) : 0;
+            return sum + bookingTotal;
+          }, 0);
         }
 
         if (staffRes.status === "fulfilled" && staffRes.value) {
@@ -53,12 +69,28 @@ export default function ManagerStats() {
             (Array.isArray(assignmentsRes.value.data) ? assignmentsRes.value.data.length : 0);
         }
 
+        if (estimatesRes.status === "fulfilled" && estimatesRes.value && Array.isArray(estimatesRes.value.data)) {
+          pendingEstCount = estimatesRes.value.data.filter((e: any) =>
+            ["DRAFT", "SENT", "VIEWED"].includes(e.status)
+          ).length;
+        }
+
+        if (analyticsRes.status === "fulfilled" && analyticsRes.value?.data) {
+          staffHours = analyticsRes.value.data.totalStaffHours || 0;
+          if (analyticsRes.value.data.totalRevenue) {
+            revenue = analyticsRes.value.data.totalRevenue;
+          }
+        }
+
         if (isMounted) {
           setCounts({
             totalStaff: staffCount,
             upcomingEvents: eventCount,
             availableStaff: Math.max(staffCount - assignmentCount, 0),
             pendingTasks: assignmentCount,
+            totalRevenue: revenue,
+            pendingEstimates: pendingEstCount,
+            totalStaffHours: staffHours,
             loaded: true,
           });
         }
@@ -74,30 +106,33 @@ export default function ManagerStats() {
     };
   }, []);
 
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(val);
+
   const stats = [
     {
-      label: "Staff Members",
-      value: counts.loaded ? String(counts.totalStaff) : "...",
-      icon: Users,
-      description: "Registered team members",
+      label: "Total Revenue",
+      value: counts.loaded ? formatCurrency(counts.totalRevenue) : "...",
+      icon: IndianRupee,
+      description: "Confirmed event bookings",
     },
     {
-      label: "Upcoming Events",
+      label: "Pending Estimates",
+      value: counts.loaded ? String(counts.pendingEstimates) : "...",
+      icon: FileText,
+      description: "Awaiting client response",
+    },
+    {
+      label: "Event Volume",
       value: counts.loaded ? String(counts.upcomingEvents) : "...",
       icon: CalendarDays,
-      description: "Events scheduled",
+      description: "Total events in pipeline",
     },
     {
-      label: "Available Staff",
-      value: counts.loaded ? String(counts.availableStaff) : "...",
-      icon: UserCheck,
-      description: "Staff ready for duty",
-    },
-    {
-      label: "Pending Assignments",
-      value: counts.loaded ? String(counts.pendingTasks) : "...",
-      icon: ClipboardList,
-      description: "Scheduled assignments",
+      label: "Staff Hours Worked",
+      value: counts.loaded ? `${counts.totalStaffHours} hrs` : "...",
+      icon: Clock,
+      description: "Log hours across shifts",
     },
   ];
 

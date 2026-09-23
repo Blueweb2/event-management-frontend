@@ -1,14 +1,22 @@
-import StaffEventsHeader from "@/components/staff/events/StaffEventsHeader";
-import StaffEventsList from "@/components/staff/events/StaffEventsList";
+"use client";
 
-import { staffEvents } from "@/components/staff/constants";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
-export default function StaffEventsPage() {
+export default function StaffEventsRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/staff/duties");
+  }, [router]);
+
   return (
-    <main className="py-5 sm:py-6">
-      <StaffEventsHeader />
-
-      <StaffEventsList events={staffEvents} />
-    </main>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#9a6c37]/10 text-[#9a6c37]">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+      <p className="text-xs font-medium text-gray-500">Redirecting to My Shifts...</p>
+    </div>
   );
 }

@@ -1,32 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { Building2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Building2, CheckCircle2 } from "lucide-react";
+
+const STORAGE_KEY = "antigravity_business_settings";
 
 export default function BusinessSettings() {
-  const [businessName, setBusinessName] = useState(
-    "Elegant Events"
-  );
+  const [businessName, setBusinessName] = useState("Elegant Events");
+  const [email, setEmail] = useState("hello@elegantevents.com");
+  const [phone, setPhone] = useState("+91 98765 43210");
+  const [address, setAddress] = useState("Kochi, Kerala");
+  const [message, setMessage] = useState("");
 
-  const [email, setEmail] = useState(
-    "hello@elegantevents.com"
-  );
-
-  const [phone, setPhone] = useState(
-    "+91 98765 43210"
-  );
-
-  const [address, setAddress] = useState(
-    "Kochi, Kerala"
-  );
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.businessName) setBusinessName(parsed.businessName);
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.address) setAddress(parsed.address);
+      }
+    } catch {}
+  }, []);
 
   const handleSave = () => {
-    console.log({
-      businessName,
-      email,
-      phone,
-      address,
-    });
+    const payload = {
+      businessName: businessName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      setMessage("Business information saved successfully.");
+      setTimeout(() => setMessage(""), 4000);
+    } catch {
+      setMessage("Failed to save business information.");
+    }
   };
 
   return (
@@ -43,7 +55,7 @@ export default function BusinessSettings() {
             </h2>
 
             <p className="text-sm text-[#9b938a]">
-              Manage your event business details.
+              Manage your event business details for invoice exports and branding.
             </p>
           </div>
         </div>
@@ -108,13 +120,21 @@ export default function BusinessSettings() {
           />
         </div>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          className="rounded-xl bg-[#b8894b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#a7773f]"
-        >
-          Save Business Details
-        </button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="rounded-xl bg-[#b8894b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#a7773f] transition"
+          >
+            Save Business Details
+          </button>
+          {message && (
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#557555]">
+              <CheckCircle2 size={15} />
+              <span>{message}</span>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -35,54 +35,53 @@ export default function ScheduleFilters({
   onEndDateChange,
 }: ScheduleFiltersProps) {
   return (
-    <div className="space-y-3 bg-[#F8F7F3] px-4 py-3">
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-gray-500 shadow-sm">
-        <SlidersHorizontal size={16} />
+    <div className="space-y-3.5 rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none pb-1 sm:pb-0">
+        <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
+          <SlidersHorizontal size={15} />
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {filters.map((filter) => {
+            const active = activeFilter === filter;
+
+            return (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => onFilterChange(filter)}
+                className={`min-h-8 sm:min-h-9 shrink-0 rounded-xl px-3 sm:px-4 text-xs font-semibold transition whitespace-nowrap ${
+                  active
+                    ? "bg-[#9a7b4f] text-white shadow-xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {filter}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {filters.map((filter) => {
-        const active =
-          activeFilter === filter;
-
-        return (
-          <button
-            key={filter}
-            type="button"
-            onClick={() =>
-              onFilterChange(filter)
-            }
-            className={`min-h-9 shrink-0 rounded-lg px-4 text-xs font-medium transition ${
-              active
-                ? "bg-[#A88A5A] text-white"
-                : "bg-white text-gray-600"
-            }`}
-          >
-            {filter}
-          </button>
-        );
-      })}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs font-medium text-gray-600">
-          From
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <label className="text-xs font-semibold text-[#403a34]">
+          From Date
           <input
             type="date"
             value={startDate}
             onChange={(event) => onStartDateChange(event.target.value)}
-            className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-[#A88A5A]"
+            className="mt-1 h-10 w-full rounded-xl border border-[#e3dbd2] bg-[#fdfbf8] px-3 text-xs text-[#29241f] outline-none focus:border-[#b8894b]"
           />
         </label>
 
-        <label className="text-xs font-medium text-gray-600">
-          To
+        <label className="text-xs font-semibold text-[#403a34]">
+          To Date
           <input
             type="date"
             value={endDate}
             min={startDate || undefined}
             onChange={(event) => onEndDateChange(event.target.value)}
-            className="mt-1 h-10 w-full rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 outline-none focus:border-[#A88A5A]"
+            className="mt-1 h-10 w-full rounded-xl border border-[#e3dbd2] bg-[#fdfbf8] px-3 text-xs text-[#29241f] outline-none focus:border-[#b8894b]"
           />
         </label>
       </div>

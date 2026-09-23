@@ -1,6 +1,8 @@
 import {
   get,
   post,
+  patch,
+  del,
   ApiResponse,
 } from "./api";
 
@@ -11,6 +13,7 @@ import type {
   MarkAbsentPayload,
   AttendanceFilters,
   AttendanceListResponse,
+  UpdateAttendancePayload,
 } from "@/types/attendance";
 
 // ==========================================
@@ -170,3 +173,44 @@ export const markAbsent = async (
 
   return result.data.attendance;
 };
+
+// ==========================================
+// UPDATE ATTENDANCE (MANUAL CORRECTION)
+// PATCH /api/attendance/:id
+// ==========================================
+
+export const updateAttendance = async (
+  id: string,
+  payload: UpdateAttendancePayload,
+  token: string,
+): Promise<Attendance> => {
+  const result = await patch<
+    ApiResponse<{
+      attendance: Attendance;
+    }>
+  >(`/attendance/${id}`, payload, token);
+
+  return result.data.attendance;
+};
+
+// ==========================================
+// DELETE ATTENDANCE
+// DELETE /api/attendance/:id
+// ==========================================
+
+export const deleteAttendance = async (
+  id: string,
+  token: string,
+): Promise<{ success: boolean; message?: string }> => {
+  return del<{ success: boolean; message?: string }>(`/attendance/${id}`, token);
+};
+
+export const checkInStaff = async (
+  token: string,
+  payload: CheckInPayload,
+): Promise<Attendance> => checkIn(payload, token);
+
+export const checkOutStaff = async (
+  token: string,
+  payload: CheckOutPayload,
+): Promise<Attendance> => checkOut(payload, token);

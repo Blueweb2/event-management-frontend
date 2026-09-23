@@ -16,6 +16,8 @@ interface ExpensesFiltersProps {
   category: ExpenseCategory | "All";
   paymentMethod: PaymentMethod | "All";
   status: ExpenseStatus | "All";
+  eventFilter?: string;
+  eventOptions?: { id: string; name: string }[];
   onSearchChange: (value: string) => void;
   onCategoryChange: (
     value: ExpenseCategory | "All"
@@ -26,6 +28,7 @@ interface ExpensesFiltersProps {
   onStatusChange: (
     value: ExpenseStatus | "All"
   ) => void;
+  onEventFilterChange?: (value: string) => void;
   onClear: () => void;
 }
 
@@ -34,17 +37,21 @@ export default function ExpensesFilters({
   category,
   paymentMethod,
   status,
+  eventFilter = "All",
+  eventOptions = [],
   onSearchChange,
   onCategoryChange,
   onPaymentMethodChange,
   onStatusChange,
+  onEventFilterChange,
   onClear,
 }: ExpensesFiltersProps) {
   const hasFilters =
     search ||
     category !== "All" ||
     paymentMethod !== "All" ||
-    status !== "All";
+    status !== "All" ||
+    (eventFilter && eventFilter !== "All");
 
   return (
     <section className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm sm:p-5">
@@ -59,7 +66,7 @@ export default function ExpensesFilters({
         </h2>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <div className="relative">
           <Search
             size={17}
@@ -76,6 +83,21 @@ export default function ExpensesFilters({
             className="h-11 w-full rounded-xl border border-[#ded5cb] bg-[#fdfbf8] pl-10 pr-3 text-sm text-[#29241f] outline-none transition placeholder:text-[#aaa198] focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/10"
           />
         </div>
+
+        <select
+          value={eventFilter}
+          onChange={(event) =>
+            onEventFilterChange?.(event.target.value)
+          }
+          className="h-11 rounded-xl border border-[#ded5cb] bg-[#fdfbf8] px-3 text-sm text-[#403a34] outline-none focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/10"
+        >
+          <option value="All">All Events</option>
+          {eventOptions.map((evt) => (
+            <option key={evt.id} value={evt.id}>
+              {evt.name}
+            </option>
+          ))}
+        </select>
 
         <select
           value={category}

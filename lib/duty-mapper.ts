@@ -10,7 +10,10 @@ const getEvent = (assignment: Assignment) =>
 const getStaff = (assignment: Assignment) =>
   typeof assignment.staff === "string"
     ? { id: assignment.staff }
-    : assignment.staff;
+    : {
+        ...assignment.staff,
+        id: assignment.staff.id || (assignment.staff as any)._id,
+      };
 
 const formatDate = (date: string) => {
   if (!date) return "";
@@ -41,5 +44,6 @@ export const mapAssignmentToDuty = (
     staffName: "name" in staff ? staff.name : "Staff unavailable",
     description: assignment.description ?? "",
     status: assignment.status,
+    checklist: assignment.checklist || [],
   };
 };

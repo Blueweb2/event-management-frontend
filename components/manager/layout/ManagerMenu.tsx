@@ -47,13 +47,13 @@ const menuItems = [
   },
 
   // ==========================================
-  // Core Management
+  // Core Management & Operations
   // ==========================================
 
   {
-    label: "Clients",
-    href: "/manager/clients",
-    icon: UserRound,
+    label: "Operations Hub",
+    href: "/manager/duties",
+    icon: ClipboardList,
   },
   {
     label: "Events",
@@ -64,6 +64,11 @@ const menuItems = [
     label: "Estimates",
     href: "/manager/estimates",
     icon: FileText,
+  },
+  {
+    label: "Clients",
+    href: "/manager/clients",
+    icon: UserRound,
   },
   {
     label: "Services",
@@ -77,28 +82,13 @@ const menuItems = [
   },
 
   // ==========================================
-  // Staff Management
+  // Staff & Team Management
   // ==========================================
 
   {
-    label: "Staff",
+    label: "Staff Members",
     href: "/manager/staff",
     icon: Users,
-  },
-  {
-    label: "Duties",
-    href: "/manager/duties",
-    icon: ClipboardList,
-  },
-  {
-    label: "Tasks",
-    href: "/manager/tasks",
-    icon: ClipboardList,
-  },
-  {
-    label: "Schedule",
-    href: "/manager/schedule",
-    icon: CalendarDays,
   },
   {
     label: "Availability",

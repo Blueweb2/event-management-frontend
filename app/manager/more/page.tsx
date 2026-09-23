@@ -1,127 +1,22 @@
-import Link from "next/link";
-import {
-  BarChart3,
-  CalendarDays,
-  DollarSign,
-  Settings,
-  Users,
-  UserRound,
-  Utensils,
-} from "lucide-react";
+"use client";
 
-// ==========================================
-// Menu Items
-// ==========================================
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
-const menuItems = [
-  {
-    label: "Clients",
-    description: "Manage client profiles and history",
-    href: "/manager/clients",
-    icon: UserRound,
-  },
-  {
-    label: "Events",
-    description: "Manage confirmed events and schedules",
-    href: "/manager/events",
-    icon: CalendarDays,
-  },
-  {
-    label: "Staff",
-    description: "Manage staff members and profiles",
-    href: "/manager/staff",
-    icon: Users,
-  },
-  {
-    label: "Expenses",
-    description: "Track event-related expenses",
-    href: "/manager/expenses",
-    icon: DollarSign,
-  },
-  {
-    label: "Food",
-    description: "Manage food and menu options",
-    href: "/manager/food",
-    icon: Utensils,
-  },
-  {
-    label: "Reports",
-    description: "View business performance",
-    href: "/manager/reports",
-    icon: BarChart3,
-  },
-  {
-    label: "Settings",
-    description: "Manage dashboard settings",
-    href: "/manager/settings",
-    icon: Settings,
-  },
-];
+export default function MoreRedirectPage() {
+  const router = useRouter();
 
-// ==========================================
-// More Page
-// ==========================================
+  useEffect(() => {
+    router.replace("/manager/settings");
+  }, [router]);
 
-export default function MorePage() {
   return (
-    <div className="space-y-6">
-      {/* ======================================
-          Header
-      ====================================== */}
-
-      <div>
-        <p className="text-sm font-semibold text-[#9a6c37]">
-          Manager
-        </p>
-
-        <h1 className="mt-1 text-2xl font-bold text-[#29241f]">
-          More
-        </h1>
-
-        <p className="mt-2 text-sm text-[#756d64]">
-          Additional management tools and settings.
-        </p>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#9A7B4F]/10 text-[#9A7B4F]">
+        <Loader2 className="h-6 w-6 animate-spin" />
       </div>
-
-      {/* ======================================
-          Menu
-      ====================================== */}
-
-      <div className="grid gap-3">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-4 rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm transition hover:border-[#d7c4aa] hover:bg-[#fdfbf8]"
-            >
-              {/* ==================================
-                  Icon
-              ================================== */}
-
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
-                <Icon size={20} />
-              </div>
-
-              {/* ==================================
-                  Content
-              ================================== */}
-
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#29241f]">
-                  {item.label}
-                </p>
-
-                <p className="mt-1 text-xs text-[#8d847b]">
-                  {item.description}
-                </p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      <p className="text-xs font-medium text-gray-500">Redirecting to Settings...</p>
     </div>
   );
 }

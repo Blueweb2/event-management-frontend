@@ -4,14 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  CalendarDays,
   ClipboardList,
   Clock3,
+  User,
   Menu,
 } from "lucide-react";
 
 interface StaffBottomNavProps {
-  onMore: () => void;
+  onMore?: () => void;
 }
 
 export default function StaffBottomNav({ onMore }: StaffBottomNavProps) {
@@ -19,13 +19,13 @@ export default function StaffBottomNav({ onMore }: StaffBottomNavProps) {
 
   const navItems = [
     { label: "Home", href: "/staff", icon: LayoutDashboard },
-    { label: "Duties", href: "/staff/duties", icon: ClipboardList },
-    { label: "Events", href: "/staff/events", icon: CalendarDays },
-    { label: "Schedule", href: "/staff/schedule", icon: Clock3 },
+    { label: "Shifts", href: "/staff/duties", icon: ClipboardList },
+    { label: "Attendance", href: "/staff/attendance", icon: Clock3 },
+    { label: "Profile", href: "/staff/profile", icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#e8e1d8] bg-white px-2 py-2 sm:px-6 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e8e1d8] bg-white/95 backdrop-blur-md px-3 py-2 sm:px-6 lg:hidden shadow-lg">
       <div className="mx-auto flex max-w-md items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -38,26 +38,31 @@ export default function StaffBottomNav({ onMore }: StaffBottomNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-medium transition ${
+              className={`relative flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 text-[11px] font-bold transition-all duration-200 active:scale-95 ${
                 isActive
                   ? "text-[#9a6c37]"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-400 hover:text-gray-800"
               }`}
             >
-              <Icon size={18} strokeWidth={isActive ? 2.3 : 1.8} />
+              {isActive && (
+                <span className="absolute inset-0 rounded-2xl bg-[#9a6c37]/10 -z-10 animate-fade-in" />
+              )}
+              <Icon size={20} strokeWidth={isActive ? 2.4 : 1.8} />
               <span>{item.label}</span>
             </Link>
           );
         })}
 
-        <button
-          type="button"
-          onClick={onMore}
-          className="flex flex-col items-center gap-1 rounded-xl px-3 py-1 text-[11px] font-medium text-gray-500 hover:text-gray-900"
-        >
-          <Menu size={18} />
-          <span>More</span>
-        </button>
+        {onMore && (
+          <button
+            type="button"
+            onClick={onMore}
+            className="flex flex-col items-center gap-1 rounded-2xl px-3.5 py-1.5 text-[11px] font-bold text-gray-400 hover:text-gray-800 transition active:scale-95"
+          >
+            <Menu size={20} />
+            <span>More</span>
+          </button>
+        )}
       </div>
     </nav>
   );

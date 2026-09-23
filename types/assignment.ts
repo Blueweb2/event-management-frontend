@@ -92,6 +92,8 @@ export type Assignment = {
 
   notes?: string;
 
+  checklist?: Array<{ _id?: string; text: string; completed: boolean }>;
+
   assignedBy:
     | string
     | AssignmentCreatedBy;
@@ -123,6 +125,8 @@ export type CreateAssignmentPayload = {
   endTime: string;
 
   notes?: string;
+
+  checklist?: Array<{ text: string; completed?: boolean }>;
 };
 
 // ==========================================
@@ -147,6 +151,8 @@ export type UpdateAssignmentPayload = {
   status?: AssignmentStatus;
 
   notes?: string;
+
+  checklist?: Array<{ text: string; completed: boolean }>;
 };
 
 // ==========================================

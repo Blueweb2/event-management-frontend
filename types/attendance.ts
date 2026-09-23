@@ -176,3 +176,17 @@ export type AttendanceResponse = {
     attendance: Attendance;
   };
 };
+
+// ==========================================
+// UPDATE ATTENDANCE PAYLOAD
+// ==========================================
+
+export type UpdateAttendancePayload = {
+  checkIn?: string | null;
+
+  checkOut?: string | null;
+
+  status?: AttendanceStatus;
+
+  notes?: string;
+};

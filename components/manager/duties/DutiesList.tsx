@@ -11,6 +11,7 @@ interface DutiesListProps {
   onEdit: (duty: Duty) => void;
   onDelete: (duty: Duty) => void;
   onStatusChange: (duty: Duty) => void;
+  onToggleChecklist?: (dutyId: string, updatedChecklist: Array<{ _id?: string; text: string; completed: boolean }>) => void;
 }
 
 export default function DutiesList({
@@ -19,6 +20,7 @@ export default function DutiesList({
   onEdit,
   onDelete,
   onStatusChange,
+  onToggleChecklist,
 }: DutiesListProps) {
   return (
     <section>
@@ -58,6 +60,7 @@ export default function DutiesList({
               onEdit={onEdit}
               onDelete={onDelete}
               onStatusChange={onStatusChange}
+              onToggleChecklist={onToggleChecklist}
             />
           ))}
         </div>

@@ -23,9 +23,12 @@ import {
   updateExpense,
   type ExpensePayload,
 } from "@/lib/expense.api";
+import { getEvents } from "@/lib/event.api";
 
 export default function ExpensesPage() {
   const [expenseList, setExpenseList] = useState<Expense[]>([]);
+  const [eventOptions, setEventOptions] = useState<{ id: string; name: string }[]>([]);
+  const [eventFilter, setEventFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -55,7 +58,19 @@ export default function ExpensesPage() {
     try {
       setLoading(true);
       setError("");
-      setExpenseList(await getExpenses());
+      const [expenses, eventsRes] = await Promise.all([
+        getExpenses(),
+        getEvents({ limit: 100 }).catch(() => ({ data: [] })),
+      ]);
+      setExpenseList(expenses);
+      if (eventsRes && Array.isArray(eventsRes.data)) {
+        setEventOptions(
+          eventsRes.data.map((evt) => ({
+            id: evt._id,
+            name: evt.eventName,
+          }))
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load expenses.");
     } finally {
@@ -70,6 +85,7 @@ export default function ExpensesPage() {
 
   const filteredExpenses = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const selectedEventObj = eventOptions.find((e) => e.id === eventFilter);
 
     return expenseList.filter((expense) => {
       const matchesSearch =
@@ -91,11 +107,18 @@ export default function ExpensesPage() {
         status === "All" ||
         expense.status === status;
 
+      const matchesEvent =
+        eventFilter === "All" ||
+        expense.eventId === eventFilter ||
+        (selectedEventObj &&
+          expense.event.toLowerCase() === selectedEventObj.name.toLowerCase());
+
       return (
         matchesSearch &&
         matchesCategory &&
         matchesPayment &&
-        matchesStatus
+        matchesStatus &&
+        matchesEvent
       );
     });
   }, [
@@ -104,6 +127,8 @@ export default function ExpensesPage() {
     category,
     paymentMethod,
     status,
+    eventFilter,
+    eventOptions,
   ]);
 
   const handleAddExpense = () => {
@@ -122,6 +147,7 @@ export default function ExpensesPage() {
       category: expense.category,
       amount: expense.amount,
       event: expense.event,
+      eventId: expense.eventId || undefined,
       date: expense.date,
       paymentMethod: expense.paymentMethod,
       status: expense.status,
@@ -155,6 +181,7 @@ export default function ExpensesPage() {
     setCategory("All");
     setPaymentMethod("All");
     setStatus("All");
+    setEventFilter("All");
   };
 
   return (
@@ -172,10 +199,13 @@ export default function ExpensesPage() {
         category={category}
         paymentMethod={paymentMethod}
         status={status}
+        eventFilter={eventFilter}
+        eventOptions={eventOptions}
         onSearchChange={setSearch}
         onCategoryChange={setCategory}
         onPaymentMethodChange={setPaymentMethod}
         onStatusChange={setStatus}
+        onEventFilterChange={setEventFilter}
         onClear={clearFilters}
       />
 
@@ -198,6 +228,7 @@ export default function ExpensesPage() {
         }}
         onSave={handleSaveExpense}
         editingExpense={editingExpense}
+        events={eventOptions}
       />
     </div>
   );

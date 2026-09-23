@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Sparkles } from "lucide-react";
 
 import {
   getEventById,
@@ -11,6 +11,13 @@ import {
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import EventServiceStaffingMatrix from "@/components/manager/events/EventServiceStaffingMatrix";
+import EventProfitabilityCard from "@/components/manager/events/EventProfitabilityCard";
+import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
+import {
+  type ClientDocumentData,
+  defaultCompanyDetails,
+} from "@/lib/document-formatter";
 import { useAssignments } from "@/hooks/useAssignments";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaff } from "@/hooks/useStaff";
@@ -40,6 +47,7 @@ export default function ManagerEventDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState("");
+  const [exportModalOpen, setExportModalOpen] = useState(false);
 
   const [assignmentForm, setAssignmentForm] = useState({
     staff: "",
@@ -309,157 +317,262 @@ export default function ManagerEventDetailsPage() {
   // Render
   // ==========================================
 
+  const eventDocumentData: ClientDocumentData | null = event
+    ? {
+        documentType: "INVOICE",
+        documentNumber: `INV-${event._id.slice(-6).toUpperCase()}`,
+        date: new Date().toISOString().slice(0, 10),
+        status: event.status === "Completed" ? "PAID" : "CONFIRMED",
+        company: defaultCompanyDetails,
+        client: {
+          name:
+            typeof event.client === "object"
+              ? event.client.name
+              : "Valued Client",
+          phone:
+            typeof event.client === "object" ? event.client.phone : "",
+          email:
+            typeof event.client === "object" ? event.client.email : "",
+          address:
+            typeof event.client === "object"
+              ? event.client.address
+              : undefined,
+        },
+        event: {
+          name: event.eventName,
+          type: event.eventType,
+          date: event.eventDate,
+          time: event.eventTime,
+          guests: event.guests,
+          location: event.location,
+          description: event.description || event.notes,
+        },
+        services:
+          typeof event.booking === "object" &&
+          Array.isArray(event.booking.services) &&
+          event.booking.services.length > 0
+            ? event.booking.services.map((s, idx) => ({
+                id: s._id || String(idx),
+                name: s.serviceName,
+                category: s.category,
+                quantity: s.quantity,
+                unitLabel: s.unitLabel,
+                unitPrice: s.unitPrice,
+                total: s.total,
+              }))
+            : [
+                {
+                  id: "1",
+                  name: "Full Event Management & Production",
+                  quantity: 1,
+                  unitPrice:
+                    typeof event.booking === "object" &&
+                    event.booking.total
+                      ? event.booking.total
+                      : 0,
+                  total:
+                    typeof event.booking === "object" &&
+                    event.booking.total
+                      ? event.booking.total
+                      : 0,
+                },
+              ],
+        catering:
+          typeof event.booking === "object" &&
+          event.booking.foodMenu &&
+          event.booking.foodMenu.included
+            ? {
+                included: true,
+                servingType: event.booking.foodMenu.servingType,
+                ratePerGuest: event.booking.foodMenu.ratePerGuest,
+                totalFoodAmount: event.booking.foodMenu.totalFoodAmount,
+                guestCount: event.guests,
+                notes: event.booking.foodMenu.notes,
+                items: event.booking.foodMenu.items,
+              }
+            : undefined,
+        subtotal:
+          typeof event.booking === "object" && event.booking.subtotal
+            ? event.booking.subtotal
+            : typeof event.booking === "object" && event.booking.total
+            ? event.booking.total
+            : 0,
+        discount:
+          typeof event.booking === "object" &&
+          event.booking.discountAmount
+            ? event.booking.discountAmount
+            : 0,
+        additionalCharges:
+          typeof event.booking === "object" &&
+          event.booking.additionalCharges
+            ? event.booking.additionalCharges
+            : 0,
+        gstRate:
+          typeof event.booking === "object" && event.booking.gstRate
+            ? event.booking.gstRate
+            : 18,
+        gstAmount:
+          typeof event.booking === "object" && event.booking.gstAmount
+            ? event.booking.gstAmount
+            : 0,
+        total:
+          typeof event.booking === "object" && event.booking.total
+            ? event.booking.total
+            : 0,
+        currency:
+          typeof event.booking === "object" && event.booking.currency
+            ? event.booking.currency
+            : "INR",
+      }
+    : null;
+
   return (
     <main className="min-h-screen bg-[#F8F7F3]">
-      <div className="mx-auto w-full max-w-2xl px-4 pb-24 pt-5 sm:px-6">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-24 pt-5 sm:px-6">
 
         {/* ======================================
             Header
         ====================================== */}
 
-        <header className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label="Back to Events"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-sm"
-          >
-            ←
-          </button>
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Back to Events"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-sm"
+            >
+              ←
+            </button>
 
-          <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8C7A55]">
-              Event Details
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8C7A55]">
+                Event Management
+              </p>
 
-            <h1 className="mt-1 truncate text-xl font-bold tracking-tight text-[#252525]">
-              {event.eventName}
-            </h1>
+              <h1 className="mt-1 truncate text-xl font-bold tracking-tight text-[#252525]">
+                {event.eventName}
+              </h1>
+            </div>
           </div>
+
+          {/* Export Studio Trigger */}
+          {eventDocumentData && (
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95 shrink-0"
+            >
+              <Sparkles size={14} className="text-[#D4AF37]" />
+              <span>Export Invoice & Quotation</span>
+            </button>
+          )}
         </header>
 
         {/* ======================================
-            Event Status
+            Event Overview Grid
         ====================================== */}
 
-        <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm text-gray-500">
-                Event Status
-              </p>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {/* Event Status & Specs */}
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+                  Event Status
+                </p>
+                <p className="mt-1 text-lg font-black text-[#252525]">
+                  {event.status}
+                </p>
+              </div>
 
-              <p className="mt-1 text-lg font-semibold text-[#252525]">
-                {event.status}
-              </p>
+              <span className="rounded-full bg-[#F4EFE4] px-3 py-1 text-xs font-bold text-[#8C7A55]">
+                {event.eventType}
+              </span>
             </div>
 
-            <span className="rounded-full bg-[#F4EFE4] px-3 py-1.5 text-xs font-semibold text-[#8C7A55]">
-              {event.status}
-            </span>
-          </div>
-        </section>
+            <div className="mt-4 space-y-2.5 border-t border-gray-100 pt-3 text-xs text-gray-600">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Date:</span>
+                <span className="font-bold text-[#252525]">{formatDate(event.eventDate)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Time:</span>
+                <span className="font-bold text-[#252525]">{event.eventTime}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Guests:</span>
+                <span className="font-bold text-[#252525]">{event.guests} guests</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Venue:</span>
+                <span className="font-bold text-[#252525] truncate max-w-[150px]">{event.location}</span>
+              </div>
+            </div>
+          </section>
 
-        {/* ======================================
-            Event Information
-        ====================================== */}
-
-        <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-base font-bold text-[#252525]">
-            Event Information
-          </h2>
-
-          <div className="mt-4 space-y-4">
-            <DetailRow
-              label="Event Type"
-              value={event.eventType}
-            />
-
-            <DetailRow
-              label="Date"
-              value={formatDate(event.eventDate)}
-            />
-
-            <DetailRow
-              label="Time"
-              value={event.eventTime}
-            />
-
-            <DetailRow
-              label="Guests"
-              value={`${event.guests} guests`}
-            />
-
-            <DetailRow
-              label="Location"
-              value={event.location}
-            />
-          </div>
-        </section>
-
-        {/* ======================================
-            Client Information
-        ====================================== */}
-
-        <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-base font-bold text-[#252525]">
-            Client
-          </h2>
-
-          <div className="mt-4">
-            {typeof event.client === "object" ? (
-              <>
-                <p className="text-base font-semibold text-[#252525]">
-                  {event.client.name}
-                </p>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  {event.client.phone}
-                </p>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  {event.client.email}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-500">
-                Client information unavailable
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* ======================================
-            Description
-        ====================================== */}
-
-        {event.description && (
-          <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-base font-bold text-[#252525]">
-              Description
+          {/* Client Information */}
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+              Client Details
             </h2>
 
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
-              {event.description}
+            <div className="mt-3">
+              {typeof event.client === "object" ? (
+                <>
+                  <p className="text-base font-extrabold text-[#252525]">
+                    {event.client.name}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-gray-500">
+                    📞 {event.client.phone}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-gray-500 truncate">
+                    ✉️ {event.client.email}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400">Client details unavailable</p>
+              )}
+            </div>
+          </section>
+
+          {/* Description & Internal Notes */}
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+              Event Notes & Scope
+            </h2>
+            <p className="mt-2 text-xs leading-5 text-gray-600 line-clamp-4">
+              {event.description || event.notes || "No additional instructions provided for this booking."}
             </p>
           </section>
-        )}
+        </div>
 
         {/* ======================================
-            Notes
+            Event Profitability & Expense Tracking
         ====================================== */}
+        <section className="mt-6">
+          <EventProfitabilityCard
+            eventId={eventId}
+            eventName={event.eventName}
+          />
+        </section>
 
-        {event.notes && (
-          <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-base font-bold text-[#252525]">
-              Notes
-            </h2>
-
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">
-              {event.notes}
-            </p>
-          </section>
-        )}
+        {/* ======================================
+            Dynamic Service & Catering Staffing Matrix
+        ====================================== */}
+        <section className="mt-6">
+          <EventServiceStaffingMatrix
+            eventId={eventId}
+            token={token || undefined}
+            onAssignmentCreated={() => {
+              void fetchAssignments({
+                event: eventId,
+                page: 1,
+                limit: 100,
+              });
+            }}
+          />
+        </section>
 
         {/* ======================================
             Staff Assignments
@@ -633,6 +746,14 @@ export default function ManagerEventDetailsPage() {
             Update Status
           </button>
         </section>
+
+        {eventDocumentData && (
+          <ClientDocumentModal
+            open={exportModalOpen}
+            onClose={() => setExportModalOpen(false)}
+            documentData={eventDocumentData}
+          />
+        )}
       </div>
     </main>
   );
