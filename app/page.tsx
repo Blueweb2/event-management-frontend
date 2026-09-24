@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="h-screen overflow-hidden bg-[#0b0b0a]">
+    <main className="h-dvh overflow-hidden bg-[#0b0b0a]">
       <section
         className="relative flex h-full items-center justify-center bg-cover bg-center"
         style={{
