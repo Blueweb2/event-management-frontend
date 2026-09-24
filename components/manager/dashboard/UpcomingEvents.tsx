@@ -33,9 +33,24 @@ export default function UpcomingEvents() {
 
     async function loadEvents() {
       try {
-        const res = await api<{ success: boolean; data: EventItem[] }>("/events?limit=4");
+        const res = await api<{ success: boolean; data: EventItem[] }>("/events?status=Upcoming&limit=10");
         if (isMounted && res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setEvents(res.data);
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          const sorted = res.data
+            .filter((evt) => {
+              if (!evt.eventDate) return false;
+              const d = new Date(evt.eventDate);
+              if (isNaN(d.getTime())) return false;
+              const eventEnd = new Date(d);
+              eventEnd.setHours(23, 59, 59, 999);
+              return eventEnd.getTime() >= todayStart.getTime();
+            })
+            .sort(
+              (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+            );
+          setEvents(sorted.slice(0, 4));
         }
       } catch (err) {
         console.warn("Could not load upcoming events from API", err);

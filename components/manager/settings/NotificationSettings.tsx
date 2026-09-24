@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Bell, CheckCircle2 } from "lucide-react";
 
-const STORAGE_KEY = "antigravity_manager_notification_preferences";
+const STORAGE_KEY = "event_manager_notification_preferences";
 
 export default function NotificationSettings() {
   const [bookingNotifications, setBookingNotifications] = useState(true);

@@ -51,6 +51,11 @@ const initialFormData: FormData = {
   confirmPassword: "",
 };
 
+import {
+  getDepartmentAndServiceOptions,
+  STANDARD_DEPARTMENTS,
+} from "@/lib/department-options";
+
 export default function AddStaffModal({
   isOpen,
   onClose,
@@ -58,6 +63,9 @@ export default function AddStaffModal({
 }: AddStaffModalProps) {
   const [formData, setFormData] =
     useState<FormData>(initialFormData);
+
+  const [departmentOptions, setDepartmentOptions] =
+    useState<string[]>(STANDARD_DEPARTMENTS);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -80,8 +88,23 @@ export default function AddStaffModal({
       setIsSaving(false);
       setShowPassword(false);
       setShowConfirmPassword(false);
+
+      void getDepartmentAndServiceOptions().then((opts) => {
+        setDepartmentOptions(opts);
+      });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
@@ -339,11 +362,11 @@ export default function AddStaffModal({
 
           {/* Department */}
           <FormField
-            label="Department"
+            label="Department / Service"
             icon={Building2}
+            required
           >
-            <input
-              type="text"
+            <select
               value={formData.department}
               onChange={(event) =>
                 handleChange(
@@ -351,10 +374,17 @@ export default function AddStaffModal({
                   event.target.value,
                 )
               }
-              placeholder="Enter department"
               disabled={isSaving}
-              className="form-input"
-            />
+              required
+              className="form-input bg-white cursor-pointer"
+            >
+              <option value="">Select a department / service</option>
+              {departmentOptions.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           {/* Password */}

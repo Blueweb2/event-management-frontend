@@ -44,6 +44,16 @@ export const mapAssignmentToDuty = (
     staffName: "name" in staff ? staff.name : "Staff unavailable",
     description: assignment.description ?? "",
     status: assignment.status,
+    rejectionReason: assignment.rejectionReason,
+    department: assignment.department,
+    serviceName: assignment.serviceName,
+    respondedAt: assignment.respondedAt,
+    hourlyRate: assignment.hourlyRate,
+    totalHours: assignment.totalHours,
+    totalAmount: assignment.totalAmount,
+    paymentStatus: assignment.paymentStatus,
+    paidAt: assignment.paidAt,
+    paymentReference: assignment.paymentReference,
     checklist: assignment.checklist || [],
   };
 };

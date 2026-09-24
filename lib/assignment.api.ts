@@ -26,6 +26,8 @@ export type GetAssignmentsParams = {
 
   status?: AssignmentStatus;
 
+  paymentStatus?: "PENDING" | "PAID" | "PROCESSING";
+
   dutyDate?: string;
 
   startDate?: string;
@@ -90,6 +92,13 @@ export const getAssignments = async (
     searchParams.set(
       "status",
       params.status,
+    );
+  }
+
+  if (params?.paymentStatus) {
+    searchParams.set(
+      "paymentStatus",
+      params.paymentStatus,
     );
   }
 
@@ -246,6 +255,29 @@ export const acceptAssignment = async (
 };
 
 // ==========================================
+// REJECT ASSIGNMENT (Staff Shift Decline with Reason)
+// PATCH /api/assignments/:id/reject
+// ==========================================
+
+export const rejectAssignment = async (
+  id: string,
+  reason: string,
+  token: string
+): Promise<Assignment> => {
+  if (!id) {
+    throw new Error("Assignment ID is required");
+  }
+
+  const result = await patch<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${id}/reject`, { reason }, token);
+
+  return result.data.assignment;
+};
+
+// ==========================================
 // UPDATE CHECKLIST SUB-TASKS
 // PATCH /api/assignments/:id/checklist
 // ==========================================
@@ -264,6 +296,33 @@ export const updateAssignmentChecklist = async (
       assignment: Assignment;
     }>
   >(`/assignments/${id}/checklist`, { checklist }, token);
+
+  return result.data.assignment;
+};
+
+// ==========================================
+// UPDATE PAYMENT STATUS (Manager Only)
+// PATCH /api/assignments/:id/payment
+// ==========================================
+
+export const updateAssignmentPayment = async (
+  id: string,
+  payload: {
+    paymentStatus?: "PENDING" | "PAID" | "PROCESSING";
+    paymentReference?: string;
+    paidAt?: string;
+  },
+  token: string
+): Promise<Assignment> => {
+  if (!id) {
+    throw new Error("Assignment ID is required");
+  }
+
+  const result = await patch<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${id}/payment`, payload, token);
 
   return result.data.assignment;
 };

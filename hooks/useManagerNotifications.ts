@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { getEvents } from "@/lib/event.api";
 import { getExpenses } from "@/lib/expense.api";
 import { getEstimates } from "@/lib/estimates.api";
+import { getAssignments } from "@/lib/assignment.api";
 import { useAuth } from "@/hooks/useAuth";
 
 export type NotificationCategory = "ACTION" | "EVENT" | "FINANCE" | "ESTIMATE" | "STAFF";
@@ -20,8 +21,8 @@ export interface ManagerNotification {
   priority: "HIGH" | "MEDIUM" | "LOW";
 }
 
-const STORAGE_KEY = "antigravity_manager_read_notifs";
-const DISMISSED_KEY = "antigravity_manager_dismissed_notifs";
+const STORAGE_KEY = "event_manager_read_notifs";
+const DISMISSED_KEY = "event_manager_dismissed_notifs";
 
 export function useManagerNotifications() {
   const { token } = useAuth();
@@ -53,14 +54,49 @@ export function useManagerNotifications() {
     try {
       setLoading(true);
 
-      const [eventsRes, expensesRes, estimatesRes] = await Promise.allSettled([
+      const [eventsRes, expensesRes, estimatesRes, assignmentsRes] = await Promise.allSettled([
         getEvents({ status: "Upcoming", limit: 10 }, token),
         getExpenses(),
         getEstimates({ limit: 10 }),
+        getAssignments(token, { limit: 50 }),
       ]);
 
       const items: ManagerNotification[] = [];
       const now = new Date();
+
+      // 0. Staff Shift Rejections (Urgent Alert for Reassignment) & Pending Responses
+      if (assignmentsRes.status === "fulfilled" && assignmentsRes.value?.data) {
+        assignmentsRes.value.data.forEach((duty) => {
+          const staffName = typeof duty.staff === "object" ? duty.staff.name : "Staff member";
+          const eventName = typeof duty.event === "object" ? duty.event.eventName : "Event";
+
+          if (duty.status === "REJECTED") {
+            items.push({
+              id: `duty-rejected-${duty._id}`,
+              category: "STAFF",
+              title: `🚨 Shift Declined: ${staffName}`,
+              message: `${staffName} declined "${duty.dutyTitle}" for ${eventName}. Reason: "${duty.rejectionReason || "Unavailable"}". Click to reassign.`,
+              timestamp: duty.respondedAt || duty.updatedAt || duty.dutyDate,
+              timeAgo: "Action Required",
+              link: `/manager/duties`,
+              read: false,
+              priority: "HIGH",
+            });
+          } else if (duty.status === "ASSIGNED") {
+            items.push({
+              id: `duty-pending-${duty._id}`,
+              category: "STAFF",
+              title: `⏳ Pending Confirmation: ${staffName}`,
+              message: `Awaiting shift confirmation from ${staffName} for "${duty.dutyTitle}" (${eventName}).`,
+              timestamp: duty.createdAt || duty.dutyDate,
+              timeAgo: "Pending Response",
+              link: `/manager/duties`,
+              read: false,
+              priority: "MEDIUM",
+            });
+          }
+        });
+      }
 
       // 1. Upcoming Events (events occurring within 72 hours)
       if (eventsRes.status === "fulfilled" && eventsRes.value?.data) {

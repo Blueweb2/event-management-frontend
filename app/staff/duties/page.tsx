@@ -22,12 +22,14 @@ import { useAssignments } from "@/hooks/useAssignments";
 import { useAttendance } from "@/hooks/useAttendance";
 import {
   acceptAssignment,
+  rejectAssignment,
   updateAssignmentChecklist,
 } from "@/lib/assignment.api";
 import type { Assignment } from "@/types/assignment";
 import { ListSkeleton } from "@/components/common/SkeletonLoaders";
 import RichEmptyState from "@/components/common/RichEmptyState";
 import ErrorMessage from "@/components/common/ErrorMessage";
+import DeclineShiftModal from "@/components/staff/shift/DeclineShiftModal";
 
 const getLocation = (): Promise<string> => {
   return new Promise((resolve) => {
@@ -74,10 +76,11 @@ export default function StaffDutiesPage() {
     autoFetch: true,
   });
 
-  // Local state for optimistic checklist and acceptance updates
+  // Local state for optimistic checklist, acceptance, and decline updates
   const [localDuties, setLocalDuties] = useState<Assignment[]>([]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [decliningDuty, setDecliningDuty] = useState<Assignment | null>(null);
   const [updatingChecklistId, setUpdatingChecklistId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string>("");
 
@@ -98,7 +101,7 @@ export default function StaffDutiesPage() {
     setAcceptingId(dutyId);
 
     try {
-      const updated = await acceptAssignment(dutyId, token);
+      await acceptAssignment(dutyId, token);
       setLocalDuties((prev) =>
         prev.map((d) => (d._id === dutyId ? { ...d, status: "ACCEPTED" } : d))
       );
@@ -109,6 +112,22 @@ export default function StaffDutiesPage() {
     } finally {
       setAcceptingId(null);
     }
+  };
+
+  // ==========================================
+  // Handle Shift Decline / Rejection with Reason
+  // ==========================================
+  const handleDeclineShift = async (dutyId: string, reason: string) => {
+    if (!token) return;
+
+    await rejectAssignment(dutyId, reason, token);
+    setLocalDuties((prev) =>
+      prev.map((d) =>
+        d._id === dutyId ? { ...d, status: "REJECTED", rejectionReason: reason } : d
+      )
+    );
+    showToast("Shift declined. Manager notified with your reason note.");
+    void fetchAssignments();
   };
 
   // ==========================================
@@ -244,6 +263,7 @@ export default function StaffDutiesPage() {
             const isCompleted = Boolean(dutyRecord?.checkIn && dutyRecord?.checkOut);
             const isPendingAcceptance = assignment.status === "ASSIGNED";
             const isAccepted = assignment.status === "ACCEPTED";
+            const isRejected = assignment.status === "REJECTED";
 
             const checklist = assignment.checklist || [];
             const completedChecklistCount = checklist.filter((i) => i.completed).length;
@@ -252,7 +272,7 @@ export default function StaffDutiesPage() {
                 ? Math.round((completedChecklistCount / checklist.length) * 100)
                 : 0;
 
-            const deptCategory = assignment.role || "Operations";
+            const deptCategory = assignment.department || assignment.role || "Operations";
             const deptEmoji = getDepartmentEmoji(deptCategory);
 
             return (
@@ -262,25 +282,57 @@ export default function StaffDutiesPage() {
               >
                 {/* Pending Acceptance Callout Banner */}
                 {isPendingAcceptance && (
-                  <div className="flex flex-col gap-2 border-b border-amber-200 bg-amber-50/80 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
-                      <BellRing size={16} className="text-amber-600 animate-bounce" />
-                      <span>New Shift Assigned: Please confirm your acceptance.</span>
+                  <div className="flex flex-col gap-3 border-b border-amber-200 bg-amber-50/90 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950">
+                      <BellRing size={17} className="text-amber-600 animate-bounce shrink-0" />
+                      <div>
+                        <span>New Shift Assigned:</span>
+                        <span className="ml-1 font-normal text-amber-800">
+                          Please confirm your availability or decline early.
+                        </span>
+                      </div>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={acceptingId === assignment._id}
-                      onClick={() => handleAcceptShift(assignment._id)}
-                      className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 text-xs font-extrabold text-white shadow-xs transition hover:bg-amber-700 disabled:opacity-50"
-                    >
-                      {acceptingId === assignment._id ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <UserCheck size={14} />
-                      )}
-                      Accept Shift
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDecliningDuty(assignment)}
+                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-white px-3.5 text-xs font-bold text-red-600 shadow-2xs transition hover:bg-red-50 hover:border-red-300"
+                      >
+                        Decline Shift
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={acceptingId === assignment._id}
+                        onClick={() => handleAcceptShift(assignment._id)}
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-extrabold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {acceptingId === assignment._id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <UserCheck size={14} />
+                        )}
+                        Accept & Confirm
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rejected Banner */}
+                {isRejected && (
+                  <div className="border-b border-red-200 bg-red-50/80 px-5 py-3 sm:px-6">
+                    <div className="flex items-start gap-2 text-xs font-semibold text-red-900">
+                      <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">You declined this shift.</span>
+                        {assignment.rejectionReason && (
+                          <p className="mt-0.5 text-red-700 font-normal">
+                            Reason: &ldquo;{assignment.rejectionReason}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -295,7 +347,13 @@ export default function StaffDutiesPage() {
 
                         {isAccepted && (
                           <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-                            ✓ Shift Accepted
+                            ✓ Shift Confirmed
+                          </span>
+                        )}
+
+                        {isRejected && (
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
+                            ✕ Shift Declined
                           </span>
                         )}
 
@@ -322,6 +380,8 @@ export default function StaffDutiesPage() {
                           ? "In Progress"
                           : isAccepted
                           ? "Accepted"
+                          : isRejected
+                          ? "Declined"
                           : isPendingAcceptance
                           ? "Pending Acceptance"
                           : assignment.status
@@ -330,7 +390,7 @@ export default function StaffDutiesPage() {
                   </div>
 
                   {/* Shift Info Grid */}
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-5 grid gap-3 sm:grid-cols-4">
                     <Info
                       icon={<CalendarDays size={16} />}
                       label="Duty Date"
@@ -349,7 +409,7 @@ export default function StaffDutiesPage() {
                     <Info
                       icon={<Clock3 size={16} />}
                       label="Shift Hours"
-                      value={`${assignment.startTime} - ${assignment.endTime}`}
+                      value={`${assignment.startTime} - ${assignment.endTime} (${assignment.totalHours || 0} hrs)`}
                     />
 
                     <Info
@@ -357,6 +417,30 @@ export default function StaffDutiesPage() {
                       label="Location"
                       value={event?.location || "Venue location TBA"}
                     />
+
+                    <div className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] border border-[#eee7dc] p-3">
+                      <span className="text-[#a7773f] shrink-0 font-bold text-sm">💰</span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9b938a]">
+                          Compensation
+                        </p>
+                        <p className="mt-0.5 truncate text-xs font-black text-emerald-800">
+                          {assignment.hourlyRate ? `$${assignment.hourlyRate}/hr` : "Standard Rate"}
+                          {assignment.totalAmount ? ` · $${assignment.totalAmount.toFixed(2)}` : ""}
+                        </p>
+                        <div className="mt-0.5">
+                          {assignment.paymentStatus === "PAID" ? (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                              ✓ Paid
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-800">
+                              Pending Payout
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Duty Description / Special Instructions */}
@@ -492,6 +576,14 @@ export default function StaffDutiesPage() {
           })}
         </div>
       )}
+
+      {/* Decline Shift Reason Modal */}
+      <DeclineShiftModal
+        duty={decliningDuty}
+        isOpen={Boolean(decliningDuty)}
+        onClose={() => setDecliningDuty(null)}
+        onConfirm={handleDeclineShift}
+      />
     </main>
   );
 }
@@ -503,6 +595,8 @@ function DutyStatusPill({ status }: { status: string }) {
         return "bg-amber-100 text-amber-800 border border-amber-200";
       case "Accepted":
         return "bg-blue-50 text-blue-800 border border-blue-200";
+      case "Declined":
+        return "bg-red-100 text-red-800 border border-red-200";
       case "In Progress":
         return "bg-emerald-100 text-emerald-800 border border-emerald-200";
       case "Completed":

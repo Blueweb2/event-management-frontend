@@ -64,6 +64,7 @@ export default function EventServiceStaffingMatrix({
   const [dutyDate, setDutyDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [hourlyRate, setHourlyRate] = useState<number>(25);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -111,6 +112,7 @@ export default function EventServiceStaffingMatrix({
     setRole(stream.department);
     setDutyDate(data?.targetDate || "");
     setStartTime(data?.event.eventTime || "10:00");
+    setHourlyRate(25);
 
     // Calculate default end time (+4 hours)
     if (data?.event.eventTime) {
@@ -153,9 +155,12 @@ export default function EventServiceStaffingMatrix({
           staff: allocatingStaff.id,
           dutyTitle: dutyTitle.trim(),
           role: role.trim() || allocatingStream?.department || "Operations",
+          department: allocatingStream?.department || allocatingStaff.department,
+          serviceName: allocatingStream?.title,
           dutyDate,
           startTime,
           endTime,
+          hourlyRate: Number(hourlyRate) || 0,
           notes: notes.trim() || undefined,
         },
         token
@@ -670,6 +675,49 @@ export default function EventServiceStaffingMatrix({
                     onChange={(e) => setEndTime(e.target.value)}
                     className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
                   />
+                </div>
+              </div>
+
+              {/* Salary Per Hour & Payout Summary */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700">
+                    Salary Per Hour ($/hr)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
+                    placeholder="e.g. 25.00"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
+                  />
+                </div>
+
+                <div className="flex flex-col justify-center rounded-xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">
+                  <p className="font-semibold text-gray-700">Calculated Payout</p>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                    <span>Duration: <strong>{(() => {
+                      if (!startTime || !endTime) return "0.0";
+                      const [sH, sM] = startTime.split(":").map(Number);
+                      const [eH, eM] = endTime.split(":").map(Number);
+                      let startMin = sH * 60 + (sM || 0);
+                      let endMin = eH * 60 + (eM || 0);
+                      if (endMin < startMin) endMin += 24 * 60;
+                      return (Math.max(0, endMin - startMin) / 60).toFixed(1);
+                    })()} hrs</strong></span>
+                    <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
+                      if (!startTime || !endTime) return "0.00";
+                      const [sH, sM] = startTime.split(":").map(Number);
+                      const [eH, eM] = endTime.split(":").map(Number);
+                      let startMin = sH * 60 + (sM || 0);
+                      let endMin = eH * 60 + (eM || 0);
+                      if (endMin < startMin) endMin += 24 * 60;
+                      const hours = Math.max(0, endMin - startMin) / 60;
+                      return (hours * (Number(hourlyRate) || 0)).toFixed(2);
+                    })()}</span>
+                  </div>
                 </div>
               </div>
 

@@ -252,9 +252,20 @@ export default function EventLifecycleBoard() {
       rawEstimate: est,
     }));
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
   const upcomingCards: PipelineCardItem[] = events
-    .filter((evt) => evt.status === "Upcoming")
-    .map((evt) => ({
+    .filter((evt) => {
+      if (evt.status !== "Upcoming") return false;
+      if (!evt.eventDate) return false;
+      const d = new Date(evt.eventDate);
+      if (isNaN(d.getTime())) return false;
+      const eventEnd = new Date(d);
+      eventEnd.setHours(23, 59, 59, 999);
+      return eventEnd.getTime() >= todayStart.getTime();
+    })
+    .map((evt): PipelineCardItem => ({
       id: evt._id,
       type: "EVENT",
       title: evt.eventName,
@@ -269,7 +280,8 @@ export default function EventLifecycleBoard() {
       amount: 0,
       status: evt.status,
       rawEvent: evt,
-    }));
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const ongoingCards: PipelineCardItem[] = events
     .filter((evt) => evt.status === "Ongoing")

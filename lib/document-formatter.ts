@@ -91,15 +91,15 @@ export interface ClientDocumentData {
 }
 
 export const defaultCompanyDetails = {
-  name: "Antigravity Events & Celebrations",
+  name: "Eventeo Events & Celebrations",
   tagline: "Luxury Event Planning, Bespoke Production & Catering",
   phone: "+91 98765 43210",
-  email: "events@antigravity.luxury",
+  email: "events@eventeo.luxury",
   address: "Grand Central Plaza, 4th Floor, Bangalore, Karnataka 560001",
   gstin: "29AABCU9603R1ZM",
-  upiId: "antigravityevents@okhdfcbank",
+  upiId: "eventeoevents@okhdfcbank",
   bankDetails: {
-    accountName: "Antigravity Luxury Events Pvt Ltd",
+    accountName: "Eventeo Luxury Events Pvt Ltd",
     accountNumber: "50200098765432",
     bankName: "HDFC Bank",
     ifsc: "HDFC0001234",

@@ -24,6 +24,11 @@ interface EditStaffModalProps {
   ) => Promise<Staff>;
 }
 
+import {
+  getDepartmentAndServiceOptions,
+  STANDARD_DEPARTMENTS,
+} from "@/lib/department-options";
+
 export default function EditStaffModal({
   staff,
   isOpen,
@@ -38,6 +43,9 @@ export default function EditStaffModal({
       role: staff.role ?? "",
       department: staff.department ?? "",
     });
+
+  const [departmentOptions, setDepartmentOptions] =
+    useState<string[]>(STANDARD_DEPARTMENTS);
 
   const [error, setError] =
     useState<string | null>(null);
@@ -63,7 +71,22 @@ export default function EditStaffModal({
     });
 
     setError(null);
-  }, [staff, isOpen]);
+
+    void getDepartmentAndServiceOptions().then((opts) => {
+      setDepartmentOptions(opts);
+    });
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [staff, isOpen, onClose]);
 
   /*
    * Don't render when closed.
@@ -283,11 +306,10 @@ export default function EditStaffModal({
 
           {/* Department */}
           <FormField
-            label="Department"
+            label="Department / Service"
             icon={Building2}
           >
-            <input
-              type="text"
+            <select
               value={formData.department}
               onChange={(event) =>
                 handleChange(
@@ -295,10 +317,16 @@ export default function EditStaffModal({
                   event.target.value,
                 )
               }
-              placeholder="Enter department"
               disabled={isSaving}
               className="form-input"
-            />
+            >
+              <option value="">Select a department or service...</option>
+              {departmentOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           {/* Error */}

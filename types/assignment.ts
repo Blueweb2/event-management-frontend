@@ -7,6 +7,7 @@ import type { Staff } from "./staff";
 export type AssignmentStatus =
   | "ASSIGNED"
   | "ACCEPTED"
+  | "REJECTED"
   | "IN_PROGRESS"
   | "COMPLETED"
   | "CANCELLED";
@@ -80,6 +81,10 @@ export type Assignment = {
 
   role?: string;
 
+  department?: string;
+
+  serviceName?: string;
+
   description?: string;
 
   dutyDate: string;
@@ -89,6 +94,22 @@ export type Assignment = {
   endTime: string;
 
   status: AssignmentStatus;
+
+  rejectionReason?: string;
+
+  respondedAt?: string;
+
+  hourlyRate?: number;
+
+  totalHours?: number;
+
+  totalAmount?: number;
+
+  paymentStatus?: "PENDING" | "PAID" | "PROCESSING";
+
+  paidAt?: string;
+
+  paymentReference?: string;
 
   notes?: string;
 
@@ -116,6 +137,10 @@ export type CreateAssignmentPayload = {
 
   role?: string;
 
+  department?: string;
+
+  serviceName?: string;
+
   description?: string;
 
   dutyDate: string;
@@ -123,6 +148,8 @@ export type CreateAssignmentPayload = {
   startTime: string;
 
   endTime: string;
+
+  hourlyRate?: number;
 
   notes?: string;
 
@@ -140,6 +167,10 @@ export type UpdateAssignmentPayload = {
 
   role?: string;
 
+  department?: string;
+
+  serviceName?: string;
+
   description?: string;
 
   dutyDate?: string;
@@ -148,7 +179,17 @@ export type UpdateAssignmentPayload = {
 
   endTime?: string;
 
+  hourlyRate?: number;
+
+  paymentStatus?: "PENDING" | "PAID" | "PROCESSING";
+
+  paidAt?: string;
+
+  paymentReference?: string;
+
   status?: AssignmentStatus;
+
+  rejectionReason?: string;
 
   notes?: string;
 

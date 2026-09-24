@@ -48,9 +48,7 @@ export default function ManagerStaffPage() {
    * Close Add Staff modal
    */
   const handleCloseAddStaff = () => {
-    if (!loading) {
-      setIsAddModalOpen(false);
-    }
+    setIsAddModalOpen(false);
   };
 
   /*

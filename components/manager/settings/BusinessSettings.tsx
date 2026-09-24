@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Building2, CheckCircle2 } from "lucide-react";
 
-const STORAGE_KEY = "antigravity_business_settings";
+const STORAGE_KEY = "event_business_settings";
 
 export default function BusinessSettings() {
   const [businessName, setBusinessName] = useState("Elegant Events");

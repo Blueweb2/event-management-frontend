@@ -65,7 +65,18 @@ export default function ManagerEventsPage() {
   }, [fetchEvents, viewMode]);
 
   const totalEvents = events.length;
-  const upcomingEvents = events.filter((event) => event.status === "Upcoming").length;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const upcomingEvents = events.filter((event) => {
+    if (event.status !== "Upcoming") return false;
+    if (!event.eventDate) return false;
+    const d = new Date(event.eventDate);
+    if (isNaN(d.getTime())) return false;
+    const eventEnd = new Date(d);
+    eventEnd.setHours(23, 59, 59, 999);
+    return eventEnd.getTime() >= todayStart.getTime();
+  }).length;
   const ongoingEvents = events.filter((event) => event.status === "Ongoing").length;
   const completedEvents = events.filter((event) => event.status === "Completed").length;
 

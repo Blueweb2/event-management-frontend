@@ -83,11 +83,21 @@ export default function DutiesFilters({
         >
           <option value="All">All Statuses</option>
 
-          {dutyStatuses.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
+          {dutyStatuses.map((item) => {
+            const labels: Record<string, string> = {
+              ASSIGNED: "Assigned (Pending Confirmation)",
+              ACCEPTED: "Confirmed by Staff",
+              REJECTED: "Declined by Staff (Needs Reassignment)",
+              IN_PROGRESS: "In Progress",
+              COMPLETED: "Completed",
+              CANCELLED: "Cancelled",
+            };
+            return (
+              <option key={item} value={item}>
+                {labels[item] || item}
+              </option>
+            );
+          })}
         </select>
       </div>
     </section>

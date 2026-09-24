@@ -73,6 +73,17 @@ export default function FoodModal({
     setError("");
   }, [editingItem, isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,26 +143,38 @@ export default function FoodModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden"
+    >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl transition-all">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+      {/* Modal Dialog Card */}
+      <div
+        className="relative flex w-full max-w-lg max-h-[92dvh] sm:max-h-[90vh] flex-col rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl transition-all overflow-hidden border border-gray-100 animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Pull Handle Indicator */}
+        <div className="flex sm:hidden justify-center pt-2.5 pb-1 bg-white">
+          <div className="h-1.5 w-12 rounded-full bg-gray-300" />
+        </div>
+
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-white px-5 sm:px-6 py-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6B5B95]/10 text-[#6B5B95]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#6B5B95]/10 text-[#6B5B95]">
               <Utensils size={20} />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                 {editingItem ? "Edit Food Item" : "Add New Food Item"}
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-[11px] sm:text-xs text-gray-500 truncate">
                 Configure dish details and standard reference rate
               </p>
             </div>
@@ -159,24 +182,29 @@ export default function FoodModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition shrink-0 active:scale-95"
+            aria-label="Close"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-600">
-            {error}
-          </div>
-        )}
+        {/* Scrollable Form Body */}
+        <form
+          id="food-item-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-4 overscroll-contain"
+        >
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700 animate-in fade-in">
+              {error}
+            </div>
+          )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
               Item Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -184,21 +212,21 @@ export default function FoodModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Paneer Tikka Angara"
-              className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
+              className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 px-3.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-2 focus:ring-[#6B5B95]/20"
               required
             />
           </div>
 
           {/* Category & Dietary */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-gray-700">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
                 Category <span className="text-red-500">*</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as FoodCategory)}
-                className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
+                className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 focus:border-[#6B5B95] focus:outline-none focus:ring-2 focus:ring-[#6B5B95]/20"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -209,13 +237,13 @@ export default function FoodModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
                 Dietary Type <span className="text-red-500">*</span>
               </label>
               <select
                 value={dietary}
                 onChange={(e) => setDietary(e.target.value as DietaryType)}
-                className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
+                className="mt-1.5 h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 focus:border-[#6B5B95] focus:outline-none focus:ring-2 focus:ring-[#6B5B95]/20"
               >
                 <option value="veg">🟢 Pure Vegetarian</option>
                 <option value="non-veg">🔴 Non-Vegetarian</option>
@@ -227,11 +255,11 @@ export default function FoodModal({
 
           {/* Default Rate */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
               Default Rate (₹ / plate or unit) <span className="text-red-500">*</span>
             </label>
-            <div className="relative mt-1">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-400">
+            <div className="relative mt-1.5">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-bold text-gray-400">
                 ₹
               </span>
               <input
@@ -241,18 +269,18 @@ export default function FoodModal({
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(e.target.value)}
                 placeholder="150"
-                className="w-full rounded-xl border border-gray-300 pl-8 pr-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
+                className="h-11 w-full rounded-xl border border-gray-300 pl-8 pr-3.5 text-sm font-semibold text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-2 focus:ring-[#6B5B95]/20"
                 required
               />
             </div>
             <p className="mt-1 text-[11px] text-gray-500">
-              Used as base reference. Managers can customize rates per customer during booking.
+              Standard reference price. Can be adjusted per customer on event booking.
             </p>
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
               Description / Ingredients
             </label>
             <textarea
@@ -260,30 +288,35 @@ export default function FoodModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Tandoor roasted cottage cheese in spicy marinade..."
-              className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-1 focus:ring-[#6B5B95]"
+              className="mt-1.5 w-full rounded-xl border border-gray-300 p-3 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6B5B95] focus:outline-none focus:ring-2 focus:ring-[#6B5B95]/20"
             />
           </div>
 
           {/* Food Image */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
               Food Image
             </label>
-            <label className="mt-1 flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-gray-300 p-3 hover:border-[#6B5B95]">
+            <label className="mt-1.5 flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-gray-300 p-3 transition hover:border-[#6B5B95] hover:bg-gray-50/50">
               {imageFile || imageUrl ? (
                 <img
                   src={imageFile ? URL.createObjectURL(imageFile) : `${process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "http://localhost:5000"}${imageUrl}`}
                   alt="Food preview"
-                  className="h-16 w-16 rounded-lg object-cover"
+                  className="h-14 w-14 rounded-xl object-cover border border-gray-200"
                 />
               ) : (
-                <span className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 text-gray-400">
+                <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-gray-400">
                   <ImagePlus size={22} />
                 </span>
               )}
-              <span className="text-xs text-gray-500">
-                Choose a JPG, PNG, WEBP, or GIF up to 5 MB.
-              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-gray-800">
+                  {imageFile ? imageFile.name : imageUrl ? "Change Photo" : "Upload Photo"}
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  JPG, PNG, WEBP, or GIF up to 5 MB
+                </p>
+              </div>
               <input
                 type="file"
                 accept="image/*"
@@ -294,56 +327,57 @@ export default function FoodModal({
           </div>
 
           {/* Toggles */}
-          <div className="flex items-center justify-between pt-1">
-            <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <label className="flex items-center gap-2.5 rounded-xl border border-gray-200 p-3 text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition">
               <input
                 type="checkbox"
                 checked={isPopular}
                 onChange={(e) => setIsPopular(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300 text-[#6B5B95] focus:ring-[#6B5B95]"
               />
-              Mark as Popular / Chef Special
+              <span>⭐ Chef Special / Popular</span>
             </label>
 
-            <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2.5 rounded-xl border border-gray-200 p-3 text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 transition">
               <input
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300 text-[#6B5B95] focus:ring-[#6B5B95]"
               />
-              Active & Available
+              <span>✓ Active & Available</span>
             </label>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="rounded-xl border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Saving...
-                </>
-              ) : editingItem ? (
-                "Save Changes"
-              ) : (
-                "Add to Menu"
-              )}
-            </button>
-          </div>
         </form>
+
+        {/* Sticky Actions Footer - Always visible and thumb-friendly on mobile */}
+        <div className="sticky bottom-0 z-20 flex items-center justify-end gap-3 border-t border-gray-100 bg-white/95 px-5 sm:px-6 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur-xs shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 sm:flex-none inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-300 bg-white px-5 text-sm sm:text-xs font-bold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="food-item-form"
+            disabled={loading}
+            className="flex-1 sm:flex-none inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 text-sm sm:text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : editingItem ? (
+              "Save Changes"
+            ) : (
+              "Add to Menu"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

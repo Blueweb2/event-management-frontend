@@ -7,16 +7,19 @@ import {
   CalendarDays,
   CheckSquare,
   Building2,
+  DollarSign,
   Plus,
   Loader2,
 } from "lucide-react";
 
 import AddDutyModal, { type DutyFormValues } from "@/components/manager/duties/AddDutyModal";
+import ManageChecklistModal from "@/components/manager/duties/ManageChecklistModal";
 import DepartmentCapacityGrid from "@/components/manager/duties/DepartmentCapacityGrid";
 import DutiesFilters from "@/components/manager/duties/DutiesFilters";
 import DutiesHeader from "@/components/manager/duties/DutiesHeader";
 import DutiesList from "@/components/manager/duties/DutiesList";
 import DutiesStats from "@/components/manager/duties/DutiesStats";
+import StaffHoursPayrollView from "@/components/manager/duties/StaffHoursPayrollView";
 import ScheduleCalendar from "@/components/manager/schedule/ScheduleCalendar";
 import ScheduleFilters, { type ScheduleFilter } from "@/components/manager/schedule/ScheduleFilters";
 import ScheduleLegend from "@/components/manager/schedule/ScheduleLegend";
@@ -33,7 +36,7 @@ import type { ScheduleEventData } from "@/components/manager/schedule/ScheduleEv
 import { getTasks, updateTask } from "@/lib/task.api";
 import type { Task } from "@/types/task";
 
-type TabType = "list" | "calendar" | "tasks" | "departments";
+type TabType = "list" | "calendar" | "tasks" | "departments" | "payroll";
 
 function OperationsHubContent() {
   const router = useRouter();
@@ -63,6 +66,7 @@ function OperationsHubContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDuty, setEditingDuty] = useState<Duty | null>(null);
   const [deletingDuty, setDeletingDuty] = useState<Duty | null>(null);
+  const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
 
   // Calendar State
   const [activeFilter, setActiveFilter] = useState<ScheduleFilter>("All");
@@ -213,6 +217,7 @@ function OperationsHubContent() {
       dutyDate: values.dutyDate,
       startTime: values.startTime,
       endTime: values.endTime,
+      hourlyRate: Number(values.hourlyRate) || 0,
       checklist: values.checklist || [],
     };
     if (editingDuty) await editAssignment(editingDuty.id, payload);
@@ -225,6 +230,14 @@ function OperationsHubContent() {
     updatedChecklist: Array<{ _id?: string; text: string; completed: boolean }>
   ) => {
     await editAssignment(dutyId, { checklist: updatedChecklist });
+  };
+
+  const handleSaveChecklistModal = async (
+    dutyId: string,
+    updatedChecklist: Array<{ _id?: string; text: string; completed: boolean }>
+  ) => {
+    await editAssignment(dutyId, { checklist: updatedChecklist });
+    await fetchAllAssignments();
   };
 
   const handleStatusChange = async (duty: Duty) => {
@@ -344,6 +357,19 @@ function OperationsHubContent() {
               <Building2 size={15} className="shrink-0" />
               <span>Department Capacity</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => switchTab("payroll")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+                activeTab === "payroll"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <DollarSign size={15} className="shrink-0 text-[#a7773f]" />
+              <span>Staff Hours & Payroll</span>
+            </button>
           </div>
         </div>
       </div>
@@ -378,6 +404,7 @@ function OperationsHubContent() {
             onDelete={setDeletingDuty}
             onStatusChange={handleStatusChange}
             onToggleChecklist={handleToggleChecklist}
+            onManageChecklist={setManagingChecklistDuty}
           />
         </div>
       )}
@@ -539,6 +566,18 @@ function OperationsHubContent() {
         />
       )}
 
+      {/* ========================================================
+          TAB 5: STAFF WORKING HOURS & PAYROLL
+      ======================================================== */}
+      {activeTab === "payroll" && (
+        <StaffHoursPayrollView
+          duties={duties}
+          token={token || ""}
+          onRefresh={fetchAllAssignments}
+          onManageChecklist={setManagingChecklistDuty}
+        />
+      )}
+
       <ConfirmDialog
         isOpen={Boolean(deletingDuty)}
         onClose={() => setDeletingDuty(null)}
@@ -563,6 +602,16 @@ function OperationsHubContent() {
           events={eventOptions}
           staff={staffOptions}
           loading={loading}
+        />
+      )}
+
+      {managingChecklistDuty && (
+        <ManageChecklistModal
+          key={managingChecklistDuty.id}
+          isOpen={Boolean(managingChecklistDuty)}
+          duty={managingChecklistDuty}
+          onClose={() => setManagingChecklistDuty(null)}
+          onSaveChecklist={handleSaveChecklistModal}
         />
       )}
     </div>

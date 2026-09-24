@@ -14,6 +14,7 @@ export type DutyFormValues = {
   dutyDate: string;
   startTime: string;
   endTime: string;
+  hourlyRate?: number;
   checklist?: Array<{ _id?: string; text: string; completed: boolean }>;
 };
 
@@ -38,6 +39,7 @@ const emptyForm: DutyFormValues = {
   dutyDate: "",
   startTime: "",
   endTime: "",
+  hourlyRate: 0,
   checklist: [],
 };
 
@@ -63,6 +65,7 @@ export default function AddDutyModal({
           dutyDate: editingDuty.eventDate,
           startTime: editingDuty.startTime,
           endTime: editingDuty.endTime,
+          hourlyRate: editingDuty.hourlyRate || 0,
           checklist: editingDuty.checklist || [],
         }
       : emptyForm
@@ -126,7 +129,8 @@ export default function AddDutyModal({
       (duty) =>
         (typeof duty.staff === "string" ? duty.staff : duty.staff?._id) === form.staff &&
         duty._id !== editingDuty?.id &&
-        duty.status !== "CANCELLED"
+        duty.status !== "CANCELLED" &&
+        duty.status !== "REJECTED"
     );
     return conflict || null;
   }, [form.staff, form.dutyDate, existingDateDuties, editingDuty]);
@@ -171,6 +175,7 @@ export default function AddDutyModal({
         ...form,
         dutyTitle: form.dutyTitle.trim(),
         description: form.description.trim(),
+        hourlyRate: Number(form.hourlyRate) || 0,
       });
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Failed to save duty.");
@@ -271,7 +276,8 @@ export default function AddDutyModal({
                   (d) =>
                     (typeof d.staff === "string" ? d.staff : d.staff?._id) === member.id &&
                     d._id !== editingDuty?.id &&
-                    d.status !== "CANCELLED"
+                    d.status !== "CANCELLED" &&
+                    d.status !== "REJECTED"
                 );
 
                 return (
@@ -356,6 +362,49 @@ export default function AddDutyModal({
                 className={inputClass}
               />
             </Field>
+          </div>
+
+          {/* Salary Per Hour & Working Hours Summary */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Salary Per Hour ($/hr)" htmlFor="duty-hourly-rate">
+              <input
+                id="duty-hourly-rate"
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder="e.g. 25.00"
+                value={form.hourlyRate ?? 0}
+                onChange={(e) => updateField("hourlyRate" as any, e.target.value)}
+                disabled={loading}
+                className={inputClass}
+              />
+            </Field>
+
+            <div className="flex flex-col justify-center rounded-xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">
+              <p className="font-semibold text-gray-700">Calculated Shift Payout</p>
+              <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                <span>Duration: <strong>{(() => {
+                  if (!form.startTime || !form.endTime) return "0.0";
+                  const [sH, sM] = form.startTime.split(":").map(Number);
+                  const [eH, eM] = form.endTime.split(":").map(Number);
+                  let startMin = sH * 60 + (sM || 0);
+                  let endMin = eH * 60 + (eM || 0);
+                  if (endMin < startMin) endMin += 24 * 60;
+                  return (Math.max(0, endMin - startMin) / 60).toFixed(1);
+                })()} hrs</strong></span>
+                <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
+                  if (!form.startTime || !form.endTime) return "0.00";
+                  const [sH, sM] = form.startTime.split(":").map(Number);
+                  const [eH, eM] = form.endTime.split(":").map(Number);
+                  let startMin = sH * 60 + (sM || 0);
+                  let endMin = eH * 60 + (eM || 0);
+                  if (endMin < startMin) endMin += 24 * 60;
+                  const hours = Math.max(0, endMin - startMin) / 60;
+                  const rate = Number(form.hourlyRate) || 0;
+                  return (hours * rate).toFixed(2);
+                })()}</span>
+              </div>
+            </div>
           </div>
 
           <Field label="Description" htmlFor="duty-description">
