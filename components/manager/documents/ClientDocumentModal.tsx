@@ -17,6 +17,8 @@ import {
   CreditCard,
   Send,
   ExternalLink,
+  Phone,
+  Mail,
 } from "lucide-react";
 
 import {
@@ -293,9 +295,15 @@ export default function ClientDocumentModal({
                   <p className="mt-2 text-xs text-[#756D64] max-w-sm leading-relaxed">
                     {currentDoc.company.address}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[#756D64]">
-                    <span>📞 {currentDoc.company.phone}</span>
-                    <span>✉️ {currentDoc.company.email}</span>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-[#756D64]">
+                    <span className="inline-flex items-center gap-1">
+                      <Phone size={13} className="text-[#9A6C37]" />
+                      {currentDoc.company.phone}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Mail size={13} className="text-[#9A6C37]" />
+                      {currentDoc.company.email}
+                    </span>
                   </div>
                   {currentDoc.company.gstin && (
                     <p className="mt-1 text-[11px] font-mono text-[#9A6C37]">
@@ -334,15 +342,18 @@ export default function ClientDocumentModal({
                   <p className="mt-2 text-sm font-bold text-[#29241F]">
                     {currentDoc.client.name}
                   </p>
-                  <p className="mt-1 text-xs text-[#756D64]">
-                    📞 {currentDoc.client.phone || "N/A"}
+                  <p className="mt-1 text-xs text-[#756D64] flex items-center gap-1.5">
+                    <Phone size={13} className="text-[#9A6C37] shrink-0" />
+                    <span>{currentDoc.client.phone || "N/A"}</span>
                   </p>
-                  <p className="text-xs text-[#756D64]">
-                    ✉️ {currentDoc.client.email || "N/A"}
+                  <p className="text-xs text-[#756D64] flex items-center gap-1.5 mt-0.5">
+                    <Mail size={13} className="text-[#9A6C37] shrink-0" />
+                    <span>{currentDoc.client.email || "N/A"}</span>
                   </p>
                   {currentDoc.client.address && (
-                    <p className="mt-1 text-xs text-[#756D64]">
-                      📍 {currentDoc.client.address}
+                    <p className="mt-1 text-xs text-[#756D64] flex items-center gap-1.5">
+                      <MapPin size={13} className="text-[#9A6C37] shrink-0" />
+                      <span>{currentDoc.client.address}</span>
                     </p>
                   )}
                 </div>
@@ -355,15 +366,20 @@ export default function ClientDocumentModal({
                   <p className="mt-2 text-sm font-bold text-[#29241F]">
                     {currentDoc.event.name}
                   </p>
-                  <p className="mt-1 text-xs text-[#756D64]">
-                    📅 {currentDoc.event.date ? currentDoc.event.date.slice(0, 10) : "TBD"}{" "}
-                    {currentDoc.event.time ? `· ${currentDoc.event.time}` : ""}
+                  <p className="mt-1 text-xs text-[#756D64] flex items-center gap-1.5">
+                    <Calendar size={13} className="text-[#9A6C37] shrink-0" />
+                    <span>
+                      {currentDoc.event.date ? currentDoc.event.date.slice(0, 10) : "TBD"}{" "}
+                      {currentDoc.event.time ? `· ${currentDoc.event.time}` : ""}
+                    </span>
                   </p>
-                  <p className="text-xs text-[#756D64]">
-                    👥 {currentDoc.event.guests} Guests · {currentDoc.event.type}
+                  <p className="text-xs text-[#756D64] flex items-center gap-1.5 mt-0.5">
+                    <Users size={13} className="text-[#9A6C37] shrink-0" />
+                    <span>{currentDoc.event.guests} Guests · {currentDoc.event.type}</span>
                   </p>
-                  <p className="mt-1 text-xs text-[#756D64] truncate">
-                    📍 {currentDoc.event.location}
+                  <p className="mt-1 text-xs text-[#756D64] flex items-center gap-1.5 truncate">
+                    <MapPin size={13} className="text-[#9A6C37] shrink-0" />
+                    <span className="truncate">{currentDoc.event.location}</span>
                   </p>
                 </div>
               </div>

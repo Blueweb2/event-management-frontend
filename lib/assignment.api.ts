@@ -326,3 +326,58 @@ export const updateAssignmentPayment = async (
 
   return result.data.assignment;
 };
+
+// ==========================================
+// START TASK EXECUTION
+// POST /api/assignments/:dutyId/tasks/:taskId/start
+// ==========================================
+
+export const startTask = async (
+  dutyId: string,
+  taskId: string,
+  token: string
+): Promise<Assignment> => {
+  const result = await post<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${dutyId}/tasks/${taskId}/start`, {}, token);
+
+  return result.data.assignment;
+};
+
+// ==========================================
+// COMPLETE TASK EXECUTION
+// POST /api/assignments/:dutyId/tasks/:taskId/complete
+// ==========================================
+
+export const completeTask = async (
+  dutyId: string,
+  taskId: string,
+  completionNotes: string = "",
+  token: string
+): Promise<Assignment> => {
+  const result = await post<
+    ApiResponse<{
+      assignment: Assignment;
+    }>
+  >(`/assignments/${dutyId}/tasks/${taskId}/complete`, { completionNotes }, token);
+
+  return result.data.assignment;
+};
+
+// ==========================================
+// GET EVENT TASK PROGRESS
+// GET /api/assignments/event/:eventId/task-progress
+// ==========================================
+
+export const getEventTaskProgress = async (
+  eventId: string,
+  token: string
+): Promise<{ tasks: any[]; summary: any }> => {
+  const result = await get<
+    ApiResponse<{ tasks: any[]; summary: any }>
+  >(`/assignments/event/${eventId}/task-progress`, token);
+
+  return result.data || { tasks: [], summary: {} };
+};

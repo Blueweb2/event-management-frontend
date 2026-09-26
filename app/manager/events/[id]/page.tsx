@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, UserPlus, Sparkles } from "lucide-react";
+import { Loader2, UserPlus, Sparkles, Phone, Mail } from "lucide-react";
 
 import {
   getEventById,
@@ -13,6 +13,12 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import EventServiceStaffingMatrix from "@/components/manager/events/EventServiceStaffingMatrix";
 import EventProfitabilityCard from "@/components/manager/events/EventProfitabilityCard";
+import EventStaffAttendanceCard from "@/components/manager/events/EventStaffAttendanceCard";
+import EventTaskProgressCard from "@/components/manager/events/EventTaskProgressCard";
+import EventActivityTimelineCard from "@/components/manager/events/EventActivityTimelineCard";
+import { getEventStaffAttendance } from "@/lib/attendance.api";
+import { getEventTaskProgress } from "@/lib/assignment.api";
+import { getEventActivityTimeline } from "@/lib/event.api";
 import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
 import {
   type ClientDocumentData,
@@ -82,6 +88,35 @@ export default function ManagerEventDetailsPage() {
     autoFetch: false,
   });
 
+  const [attendanceTrackingData, setAttendanceTrackingData] = useState<any[]>([]);
+  const [taskProgressData, setTaskProgressData] = useState<{ tasks: any[]; summary: any }>({
+    tasks: [],
+    summary: { totalTasks: 0, completedCount: 0, inProgressCount: 0, pendingCount: 0, overdueCount: 0, progressPercentage: 0 },
+  });
+  const [activitiesData, setActivitiesData] = useState<any[]>([]);
+  const [monitoringLoading, setMonitoringLoading] = useState(false);
+
+  const fetchMonitoringData = useCallback(async () => {
+    if (!token || !eventId) return;
+    try {
+      setMonitoringLoading(true);
+      const [attendanceRes, taskRes, activityRes] = await Promise.all([
+        getEventStaffAttendance(token, eventId).catch(() => []),
+        getEventTaskProgress(eventId, token).catch(() => ({ tasks: [], summary: {} })),
+        getEventActivityTimeline(eventId, token).catch(() => ({ success: false, data: { activities: [] } })),
+      ]);
+      setAttendanceTrackingData(attendanceRes);
+      setTaskProgressData(taskRes);
+      if (activityRes?.data?.activities) {
+        setActivitiesData(activityRes.data.activities);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setMonitoringLoading(false);
+    }
+  }, [eventId, token]);
+
   // ==========================================
   // Fetch Event
   // ==========================================
@@ -119,10 +154,11 @@ export default function ManagerEventDetailsPage() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       void fetchEvent();
+      void fetchMonitoringData();
     }, 0);
 
     return () => clearTimeout(timeout);
-  }, [fetchEvent]);
+  }, [fetchEvent, fetchMonitoringData]);
 
   useEffect(() => {
     if (!token || !eventId) return;
@@ -523,11 +559,13 @@ export default function ManagerEventDetailsPage() {
                   <p className="text-base font-extrabold text-[#252525]">
                     {event.client.name}
                   </p>
-                  <p className="mt-1 text-xs font-medium text-gray-500">
-                    📞 {event.client.phone}
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                    <Phone size={13} className="text-[#9a6c37] shrink-0" />
+                    <span>{event.client.phone}</span>
                   </p>
-                  <p className="mt-0.5 text-xs font-medium text-gray-500 truncate">
-                    ✉️ {event.client.email}
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500 truncate">
+                    <Mail size={13} className="text-[#9a6c37] shrink-0" />
+                    <span className="truncate">{event.client.email}</span>
                   </p>
                 </>
               ) : (
@@ -570,7 +608,41 @@ export default function ManagerEventDetailsPage() {
                 page: 1,
                 limit: 100,
               });
+              void fetchMonitoringData();
             }}
+          />
+        </section>
+
+        {/* ======================================
+            Staff Duty Time & Attendance Tracker
+        ====================================== */}
+        <section className="mt-6">
+          <EventStaffAttendanceCard
+            attendanceData={attendanceTrackingData}
+            loading={monitoringLoading}
+            onRefresh={fetchMonitoringData}
+          />
+        </section>
+
+        {/* ======================================
+            Task Execution Progress Tracker
+        ====================================== */}
+        <section className="mt-6">
+          <EventTaskProgressCard
+            taskProgress={taskProgressData}
+            loading={monitoringLoading}
+            onRefresh={fetchMonitoringData}
+          />
+        </section>
+
+        {/* ======================================
+            Operational Activity Audit Log
+        ====================================== */}
+        <section className="mt-6">
+          <EventActivityTimelineCard
+            activities={activitiesData}
+            loading={monitoringLoading}
+            onRefresh={fetchMonitoringData}
           />
         </section>
 

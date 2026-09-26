@@ -14,8 +14,10 @@ import {
   CalendarDays,
   MapPin,
   Clock3,
+  AlertCircle,
 } from "lucide-react";
 import type { Duty } from "./constants";
+import { formatTime24to12 } from "@/lib/duty-mapper";
 
 interface ManageChecklistModalProps {
   isOpen: boolean;
@@ -78,8 +80,11 @@ export default function ManageChecklistModal({
   const [saving, setSaving] = useState(false);
   const [activeTemplateTab, setActiveTemplateTab] = useState<string>("catering");
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (duty) {
+      setError(null);
       setItems(duty.checklist ? [...duty.checklist] : []);
       // auto-detect template from department
       const dept = (duty.department || duty.serviceName || "").toLowerCase();
@@ -125,11 +130,12 @@ export default function ManageChecklistModal({
 
   const handleSave = async () => {
     setSaving(true);
+    setError(null);
     try {
       await onSaveChecklist(duty.id, items);
       onClose();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save checklist");
+      setError(err instanceof Error ? err.message : "Failed to save checklist");
     } finally {
       setSaving(false);
     }
@@ -174,6 +180,19 @@ export default function ManageChecklistModal({
           </button>
         </div>
 
+        {/* Error Alert Box */}
+        {error && (
+          <div role="alert" className="flex items-center justify-between gap-3 border-b border-rose-200 bg-rose-50 px-6 py-3 text-xs font-semibold text-rose-800">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0 text-rose-600" />
+              <span>{error}</span>
+            </div>
+            <button type="button" onClick={() => setError(null)} className="text-rose-500 hover:text-rose-800">
+              <X size={15} />
+            </button>
+          </div>
+        )}
+
         {/* Shift Details Banner */}
         <div className="grid grid-cols-3 gap-2 border-b border-[#eee7dc] bg-[#faf8f5]/60 px-6 py-3 text-xs text-[#554e46]">
           <div className="flex items-center gap-1.5 truncate">
@@ -182,7 +201,7 @@ export default function ManageChecklistModal({
           </div>
           <div className="flex items-center gap-1.5 truncate">
             <Clock3 size={14} className="text-[#a7773f] shrink-0" />
-            <span className="truncate">{duty.startTime} - {duty.endTime}</span>
+            <span className="truncate">{formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}</span>
           </div>
           <div className="flex items-center gap-1.5 truncate">
             <MapPin size={14} className="text-[#a7773f] shrink-0" />

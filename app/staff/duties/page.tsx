@@ -7,6 +7,8 @@ import {
   Clock3,
   MapPin,
   Play,
+  Pause,
+  Lock,
   Loader2,
   CheckSquare,
   Square,
@@ -15,7 +17,18 @@ import {
   BellRing,
   UserCheck,
   ListChecks,
+  X,
+  Utensils,
+  Palette,
+  Volume2,
+  Camera,
+  ShieldCheck,
+  Truck,
+  ConciergeBell,
+  Settings,
 } from "lucide-react";
+
+
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAssignments } from "@/hooks/useAssignments";
@@ -24,12 +37,18 @@ import {
   acceptAssignment,
   rejectAssignment,
   updateAssignmentChecklist,
+  startTask,
+  completeTask,
 } from "@/lib/assignment.api";
+import { pauseStaffShift, resumeStaffShift } from "@/lib/attendance.api";
 import type { Assignment } from "@/types/assignment";
+import { formatTime24to12 } from "@/lib/duty-mapper";
 import { ListSkeleton } from "@/components/common/SkeletonLoaders";
 import RichEmptyState from "@/components/common/RichEmptyState";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import DeclineShiftModal from "@/components/staff/shift/DeclineShiftModal";
+import PauseShiftModal from "@/components/staff/shift/PauseShiftModal";
+import CompleteTaskModal from "@/components/staff/shift/CompleteTaskModal";
 
 const getLocation = (): Promise<string> => {
   return new Promise((resolve) => {
@@ -81,8 +100,11 @@ export default function StaffDutiesPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [decliningDuty, setDecliningDuty] = useState<Assignment | null>(null);
+  const [pausingDutyId, setPausingDutyId] = useState<string | null>(null);
+  const [completingTaskInfo, setCompletingTaskInfo] = useState<{ dutyId: string; taskId: string; taskTitle: string } | null>(null);
   const [updatingChecklistId, setUpdatingChecklistId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalDuties(assignments);
@@ -99,6 +121,7 @@ export default function StaffDutiesPage() {
   const handleAcceptShift = async (dutyId: string) => {
     if (!token) return;
     setAcceptingId(dutyId);
+    setActionError(null);
 
     try {
       await acceptAssignment(dutyId, token);
@@ -108,7 +131,7 @@ export default function StaffDutiesPage() {
       showToast("Shift accepted! See you on duty.");
       void fetchAssignments();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to accept shift.");
+      setActionError(err instanceof Error ? err.message : "Failed to accept shift.");
     } finally {
       setAcceptingId(null);
     }
@@ -170,17 +193,52 @@ export default function StaffDutiesPage() {
   };
 
   // ==========================================
-  // Attendance Clock-In / Clock-Out
+  // Attendance Clock-In / Pause / Resume / Clock-Out
   // ==========================================
   const handleCheckIn = async (dutyId: string) => {
     setProcessingId(dutyId);
+    setActionError(null);
     try {
       const locationNotes = await getLocation();
       await staffCheckIn({ duty: dutyId, notes: locationNotes });
       await fetchAttendance();
       showToast("Checked in successfully! Have a great shift.");
     } catch (err) {
-      if (err instanceof Error) alert(err.message);
+      setActionError(err instanceof Error ? err.message : "Check-in failed.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handlePauseShiftWithReason = async (reason: string, extraNotes: string) => {
+    if (!token || !pausingDutyId) return;
+    setProcessingId(pausingDutyId);
+    setActionError(null);
+    try {
+      const locationNotes = await getLocation();
+      const fullNotes = extraNotes ? `${locationNotes} | Notes: ${extraNotes}` : locationNotes;
+      await pauseStaffShift(token, { duty: pausingDutyId, reason, notes: fullNotes });
+      await fetchAttendance();
+      showToast(`Shift paused (${reason}). Break time logged!`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Pause shift failed.");
+    } finally {
+      setProcessingId(null);
+      setPausingDutyId(null);
+    }
+  };
+
+  const handleResumeShift = async (dutyId: string) => {
+    if (!token) return;
+    setProcessingId(dutyId);
+    setActionError(null);
+    try {
+      const locationNotes = await getLocation();
+      await resumeStaffShift(token, { duty: dutyId, notes: locationNotes });
+      await fetchAttendance();
+      showToast("Shift resumed! Active work time running.");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Resume shift failed.");
     } finally {
       setProcessingId(null);
     }
@@ -188,15 +246,51 @@ export default function StaffDutiesPage() {
 
   const handleCheckOut = async (dutyId: string) => {
     setProcessingId(dutyId);
+    setActionError(null);
     try {
       const locationNotes = await getLocation();
       await staffCheckOut({ duty: dutyId, notes: locationNotes });
       await fetchAttendance();
-      showToast("Checked out successfully! Shift logged.");
+      showToast("Checked out successfully! Active work time logged.");
     } catch (err) {
-      if (err instanceof Error) alert(err.message);
+      setActionError(err instanceof Error ? err.message : "Check-out failed.");
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  // ==========================================
+  // Task Execution Handlers
+  // ==========================================
+  const handleStartTaskAction = async (dutyId: string, taskId: string) => {
+    if (!token) return;
+    setProcessingId(dutyId);
+    setActionError(null);
+    try {
+      await startTask(dutyId, taskId, token);
+      showToast("Task started! Actual start time recorded.");
+      void fetchAssignments();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to start task.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleCompleteTaskAction = async (notes: string) => {
+    if (!token || !completingTaskInfo) return;
+    const { dutyId, taskId } = completingTaskInfo;
+    setProcessingId(dutyId);
+    setActionError(null);
+    try {
+      await completeTask(dutyId, taskId, notes, token);
+      showToast("Task completed successfully!");
+      void fetchAssignments();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to complete task.");
+    } finally {
+      setProcessingId(null);
+      setCompletingTaskInfo(null);
     }
   };
 
@@ -241,6 +335,19 @@ export default function StaffDutiesPage() {
         </p>
       </header>
 
+      {/* Action Error Alert Box */}
+      {actionError && (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-xs animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle size={18} className="shrink-0 text-rose-600" />
+            <span>{actionError}</span>
+          </div>
+          <button type="button" onClick={() => setActionError(null)} className="text-rose-500 hover:text-rose-800 transition">
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
       {localDuties.length === 0 ? (
         <div className="mt-8">
           <RichEmptyState
@@ -273,7 +380,7 @@ export default function StaffDutiesPage() {
                 : 0;
 
             const deptCategory = assignment.department || assignment.role || "Operations";
-            const deptEmoji = getDepartmentEmoji(deptCategory);
+            const DeptIcon = getDepartmentEmoji(deptCategory);
 
             return (
               <article
@@ -341,8 +448,9 @@ export default function StaffDutiesPage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-[#faf6f0] px-2.5 py-0.5 text-[11px] font-extrabold text-[#9a6c37] border border-[#ede5d8]">
-                          {deptEmoji} {deptCategory}
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#faf6f0] px-2.5 py-0.5 text-[11px] font-extrabold text-[#9a6c37] border border-[#ede5d8]">
+                          <DeptIcon size={13} className="shrink-0 text-[#9a6c37]" />
+                          <span>{deptCategory}</span>
                         </span>
 
                         {isAccepted && (
@@ -409,7 +517,7 @@ export default function StaffDutiesPage() {
                     <Info
                       icon={<Clock3 size={16} />}
                       label="Shift Hours"
-                      value={`${assignment.startTime} - ${assignment.endTime} (${assignment.totalHours || 0} hrs)`}
+                      value={`${formatTime24to12(assignment.startTime)} - ${formatTime24to12(assignment.endTime)} (${assignment.totalHours || 0} hrs)`}
                     />
 
                     <Info
@@ -517,59 +625,139 @@ export default function StaffDutiesPage() {
                     </div>
                   )}
 
-                  {/* Attendance Check-in / Check-out Controls */}
-                  <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
-                    <div>
-                      {isCompleted ? (
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
-                          <CheckCircle2 size={16} />
-                          <span>Shift Completed & Logged</span>
+                  {/* Attendance Check-in / Pause / Resume / Check-out Controls */}
+                  {(() => {
+                    const isSameDate = new Date().toISOString().slice(0, 10) === assignment.dutyDate?.slice(0, 10);
+                    const isEventStarted = event ? (event.status === "IN_PROGRESS" || event.status === "Ongoing") : false;
+
+                    let canCheckIn = isSameDate && isEventStarted;
+                    let windowNotice = "";
+
+                    if (!isSameDate && assignment.dutyDate) {
+                      windowNotice = `Available on ${new Date(assignment.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`;
+                    } else if (!isEventStarted) {
+                      windowNotice = "Waiting for manager to start the event";
+                    } else if (isSameDate && assignment.startTime) {
+                      const [h, m] = assignment.startTime.split(":").map(Number);
+                      const wStart = new Date(assignment.dutyDate);
+                      wStart.setHours(h, (m || 0) - 15, 0, 0);
+                      if (new Date() < wStart) {
+                        canCheckIn = false;
+                        windowNotice = `Opens at ${wStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+                      }
+                    }
+
+                    const isPaused = Boolean(dutyRecord?.isPaused);
+
+                    return (
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
+                        <div>
+                          {isCompleted ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+                              <CheckCircle2 size={16} />
+                              <span>Shift Completed ({dutyRecord?.totalHours || assignment.totalHours || 0} active hrs)</span>
+                            </div>
+                          ) : isCheckedIn && dutyRecord?.checkIn ? (
+                            <div className="space-y-0.5">
+                              <p className="text-xs text-gray-600 font-semibold">
+                                Checked in at {new Date(dutyRecord.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                              {isPaused ? (
+                                <p className="text-[11px] font-bold text-amber-700">
+                                  ⏸️ Shift Paused (Break in progress)
+                                </p>
+                              ) : dutyRecord?.totalPauseMinutes ? (
+                                <p className="text-[10px] text-gray-400">
+                                  ({dutyRecord.totalPauseMinutes} mins break recorded)
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500">
+                              {canCheckIn
+                                ? "Event Started – Clock-in is available."
+                                : !isEventStarted && isSameDate
+                                ? "⏳ Waiting for manager to start the event."
+                                : `🔒 Check-in opens 15 mins prior to shift (${windowNotice})`}
+                            </p>
+                          )}
                         </div>
-                      ) : isCheckedIn && dutyRecord?.checkIn ? (
-                        <p className="text-xs text-gray-500">
-                          Checked in at {new Date(dutyRecord.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-gray-500">
-                          Check in when you arrive at the venue to record attendance.
-                        </p>
-                      )}
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      {!isCheckedIn && !isCompleted && (
-                        <button
-                          type="button"
-                          disabled={processingId === assignment._id}
-                          onClick={() => handleCheckIn(assignment._id)}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black disabled:opacity-50"
-                        >
-                          {processingId === assignment._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Play size={14} />
+                        <div className="flex items-center gap-2">
+                          {!isCheckedIn && !isCompleted && (
+                            <button
+                              type="button"
+                              disabled={processingId === assignment._id || !canCheckIn}
+                              onClick={() => handleCheckIn(assignment._id)}
+                              className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-5 text-xs font-extrabold text-white shadow-sm transition ${
+                                canCheckIn
+                                  ? "bg-[#29241f] hover:bg-black"
+                                  : "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed"
+                              }`}
+                              title={!canCheckIn ? windowNotice : ""}
+                            >
+                              {processingId === assignment._id ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : canCheckIn ? (
+                                <Play size={14} />
+                              ) : (
+                                <Lock size={14} />
+                              )}
+                              <span>{canCheckIn ? "Clock In" : !isEventStarted && isSameDate ? "Waiting for Event to Start" : `Clock In (${windowNotice || "15m Prior"})`}</span>
+                            </button>
                           )}
-                          Clock In
-                        </button>
-                      )}
 
-                      {isCheckedIn && (
-                        <button
-                          type="button"
-                          disabled={processingId === assignment._id}
-                          onClick={() => handleCheckOut(assignment._id)}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-50"
-                        >
-                          {processingId === assignment._id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <CheckCircle2 size={14} />
+                          {isCheckedIn && (
+                            <>
+                              {isPaused ? (
+                                <button
+                                  type="button"
+                                  disabled={processingId === assignment._id}
+                                  onClick={() => handleResumeShift(assignment._id)}
+                                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
+                                >
+                                  {processingId === assignment._id ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : (
+                                    <Play size={14} />
+                                  )}
+                                  Resume Shift
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={processingId === assignment._id}
+                                  onClick={() => setPausingDutyId(assignment._id)}
+                                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-800 disabled:opacity-50"
+                                >
+                                  {processingId === assignment._id ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : (
+                                    <Pause size={14} />
+                                  )}
+                                  Pause Shift
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                disabled={processingId === assignment._id}
+                                onClick={() => handleCheckOut(assignment._id)}
+                                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-800 disabled:opacity-50"
+                              >
+                                {processingId === assignment._id ? (
+                                  <Loader2 size={14} className="animate-spin" />
+                                ) : (
+                                  <CheckCircle2 size={14} />
+                                )}
+                                Clock Out
+                              </button>
+                            </>
                           )}
-                          Clock Out
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </article>
             );
@@ -583,6 +771,21 @@ export default function StaffDutiesPage() {
         isOpen={Boolean(decliningDuty)}
         onClose={() => setDecliningDuty(null)}
         onConfirm={handleDeclineShift}
+      />
+
+      {/* Pause Shift Reason Modal */}
+      <PauseShiftModal
+        isOpen={Boolean(pausingDutyId)}
+        onClose={() => setPausingDutyId(null)}
+        onConfirm={handlePauseShiftWithReason}
+      />
+
+      {/* Task Completion Notes Modal */}
+      <CompleteTaskModal
+        taskTitle={completingTaskInfo?.taskTitle || "Task"}
+        isOpen={Boolean(completingTaskInfo)}
+        onClose={() => setCompletingTaskInfo(null)}
+        onConfirm={handleCompleteTaskAction}
       />
     </main>
   );
@@ -639,21 +842,66 @@ function Info({
   );
 }
 
+
+
 function getDepartmentEmoji(role = "") {
   const r = role.toLowerCase();
-  if (r.includes("cater") || r.includes("food") || r.includes("chef") || r.includes("beverage"))
-    return "🍽️";
-  if (r.includes("decor") || r.includes("stage") || r.includes("floral"))
-    return "🎨";
-  if (r.includes("sound") || r.includes("audio") || r.includes("dj"))
-    return "🔊";
-  if (r.includes("photo") || r.includes("video") || r.includes("media") || r.includes("reel"))
-    return "📷";
-  if (r.includes("security") || r.includes("guard"))
-    return "🛡️";
-  if (r.includes("logistic") || r.includes("transport"))
-    return "🚚";
-  if (r.includes("hospitality") || r.includes("host") || r.includes("usher"))
-    return "🛎️";
-  return "⚙️";
+
+  if (
+    r.includes("cater") ||
+    r.includes("food") ||
+    r.includes("chef") ||
+    r.includes("beverage")
+  ) {
+    return Utensils;
+  }
+
+  if (
+    r.includes("decor") ||
+    r.includes("stage") ||
+    r.includes("floral")
+  ) {
+    return Palette;
+  }
+
+  if (
+    r.includes("sound") ||
+    r.includes("audio") ||
+    r.includes("dj")
+  ) {
+    return Volume2;
+  }
+
+  if (
+    r.includes("photo") ||
+    r.includes("video") ||
+    r.includes("media") ||
+    r.includes("reel")
+  ) {
+    return Camera;
+  }
+
+  if (
+    r.includes("security") ||
+    r.includes("guard")
+  ) {
+    return ShieldCheck;
+  }
+
+  if (
+    r.includes("logistic") ||
+    r.includes("transport")
+  ) {
+    return Truck;
+  }
+
+  if (
+    r.includes("hospitality") ||
+    r.includes("host") ||
+    r.includes("usher")
+  ) {
+    return ConciergeBell;
+  }
+
+  return Settings;
 }

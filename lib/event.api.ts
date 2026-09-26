@@ -69,10 +69,17 @@ export interface EventBooking {
 }
 
 export type EventStatus =
+  | "CONFIRMED"
+  | "READY_TO_START"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
   | "Upcoming"
   | "Ongoing"
   | "Completed"
-  | "Cancelled";
+  | "Cancelled"
+  | "Invoiced"
+  | "Settled";
 
 export interface Event {
   _id: string;
@@ -97,12 +104,46 @@ export interface Event {
 
   notes?: string;
 
-  createdBy?: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-  } | string | null;
+  startedAt?: string | null;
+  startedBy?:
+    | {
+        _id: string;
+        name: string;
+        email?: string;
+        role?: string;
+      }
+    | string
+    | null;
+
+  completedAt?: string | null;
+  completedBy?:
+    | {
+        _id: string;
+        name: string;
+        email?: string;
+      }
+    | string
+    | null;
+
+  invoicedAt?: string | null;
+  invoicedBy?:
+    | {
+        _id: string;
+        name: string;
+        email?: string;
+      }
+    | string
+    | null;
+
+  createdBy?:
+    | {
+        _id: string;
+        name: string;
+        email: string;
+        role: string;
+      }
+    | string
+    | null;
 
   createdAt: string;
   updatedAt: string;
@@ -293,6 +334,21 @@ export function updateEventStatus(
 }
 
 // ==========================================
+// Start Event (Manager Action)
+// ==========================================
+
+export function startEvent(
+  eventId: string,
+  token?: string
+): Promise<UpdateEventResponse> {
+  return patch<UpdateEventResponse>(
+    `/events/${eventId}/start`,
+    {},
+    token
+  );
+}
+
+// ==========================================
 // Cancel Event
 // ==========================================
 
@@ -302,6 +358,20 @@ export function cancelEvent(
 ): Promise<UpdateEventResponse> {
   return del<UpdateEventResponse>(
     `/events/${eventId}`,
+    token
+  );
+}
+
+// ==========================================
+// Get Event Activity Timeline
+// ==========================================
+
+export function getEventActivityTimeline(
+  eventId: string,
+  token?: string
+): Promise<{ success: boolean; data: { eventId: string; eventName: string; activities: any[] } }> {
+  return get<{ success: boolean; data: { eventId: string; eventName: string; activities: any[] } }>(
+    `/events/${eventId}/activity-timeline`,
     token
   );
 }

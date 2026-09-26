@@ -80,6 +80,16 @@ export type Attendance = {
 
   status: AttendanceStatus;
 
+  isPaused?: boolean;
+
+  pausedAt?: string | null;
+
+  totalPauseMinutes?: number;
+
+  activeMinutes?: number;
+
+  totalHours?: number;
+
   notes: string;
 
   markedBy: string | AttendanceMarkedBy | null;
@@ -87,6 +97,20 @@ export type Attendance = {
   createdAt: string;
 
   updatedAt: string;
+};
+
+// ==========================================
+// PAUSE / RESUME SHIFT
+// ==========================================
+
+export type PauseShiftPayload = {
+  duty: string;
+  notes?: string;
+};
+
+export type ResumeShiftPayload = {
+  duty: string;
+  notes?: string;
 };
 
 // ==========================================

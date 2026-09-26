@@ -15,6 +15,14 @@ import {
   UserCheck,
   UserPlus,
   Users,
+   Utensils,
+  Palette,
+  Volume2,
+  Camera,
+  ShieldCheck,
+  Truck,
+  ConciergeBell,
+  Settings,
 } from "lucide-react";
 import {
   getDepartmentAvailability,
@@ -254,6 +262,8 @@ export default function DepartmentCapacityGrid({
                 ? Math.round((dept.available / dept.total) * 100)
                 : 0;
 
+            const DeptIcon = getDepartmentIcon(dept.department);
+
             return (
               <div
                 key={dept.department}
@@ -264,7 +274,7 @@ export default function DepartmentCapacityGrid({
                   <div className="flex items-center justify-between border-b border-gray-100 pb-3.5">
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#faf6f0] text-lg text-[#9a6c37] border border-[#ede5d8]">
-                        {getDepartmentEmoji(dept.department)}
+                        <DeptIcon size={18} className="text-[#9a6c37]" />
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-[#29241f]">
@@ -361,18 +371,63 @@ export default function DepartmentCapacityGrid({
   );
 }
 
-function getDepartmentEmoji(dept = "") {
+
+
+function getDepartmentIcon(dept = "") {
   const d = dept.toLowerCase();
-  if (d.includes("cater") || d.includes("food") || d.includes("beverage"))
-    return "🍽️";
-  if (d.includes("decor") || d.includes("stage") || d.includes("floral"))
-    return "🎨";
-  if (d.includes("sound") || d.includes("audio") || d.includes("dj"))
-    return "🔊";
-  if (d.includes("photo") || d.includes("video") || d.includes("media"))
-    return "📷";
-  if (d.includes("security") || d.includes("guard")) return "🛡️";
-  if (d.includes("logistic") || d.includes("transport")) return "🚚";
-  if (d.includes("hospitality") || d.includes("usher")) return "🛎️";
-  return "⚙️";
+
+  if (
+    d.includes("cater") ||
+    d.includes("food") ||
+    d.includes("beverage")
+  ) {
+    return Utensils;
+  }
+
+  if (
+    d.includes("decor") ||
+    d.includes("stage") ||
+    d.includes("floral")
+  ) {
+    return Palette;
+  }
+
+  if (
+    d.includes("sound") ||
+    d.includes("audio") ||
+    d.includes("dj")
+  ) {
+    return Volume2;
+  }
+
+  if (
+    d.includes("photo") ||
+    d.includes("video") ||
+    d.includes("media")
+  ) {
+    return Camera;
+  }
+
+  if (
+    d.includes("security") ||
+    d.includes("guard")
+  ) {
+    return ShieldCheck;
+  }
+
+  if (
+    d.includes("logistic") ||
+    d.includes("transport")
+  ) {
+    return Truck;
+  }
+
+  if (
+    d.includes("hospitality") ||
+    d.includes("usher")
+  ) {
+    return ConciergeBell;
+  }
+
+  return Settings;
 }

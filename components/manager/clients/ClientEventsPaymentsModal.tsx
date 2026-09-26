@@ -16,6 +16,8 @@ import {
   Send,
   PieChart,
   Percent,
+  Phone,
+  Mail,
 } from "lucide-react";
 import {
   getClientDetails,
@@ -218,8 +220,16 @@ export default function ClientEventsPaymentsModal({
               <h2 className="text-xl font-black text-[#29241f]">
                 {client.name}
               </h2>
-              <p className="text-xs text-[#8d847b]">
-                📞 {client.phone} · ✉️ {client.email}
+              <p className="text-xs text-[#8d847b] flex items-center gap-3 mt-1">
+                <span className="inline-flex items-center gap-1">
+                  <Phone size={13} className="text-[#b8894b]" />
+                  {client.phone}
+                </span>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Mail size={13} className="text-[#b8894b]" />
+                  {client.email}
+                </span>
               </p>
             </div>
           </div>

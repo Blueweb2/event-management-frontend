@@ -512,9 +512,9 @@ function AttendanceRow({
           {record?.notes && (
             <div className="mt-2.5 flex items-start gap-1.5 rounded-xl border border-amber-100 bg-amber-50/60 p-2 text-[11px] text-amber-900">
               <FileText size={13} className="mt-0.5 shrink-0 text-[#9A7B4F]" />
-              <span className="line-clamp-2">
-                {isGPS ? "📍 " : ""}
-                {record.notes}
+              <span className="line-clamp-2 inline-flex items-center gap-1">
+                {isGPS && <MapPin size={12} className="shrink-0 text-[#9A7B4F]" />}
+                <span>{record.notes}</span>
               </span>
             </div>
           )}

@@ -17,10 +17,12 @@ import {
   UserCheck,
   RefreshCw,
   Building2,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 
 import type { Duty } from "./constants";
+import { formatTime24to12 } from "@/lib/duty-mapper";
 
 interface DutyCardProps {
   duty: Duty;
@@ -41,6 +43,7 @@ export default function DutyCard({
 }: DutyCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const checklistItems = duty.checklist || [];
   const completedCount = checklistItems.filter((i) => i.completed).length;
@@ -145,7 +148,8 @@ export default function DutyCard({
                           onClick={() => {
                             setMenuOpen(false);
                             if (duty.status !== "ACCEPTED") {
-                              alert("Sub-tasks can only be assigned after the staff member accepts the duty.");
+                              setWarning("Sub-tasks can only be assigned after the staff member accepts the duty.");
+                              setTimeout(() => setWarning(null), 4500);
                               return;
                             }
                             onManageChecklist(duty);
@@ -212,6 +216,19 @@ export default function DutyCard({
           </div>
         </div>
 
+        {/* Warning Alert Box Banner */}
+        {warning && (
+          <div role="alert" className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs font-bold text-amber-800 animate-in fade-in">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <AlertCircle size={15} className="shrink-0 text-amber-600" />
+              <span className="truncate">{warning}</span>
+            </div>
+            <button type="button" onClick={() => setWarning(null)} className="shrink-0 text-amber-600 hover:text-amber-900">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Staff Rejection Reason Banner */}
         {duty.status === "REJECTED" && duty.rejectionReason && (
           <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-800">
@@ -240,7 +257,7 @@ export default function DutyCard({
 
               <p className="mt-0.5 flex items-center gap-1 text-xs text-[#9b938a]">
                 <Clock3 size={12} />
-                {duty.startTime} – {duty.endTime}
+                {formatTime24to12(duty.startTime)} – {formatTime24to12(duty.endTime)}
               </p>
             </div>
           </div>

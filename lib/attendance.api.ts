@@ -73,6 +73,61 @@ export const checkOut = async (
 };
 
 // ==========================================
+// PAUSE SHIFT
+// POST /api/attendance/pause
+// ==========================================
+
+export const pauseStaffShift = async (
+  token: string,
+  payload: { duty: string; reason?: string; notes?: string }
+): Promise<Attendance> => {
+  if (!payload.duty) {
+    throw new Error("Duty is required");
+  }
+
+  const result = await post<
+    ApiResponse<{
+      attendance: Attendance;
+    }>
+  >("/attendance/pause", payload, token);
+
+  return result.data.attendance;
+};
+
+export const getEventStaffAttendance = async (
+  token: string,
+  eventId: string
+): Promise<any[]> => {
+  const result = await get<ApiResponse<any[]>>(
+    `/attendance/event/${eventId}`,
+    token
+  );
+  return result.data || [];
+};
+
+// ==========================================
+// RESUME SHIFT
+// POST /api/attendance/resume
+// ==========================================
+
+export const resumeStaffShift = async (
+  token: string,
+  payload: { duty: string; notes?: string }
+): Promise<Attendance> => {
+  if (!payload.duty) {
+    throw new Error("Duty is required");
+  }
+
+  const result = await post<
+    ApiResponse<{
+      attendance: Attendance;
+    }>
+  >("/attendance/resume", payload, token);
+
+  return result.data.attendance;
+};
+
+// ==========================================
 // GET ATTENDANCE
 // GET /api/attendance
 // ==========================================

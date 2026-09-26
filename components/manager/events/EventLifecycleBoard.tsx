@@ -28,6 +28,7 @@ import {
 import {
   getEvents,
   updateEventStatus,
+  startEvent,
   type Event,
 } from "@/lib/event.api";
 
@@ -84,7 +85,7 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: "upcoming",
     title: "Upcoming Event",
-    subtitle: "Confirmed & scheduled",
+    subtitle: "Confirmed & ready to start",
     color: "border-emerald-200 bg-emerald-50/30",
     badgeBg: "bg-emerald-100",
     badgeText: "text-emerald-800",
@@ -92,7 +93,7 @@ const COLUMNS: ColumnConfig[] = [
   {
     id: "ongoing",
     title: "Ongoing Event",
-    subtitle: "In progress today",
+    subtitle: "In progress - clock in enabled",
     color: "border-indigo-200 bg-indigo-50/30",
     badgeBg: "bg-indigo-100",
     badgeText: "text-indigo-800",
@@ -195,6 +196,21 @@ export default function EventLifecycleBoard() {
     }
   };
 
+  const handleStartEventAction = async (eventId: string) => {
+    try {
+      setActionLoading(eventId);
+      setError(null);
+
+      await startEvent(eventId);
+      showToast("🚀 Event started! Staff clock-in is now enabled.");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start event");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleUpdateEventStatus = async (eventId: string, newStatus: any) => {
     try {
       setActionLoading(eventId);
@@ -257,7 +273,8 @@ export default function EventLifecycleBoard() {
 
   const upcomingCards: PipelineCardItem[] = events
     .filter((evt) => {
-      if (evt.status !== "Upcoming") return false;
+      const isUpcoming = ["Upcoming", "CONFIRMED", "READY_TO_START"].includes(evt.status);
+      if (!isUpcoming) return false;
       if (!evt.eventDate) return false;
       const d = new Date(evt.eventDate);
       if (isNaN(d.getTime())) return false;
@@ -284,7 +301,7 @@ export default function EventLifecycleBoard() {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const ongoingCards: PipelineCardItem[] = events
-    .filter((evt) => evt.status === "Ongoing")
+    .filter((evt) => ["Ongoing", "IN_PROGRESS"].includes(evt.status))
     .map((evt) => ({
       id: evt._id,
       type: "EVENT",
@@ -525,49 +542,179 @@ export default function EventLifecycleBoard() {
                           )}
 
                           {/* Column 3: Upcoming Event -> START ACTION */}
-                          {col.id === "upcoming" && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateEventStatus(card.id, "Ongoing")}
-                              disabled={isProcessing}
-                              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                              <Play size={12} />
-                              <span>{isProcessing ? "Starting..." : "Start Event"}</span>
-                            </button>
-                          )}
+                          {col.id === "upcoming" && (() => {
+                            const todayStr = new Date().toISOString().slice(0, 10);
+                            const eventDateStr = card.date ? new Date(card.date).toISOString().slice(0, 10) : "";
+                            const canStart = eventDateStr ? todayStr >= eventDateStr : false;
+                            const formattedDate = card.date
+                              ? new Date(card.date).toLocaleDateString("en-US", {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                })
+                              : "";
 
-                          {/* Column 4: Ongoing Event -> COMPLETE ACTION */}
+                            return (
+                              <div className="space-y-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEventAction(card.id)}
+                                  disabled={isProcessing || !canStart}
+                                  className={`flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white shadow-sm transition ${
+                                    canStart
+                                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-[0.98]"
+                                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                  } disabled:opacity-60`}
+                                >
+                                  <Play size={13} className="fill-current" />
+                                  <span>{isProcessing ? "Starting Event..." : "Start Event"}</span>
+                                </button>
+
+                                {!canStart && formattedDate && (
+                                  <p className="text-center text-[11px] font-medium text-amber-700 bg-amber-50 rounded-lg py-1 px-2 border border-amber-200/60">
+                                    Event can be started on {formattedDate}.
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Column 4: Ongoing Event -> COMPLETE ACTION & STARTED DETAILS */}
                           {col.id === "ongoing" && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateEventStatus(card.id, "Completed")}
-                              disabled={isProcessing}
-                              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                            >
-                              <CheckCircle2 size={13} />
-                              <span>{isProcessing ? "Completing..." : "Complete Event"}</span>
-                            </button>
+                            <div className="space-y-2">
+                              <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-2 text-[11px] space-y-1 text-indigo-900">
+                                <div className="flex items-center justify-between font-semibold text-indigo-700">
+                                  <span>Status: IN PROGRESS</span>
+                                  <span className="rounded bg-indigo-200/80 px-1.5 py-0.5 text-[10px] font-bold text-indigo-800">
+                                    Clock-In: ENABLED
+                                  </span>
+                                </div>
+
+                                {card.rawEvent?.startedAt && (
+                                  <p className="text-gray-600">
+                                    Started:{" "}
+                                    <span className="font-medium text-gray-900">
+                                      {new Date(card.rawEvent.startedAt).toLocaleString("en-US", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })}
+                                    </span>
+                                  </p>
+                                )}
+
+                                {card.rawEvent?.startedBy && (
+                                  <p className="text-gray-600">
+                                    Started By:{" "}
+                                    <span className="font-medium text-gray-900">
+                                      {typeof card.rawEvent.startedBy === "object"
+                                        ? card.rawEvent.startedBy.name
+                                        : "Manager"}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateEventStatus(card.id, "Completed")}
+                                disabled={isProcessing}
+                                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>{isProcessing ? "Completing..." : "Complete Event"}</span>
+                              </button>
+                            </div>
                           )}
 
-                          {/* Column 5: Completed -> INVOICE ACTION */}
+                          {/* Column 5: Completed -> SHOW DETAILS & INVOICE ACTION */}
                           {col.id === "completed" && (
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateEventStatus(card.id, "Invoiced")}
-                              disabled={isProcessing}
-                              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
-                            >
-                              <FileText size={13} />
-                              <span>{isProcessing ? "Updating..." : "Generate Invoice"}</span>
-                            </button>
+                            <div className="space-y-2">
+                              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-2 text-[11px] space-y-1 text-emerald-900">
+                                <div className="flex items-center justify-between font-semibold text-emerald-700">
+                                  <span>Status: COMPLETED</span>
+                                  <span className="rounded bg-emerald-200/80 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                                    Ready for Billing
+                                  </span>
+                                </div>
+
+                                {card.rawEvent?.completedAt && (
+                                  <p className="text-gray-600">
+                                    Finished:{" "}
+                                    <span className="font-medium text-gray-900">
+                                      {new Date(card.rawEvent.completedAt).toLocaleString("en-US", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })}
+                                    </span>
+                                  </p>
+                                )}
+
+                                {card.rawEvent?.completedBy && (
+                                  <p className="text-gray-600">
+                                    Completed By:{" "}
+                                    <span className="font-medium text-gray-900">
+                                      {typeof card.rawEvent.completedBy === "object"
+                                        ? card.rawEvent.completedBy.name
+                                        : "Manager"}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateEventStatus(card.id, "Invoiced")}
+                                disabled={isProcessing}
+                                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 disabled:opacity-50"
+                              >
+                                <FileText size={13} />
+                                <span>{isProcessing ? "Updating..." : "Generate & Settle Invoice"}</span>
+                              </button>
+                            </div>
                           )}
 
                           {/* Column 6: Invoiced & Settled */}
                           {col.id === "invoiced" && (
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-purple-800">
-                              <CheckCircle2 size={14} className="text-purple-600" />
-                              <span>Invoiced & Settled</span>
+                            <div className="rounded-xl border border-purple-100 bg-purple-50/70 p-2.5 text-[11px] space-y-1.5 text-purple-900">
+                              <div className="flex items-center gap-1.5 font-bold text-purple-800">
+                                <CheckCircle2 size={14} className="text-purple-600 shrink-0" />
+                                <span>Invoiced & Fully Settled</span>
+                              </div>
+
+                              {card.rawEvent?.invoicedAt && (
+                                <p className="text-gray-600">
+                                  Invoiced:{" "}
+                                  <span className="font-medium text-gray-900">
+                                    {new Date(card.rawEvent.invoicedAt).toLocaleString("en-US", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    })}
+                                  </span>
+                                </p>
+                              )}
+
+                              {card.rawEvent?.invoicedBy && (
+                                <p className="text-gray-600">
+                                  Invoiced By:{" "}
+                                  <span className="font-medium text-gray-900">
+                                    {typeof card.rawEvent.invoicedBy === "object"
+                                      ? card.rawEvent.invoicedBy.name
+                                      : "Manager"}
+                                  </span>
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>

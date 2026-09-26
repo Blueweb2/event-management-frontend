@@ -18,9 +18,14 @@ import {
   Sparkles,
   MapPin,
   Loader2,
+  ListChecks,
+  Plus,
+  Tag,
+  UserCheck,
 } from "lucide-react";
 import type { Duty } from "./constants";
 import { updateAssignmentPayment } from "@/lib/assignment.api";
+import { formatTime24to12 } from "@/lib/duty-mapper";
 
 interface StaffHoursPayrollViewProps {
   duties: Duty[];
@@ -395,7 +400,7 @@ export default function StaffHoursPayrollView({
                           </div>
                           <div className="mt-1 flex items-center gap-1 text-[11px] text-gray-500">
                             <Clock size={11} />
-                            <span>{duty.startTime} – {duty.endTime}</span>
+                            <span>{formatTime24to12(duty.startTime)} – {formatTime24to12(duty.endTime)}</span>
                             <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
                               {hours} hrs
                             </span>
@@ -413,10 +418,11 @@ export default function StaffHoursPayrollView({
                               <button
                                 type="button"
                                 onClick={() => onManageChecklist && onManageChecklist(duty)}
-                                className="inline-flex items-center gap-1 rounded-md bg-[#faf6f0] border border-[#e8e1d8] px-2 py-0.5 text-[10px] font-bold text-[#9a6c37] hover:bg-[#f5efe5] transition"
+                                className="inline-flex items-center gap-1.5 rounded-md bg-[#faf6f0] border border-[#e8e1d8] px-2 py-0.5 text-[10px] font-bold text-[#9a6c37] hover:bg-[#f5efe5] transition"
                               >
+                                <ListChecks size={12} className="text-[#a7773f]" />
                                 <span>
-                                  ✓ {duty.checklist.filter((c) => c.completed).length}/{duty.checklist.length} subtasks (
+                                  {duty.checklist.filter((c) => c.completed).length}/{duty.checklist.length} subtasks (
                                   {Math.round(
                                     (duty.checklist.filter((c) => c.completed).length / duty.checklist.length) * 100
                                   )}%)
@@ -430,11 +436,13 @@ export default function StaffHoursPayrollView({
                                     onClick={() => onManageChecklist(duty)}
                                     className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9a6c37] hover:underline transition"
                                   >
-                                    + Assign Subtasks
+                                    <Plus size={12} />
+                                    <span>Assign Subtasks</span>
                                   </button>
                                 ) : (
-                                  <span className="text-[10px] font-medium text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                                    Awaiting Staff Acceptance
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    <Clock size={11} className="text-amber-600" />
+                                    <span>Awaiting Staff Acceptance</span>
                                   </span>
                                 )
                               )
@@ -447,8 +455,9 @@ export default function StaffHoursPayrollView({
                           <p className="font-black text-gray-900 text-sm">
                             {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(totalPay)}
                           </p>
-                          <p className="text-[10px] text-gray-500">
-                            @ {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(rate)} / hr
+                          <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-gray-500 font-medium">
+                            <Tag size={10} className="text-gray-400" />
+                            <span>{new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(rate)} / hr</span>
                           </p>
                         </td>
 
@@ -465,7 +474,24 @@ export default function StaffHoursPayrollView({
                                 : "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {duty.status === "ACCEPTED" ? "Confirmed" : duty.status === "ASSIGNED" ? "Pending" : duty.status}
+                            {duty.status === "ACCEPTED" ? (
+                              <>
+                                <UserCheck size={12} className="text-emerald-600" />
+                                <span>Confirmed</span>
+                              </>
+                            ) : duty.status === "ASSIGNED" ? (
+                              <>
+                                <Clock size={12} className="text-amber-600" />
+                                <span>Pending</span>
+                              </>
+                            ) : duty.status === "REJECTED" ? (
+                              <>
+                                <AlertCircle size={12} className="text-rose-600" />
+                                <span>Declined</span>
+                              </>
+                            ) : (
+                              duty.status
+                            )}
                           </span>
                         </td>
 

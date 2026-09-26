@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, AlertTriangle, Loader2, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Calendar, Clock, Loader2, X } from "lucide-react";
 import type { Assignment } from "@/types/assignment";
 
 interface DeclineShiftModalProps {
@@ -100,10 +100,16 @@ export default function DeclineShiftModal({
           <div className="rounded-2xl border border-gray-100 bg-[#fbf9f6] p-4 text-xs space-y-1.5">
             <div className="font-bold text-gray-900 text-sm">{duty.dutyTitle}</div>
             <div className="text-gray-600">{eventName}</div>
-            <div className="flex items-center gap-2 text-gray-500 pt-1">
-              <span>📅 {dateFormatted}</span>
+            <div className="flex items-center gap-3 text-gray-500 pt-1">
+              <span className="inline-flex items-center gap-1">
+                <Calendar size={13} className="text-[#9a6c37]" />
+                {dateFormatted}
+              </span>
               <span>•</span>
-              <span>⏰ {duty.startTime} - {duty.endTime}</span>
+              <span className="inline-flex items-center gap-1">
+                <Clock size={13} className="text-[#9a6c37]" />
+                {duty.startTime} - {duty.endTime}
+              </span>
             </div>
           </div>
 

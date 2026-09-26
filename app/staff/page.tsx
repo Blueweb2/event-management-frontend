@@ -79,25 +79,33 @@ export default function StaffHomePage() {
       ) : (
         <>
           {/* 1. Hero Active Shift Widget */}
-          <HeroActiveShiftWidget
-            assignments={assignments}
-            attendance={attendance}
-            onAttendanceUpdate={loadDashboard}
-          />
+          <div id="active-shift">
+            <HeroActiveShiftWidget
+              assignments={assignments}
+              attendance={attendance}
+              onAttendanceUpdate={loadDashboard}
+            />
+          </div>
 
           {/* Quick Stats Bar */}
           <StaffStats assignments={assignments} attendance={attendance} />
 
           {/* 2 & 3: Interactive Duty Checklist & Shift Notifications Feed */}
           <div className="grid gap-6 xl:grid-cols-2">
-            <InteractiveDutyChecklist assignment={activeAssignment} onUpdate={loadDashboard} />
+            <div id="duty-checklist">
+              <InteractiveDutyChecklist assignments={assignments} onUpdate={loadDashboard} />
+            </div>
             <ShiftNotificationsFeed assignments={assignments} />
           </div>
 
           {/* Duties & Upcoming Events */}
           <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-            <TodayDuties assignments={assignments} />
-            <UpcomingEvents assignments={assignments} />
+            <div id="today-duties">
+              <TodayDuties assignments={assignments} />
+            </div>
+            <div id="upcoming-events">
+              <UpcomingEvents assignments={assignments} />
+            </div>
           </div>
         </>
       )}

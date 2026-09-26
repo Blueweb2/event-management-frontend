@@ -11,6 +11,8 @@ import {
   XCircle,
   Utensils,
   Sparkles,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
@@ -53,6 +55,7 @@ export default function FoodList({
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingItem, setDeletingItem] = useState<FoodItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -69,13 +72,14 @@ export default function FoodList({
   });
 
   const handleToggleActive = async (item: FoodItem) => {
+    setError(null);
     try {
       const updated = await updateFoodItem(item._id, {
         active: !item.active,
       });
       onItemUpdated(updated);
     } catch (err) {
-      console.error("Failed to toggle status:", err);
+      setError(err instanceof Error ? err.message : "Failed to update item status");
     }
   };
 
@@ -90,13 +94,13 @@ export default function FoodList({
     if (!deletingItem) return;
 
     setDeletingId(deletingItem._id);
+    setError(null);
     try {
       await deleteFoodItem(deletingItem._id);
       onItemDeleted(deletingItem._id);
       setDeletingItem(null);
     } catch (err) {
-      console.error("Failed to delete food item:", err);
-      alert(err instanceof Error ? err.message : "Failed to delete item");
+      setError(err instanceof Error ? err.message : "Failed to delete item");
     } finally {
       setDeletingId(null);
     }
@@ -109,6 +113,18 @@ export default function FoodList({
 
   return (
     <div className="space-y-6">
+      {/* Error Alert Box */}
+      {error && (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0 text-rose-600" />
+            <span>{error}</span>
+          </div>
+          <button type="button" onClick={() => setError(null)} className="text-rose-500 hover:text-rose-800">
+            <X size={15} />
+          </button>
+        </div>
+      )}
       {/* Search and Filters */}
       <div className="flex flex-col gap-4 rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         {/* Search */}
