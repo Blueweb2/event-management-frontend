@@ -84,7 +84,7 @@ export default function DutyCard({
   };
 
   return (
-    <article className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 flex flex-col justify-between">
+    <article className="w-full min-w-0 rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5 flex flex-col justify-between">
       <div>
         {/* Top */}
         <div className="flex items-start gap-4">
