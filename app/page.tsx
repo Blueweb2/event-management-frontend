@@ -10,9 +10,9 @@ export default function HomePage() {
           backgroundImage: "url('/images/home-bg.jpeg')",
         }}
       >
-        {/* Logo */}
+        {/* Logo  shadow-xl bg-white/90 p-3 */}
         <div className="absolute left-1/2 top-8 z-10 -translate-x-1/2 sm:top-10">
-          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/90 p-3 shadow-xl sm:h-36 sm:w-36">
+          <div className="flex h-32 w-32 items-center justify-center rounded-full p-3 sm:h-36 sm:w-36">
             <Image
               src="/images/logo.svg"
               alt="Event Management"
