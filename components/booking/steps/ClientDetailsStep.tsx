@@ -1,6 +1,18 @@
 "use client";
 
-import { Mail, MapPin, Phone, User } from "lucide-react";
+import {
+  Compass,
+  HelpCircle,
+  Mail,
+  MapPin,
+  Megaphone,
+  PartyPopper,
+  Phone,
+  Search,
+  Share2,
+  User,
+  Users,
+} from "lucide-react";
 
 import Card from "@/components/ui/Card";
 
@@ -13,6 +25,45 @@ type ClientDetailsStepProps = {
     value: BookingFormData[K],
   ) => void;
 };
+
+const REFERRAL_OPTIONS = [
+  {
+    id: "Social Media",
+    label: "Social Media",
+    subLabel: "Instagram, Facebook, TikTok",
+    icon: Share2,
+  },
+  {
+    id: "Friend / Referral",
+    label: "Friend / Family",
+    subLabel: "Word of mouth recommendation",
+    icon: Users,
+  },
+  {
+    id: "Search Engine",
+    label: "Google / Search",
+    subLabel: "Online search engine",
+    icon: Search,
+  },
+  {
+    id: "Past Event",
+    label: "Past Event",
+    subLabel: "Attended a previous event",
+    icon: PartyPopper,
+  },
+  {
+    id: "Advertisement",
+    label: "Ad / Expo",
+    subLabel: "Banner, flyer, event expo",
+    icon: Megaphone,
+  },
+  {
+    id: "Other",
+    label: "Other Source",
+    subLabel: "Custom source",
+    icon: HelpCircle,
+  },
+];
 
 export default function ClientDetailsStep({
   formData,
@@ -52,9 +103,7 @@ export default function ClientDetailsStep({
 
           {/* Contact Fields */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {/* ========================================================
-                FULL NAME
-            ======================================================== */}
+            {/* FULL NAME */}
             <div>
               <label
                 htmlFor="name"
@@ -85,9 +134,7 @@ export default function ClientDetailsStep({
               </div>
             </div>
 
-            {/* ========================================================
-                PHONE NUMBER
-            ======================================================== */}
+            {/* PHONE NUMBER */}
             <div>
               <label
                 htmlFor="phone"
@@ -118,9 +165,7 @@ export default function ClientDetailsStep({
               </div>
             </div>
 
-            {/* ========================================================
-                EMAIL ADDRESS
-            ======================================================== */}
+            {/* EMAIL ADDRESS */}
             <div className="md:col-span-2">
               <label
                 htmlFor="email"
@@ -187,11 +232,101 @@ export default function ClientDetailsStep({
                 updateField("address", event.target.value)
               }
               placeholder="Enter the complete event address..."
-              rows={5}
+              rows={4}
               required
               className="w-full resize-none rounded-xl border border-neutral-200 bg-white py-3 pl-11 pr-4 text-sm leading-5 text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-[#b49a6a] focus:ring-1 focus:ring-[#b49a6a]"
             />
           </div>
+        </div>
+      </Card>
+
+      {/* ============================================================
+          HOW DID YOU HEAR ABOUT US? (REFERRAL SOURCE)
+      ============================================================ */}
+      <Card>
+        <div className="space-y-4 p-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Compass size={20} className="text-[#b49a6a]" />
+              <h3 className="text-lg font-medium text-neutral-900">
+                How Did You Hear About Us?
+              </h3>
+            </div>
+
+            <p className="mt-1 text-sm leading-5 text-neutral-500">
+              How did you first find out about our event management services?
+            </p>
+          </div>
+
+          {/* Options Grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {REFERRAL_OPTIONS.map((source) => {
+              const Icon = source.icon;
+              const isSelected = formData.referralSource === source.id;
+
+              return (
+                <button
+                  type="button"
+                  key={source.id}
+                  onClick={() => updateField("referralSource", source.id)}
+                  className={`flex flex-col items-start rounded-2xl border p-3.5 text-left transition ${
+                    isSelected
+                      ? "border-[#b49a6a] bg-[#faf6f0] text-neutral-900 ring-2 ring-[#b49a6a]/20 shadow-xs"
+                      : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                  }`}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                        isSelected
+                          ? "bg-[#b49a6a] text-white"
+                          : "bg-neutral-100 text-neutral-500"
+                      }`}
+                    >
+                      <Icon size={18} />
+                    </span>
+
+                    <input
+                      type="radio"
+                      name="referralSource"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      className="h-4 w-4 text-[#b49a6a] focus:ring-[#b49a6a]"
+                    />
+                  </div>
+
+                  <p className="mt-3 text-xs font-bold text-neutral-900">
+                    {source.label}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-neutral-500 line-clamp-1">
+                    {source.subLabel}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom text field if 'Other' is selected */}
+          {formData.referralSource === "Other" && (
+            <div className="mt-3">
+              <label
+                htmlFor="customReferral"
+                className="mb-1.5 block text-xs font-semibold text-neutral-700"
+              >
+                Please specify how you heard about us:
+              </label>
+              <input
+                id="customReferral"
+                type="text"
+                placeholder="e.g. Local magazine, corporate partner, radio ad..."
+                value={formData.customReferral || ""}
+                onChange={(event) =>
+                  updateField("customReferral", event.target.value)
+                }
+                className="h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-[#b49a6a] focus:ring-1 focus:ring-[#b49a6a]"
+              />
+            </div>
+          )}
         </div>
       </Card>
 

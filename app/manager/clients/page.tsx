@@ -5,6 +5,7 @@ import { Plus, Users } from "lucide-react";
 import PageHeader from "@/components/common/PageHeader";
 import ClientDirectory from "@/components/manager/clients/ClientDirectory";
 import ClientModal from "@/components/manager/clients/ClientModal";
+import ClientEventsPaymentsModal from "@/components/manager/clients/ClientEventsPaymentsModal";
 import {
   createClient,
   getClients,
@@ -24,6 +25,7 @@ export default function ManagerClientsPage() {
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [viewPaymentsClient, setViewPaymentsClient] = useState<Client | null>(null);
 
   const fetchClients = useCallback(async (nextFilters: GetClientsParams = filters) => {
     try {
@@ -68,6 +70,10 @@ export default function ManagerClientsPage() {
     setIsModalOpen(true);
   };
 
+  const openPayments = (client: Client) => {
+    setViewPaymentsClient(client);
+  };
+
   const handleFiltersChange = (nextFilters: GetClientsParams) => {
     setFilters(nextFilters);
     void fetchClients(nextFilters);
@@ -76,8 +82,8 @@ export default function ManagerClientsPage() {
   return (
     <main className="space-y-5">
       <PageHeader
-        title="Clients"
-        description="Keep every customer relationship organized in one place."
+        title="Clients & Financial Accounts"
+        description="Manage customer profiles, event history, advance payments, and outstanding balances."
         action={<button type="button" onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6B5B95] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#57487e]"><Plus size={17} />Add client</button>}
       />
 
@@ -87,9 +93,11 @@ export default function ManagerClientsPage() {
         <SummaryCard label="On this page" value={clients.length} tone="gold" />
       </div>
 
-      <ClientDirectory clients={clients} pagination={pagination} loading={loading} error={error} filters={filters} onFiltersChange={handleFiltersChange} onEdit={openEdit} onAdd={openCreate} onRefresh={() => void fetchClients(filters)} />
+      <ClientDirectory clients={clients} pagination={pagination} loading={loading} error={error} filters={filters} onFiltersChange={handleFiltersChange} onEdit={openEdit} onViewPayments={openPayments} onAdd={openCreate} onRefresh={() => void fetchClients(filters)} />
 
       <ClientModal key={`${isModalOpen}-${editingClient?._id || "new"}`} isOpen={isModalOpen} editingClient={editingClient} onClose={() => setIsModalOpen(false)} onSave={handleSave} />
+
+      <ClientEventsPaymentsModal key={`payments-${viewPaymentsClient?._id || "none"}`} isOpen={Boolean(viewPaymentsClient)} client={viewPaymentsClient} onClose={() => setViewPaymentsClient(null)} onPaymentRecorded={() => void fetchClients(filters)} />
     </main>
   );
 }

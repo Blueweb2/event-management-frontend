@@ -43,8 +43,10 @@ export type BookingFormData = {
   name: string;
   phone: string;
   email: string;
-   message: string;
+  message: string;
   address: string;
+  referralSource?: string;
+  customReferral?: string;
 
   /* ==========================================================
      FOOD & CATERING MENU

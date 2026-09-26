@@ -25,7 +25,14 @@ import {
   Utensils,
   Video,
   X,
+  Palette,
+  Volume2,
+  Camera,
+  
+  BellRing,
+  Settings,
 } from "lucide-react";
+
 import {
   getEventStaffingRequirements,
   EventStaffingResponse,
@@ -301,24 +308,27 @@ export default function EventServiceStaffingMatrix({
             All Required Services ({data.staffingStreams.length})
           </button>
 
-          {data.staffingStreams.map((stream) => (
-            <button
-              key={stream.streamId}
-              type="button"
-              onClick={() => setSelectedStreamId(stream.streamId)}
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                selectedStreamId === stream.streamId
-                  ? "bg-[#b8894b] text-white shadow-sm"
-                  : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white"
-              }`}
-            >
-              <span>{getStreamIcon(stream.category)}</span>
-              <span>{stream.title}</span>
-              <span className="ml-1 rounded-full bg-black/30 px-1.5 py-0.2 text-[10px]">
-                {stream.allocatedCount}/{stream.recommendedStaffCount}
-              </span>
-            </button>
-          ))}
+          {data.staffingStreams.map((stream) => {
+            const StreamIcon = getStreamIcon(stream.category);
+            return (
+              <button
+                key={stream.streamId}
+                type="button"
+                onClick={() => setSelectedStreamId(stream.streamId)}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                  selectedStreamId === stream.streamId
+                    ? "bg-[#b8894b] text-white shadow-sm"
+                    : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white"
+                }`}
+              >
+                <StreamIcon size={14} />
+                <span>{stream.title}</span>
+                <span className="ml-1 rounded-full bg-black/30 px-1.5 py-0.2 text-[10px]">
+                  {stream.allocatedCount}/{stream.recommendedStaffCount}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -327,6 +337,7 @@ export default function EventServiceStaffingMatrix({
         {filteredStreams.map((stream) => {
           const isFullyAllocated =
             stream.allocatedCount >= stream.recommendedStaffCount;
+          const StreamIcon = getStreamIcon(stream.category);
 
           return (
             <div
@@ -337,8 +348,8 @@ export default function EventServiceStaffingMatrix({
               <div>
                 <div className="flex items-start justify-between gap-3 border-b border-[#f1ece5] pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#faf6f0] text-xl text-[#9a6c37] border border-[#ede5d8]">
-                      {getStreamIcon(stream.category)}
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#faf6f0] text-[#9a6c37] border border-[#ede5d8]">
+                      <StreamIcon size={20} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -488,6 +499,10 @@ export default function EventServiceStaffingMatrix({
                               <button
                                 type="button"
                                 onClick={() => {
+                                  if (!isAccepted) {
+                                    alert("Sub-tasks can only be assigned after the staff member accepts the event duty allocation.");
+                                    return;
+                                  }
                                   const dutyObj: Duty = {
                                     id: duty._id,
                                     eventId: data.event.id,
@@ -510,14 +525,17 @@ export default function EventServiceStaffingMatrix({
                                 className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition shadow-2xs ${
                                   isAccepted
                                     ? "bg-emerald-700 text-white hover:bg-emerald-800"
-                                    : "bg-[#29241f] text-white hover:bg-black"
+                                    : "bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300"
                                 }`}
+                                title={!isAccepted ? "Sub-tasks can only be assigned after staff accepts duty" : ""}
                               >
                                 <ListChecks size={13} />
                                 <span>
-                                  {checklistCount > 0
-                                    ? `Manage Sub-duties (${checklistCount})`
-                                    : "+ Assign Sub-duties"}
+                                  {isAccepted
+                                    ? checklistCount > 0
+                                      ? `Manage Sub-duties (${checklistCount})`
+                                      : "+ Assign Sub-duties"
+                                    : "Sub-duties (Awaiting Acceptance)"}
                                 </span>
                               </button>
                             </div>
@@ -881,41 +899,53 @@ export default function EventServiceStaffingMatrix({
 
 function getStreamIcon(category = "") {
   const cat = category.toLowerCase();
+
   if (
     cat.includes("cater") ||
     cat.includes("food") ||
     cat.includes("beverage") ||
     cat.includes("drink")
   ) {
-    return "🍽️";
+    return Utensils;
   }
-  if (cat.includes("decor") || cat.includes("stage") || cat.includes("floral")) {
-    return "🎨";
+
+  if (
+    cat.includes("decor") ||
+    cat.includes("stage") ||
+    cat.includes("floral")
+  ) {
+    return Palette;
   }
+
   if (
     cat.includes("sound") ||
     cat.includes("audio") ||
     cat.includes("dj") ||
     cat.includes("music")
   ) {
-    return "🔊";
+    return Volume2;
   }
+
   if (
     cat.includes("photo") ||
     cat.includes("video") ||
     cat.includes("media") ||
     cat.includes("reel")
   ) {
-    return "📷";
+    return Camera;
   }
+
   if (cat.includes("security") || cat.includes("guard")) {
-    return "🛡️";
+    return Shield;
   }
+
   if (cat.includes("logistic") || cat.includes("transport")) {
-    return "🚚";
+    return Truck;
   }
+
   if (cat.includes("hospitality") || cat.includes("usher")) {
-    return "🛎️";
+    return BellRing;
   }
-  return "⚙️";
+
+  return Settings;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Edit2, Loader2, Mail, MapPin, Phone, Plus, Search, UserRound, XCircle } from "lucide-react";
+import { CheckCircle2, CreditCard, Edit2, Loader2, Mail, MapPin, Phone, Plus, Search, UserRound, XCircle } from "lucide-react";
 import {
   activateClient,
   deactivateClient,
@@ -18,11 +18,12 @@ interface ClientDirectoryProps {
   filters: GetClientsParams;
   onFiltersChange: (filters: GetClientsParams) => void;
   onEdit: (client: Client) => void;
+  onViewPayments?: (client: Client) => void;
   onAdd: () => void;
   onRefresh: () => void;
 }
 
-export default function ClientDirectory({ clients, pagination, loading, error, filters, onFiltersChange, onEdit, onAdd, onRefresh }: ClientDirectoryProps) {
+export default function ClientDirectory({ clients, pagination, loading, error, filters, onFiltersChange, onEdit, onViewPayments, onAdd, onRefresh }: ClientDirectoryProps) {
   const [search, setSearch] = useState(filters.search || "");
   const [status, setStatus] = useState<ClientStatus | "">(filters.status || "");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -80,13 +81,63 @@ export default function ClientDirectory({ clients, pagination, loading, error, f
             <article key={client._id} className="flex min-h-56 flex-col justify-between rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
               <div>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6B5B95] text-sm font-bold text-white">{client.name.charAt(0).toUpperCase()}</div><div className="min-w-0"><h2 className="truncate text-sm font-bold text-gray-900">{client.name}</h2><span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${client.status === "Active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{client.status === "Active" ? <CheckCircle2 size={11} /> : <XCircle size={11} />}{client.status}</span></div></div>
-                  <button type="button" onClick={() => onEdit(client)} title="Edit client" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-800"><Edit2 size={15} /></button>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6B5B95] text-sm font-bold text-white">
+                      {client.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="truncate text-sm font-bold text-gray-900">{client.name}</h2>
+                      <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${client.status === "Active" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        {client.status === "Active" ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                        {client.status}
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => onEdit(client)} title="Edit client" className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-800">
+                    <Edit2 size={15} />
+                  </button>
                 </div>
-                <div className="mt-5 space-y-2 text-xs text-gray-600"><a href={`tel:${client.phone}`} className="flex items-center gap-2 hover:text-[#6B5B95]"><Phone size={14} className="text-gray-400" />{client.phone}</a><a href={`mailto:${client.email}`} className="flex items-center gap-2 truncate hover:text-[#6B5B95]"><Mail size={14} className="shrink-0 text-gray-400" /><span className="truncate">{client.email}</span></a>{(client.city || client.state) && <p className="flex items-center gap-2"><MapPin size={14} className="text-gray-400" />{[client.city, client.state].filter(Boolean).join(", ")}</p>}</div>
-                {client.notes && <p className="mt-4 line-clamp-2 rounded-xl bg-[#fcfaf6] p-3 text-xs leading-5 text-gray-500">{client.notes}</p>}
+
+                <div className="mt-4 space-y-2 text-xs text-gray-600">
+                  <a href={`tel:${client.phone}`} className="flex items-center gap-2 hover:text-[#6B5B95]">
+                    <Phone size={14} className="text-gray-400" />{client.phone}
+                  </a>
+                  <a href={`mailto:${client.email}`} className="flex items-center gap-2 truncate hover:text-[#6B5B95]">
+                    <Mail size={14} className="shrink-0 text-gray-400" /><span className="truncate">{client.email}</span>
+                  </a>
+                  {(client.city || client.state) && (
+                    <p className="flex items-center gap-2">
+                      <MapPin size={14} className="text-gray-400" />{[client.city, client.state].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                </div>
+
+                {client.notes && (
+                  <p className="mt-3 line-clamp-2 rounded-xl bg-[#fcfaf6] p-2.5 text-xs leading-5 text-gray-500">
+                    {client.notes}
+                  </p>
+                )}
               </div>
-              <button type="button" disabled={updatingId === client._id} onClick={() => void handleToggleStatus(client)} className="mt-4 border-t border-gray-100 pt-3 text-left text-xs font-semibold text-gray-500 hover:text-[#6B5B95] disabled:opacity-50">{updatingId === client._id ? "Updating..." : client.status === "Active" ? "Deactivate client" : "Reactivate client"}</button>
+
+              <div className="mt-4 border-t border-gray-100 pt-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  disabled={updatingId === client._id}
+                  onClick={() => void handleToggleStatus(client)}
+                  className="text-xs font-semibold text-gray-500 hover:text-[#6B5B95] disabled:opacity-50"
+                >
+                  {updatingId === client._id ? "Updating..." : client.status === "Active" ? "Deactivate" : "Reactivate"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onViewPayments && onViewPayments(client)}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#b8894b]/30 bg-[#faf6f0] px-3 py-1.5 text-xs font-bold text-[#9a6c37] transition hover:bg-[#b8894b] hover:text-white"
+                >
+                  <CreditCard size={14} />
+                  <span>Events & Payments</span>
+                </button>
+              </div>
             </article>
           ))}
         </div>
