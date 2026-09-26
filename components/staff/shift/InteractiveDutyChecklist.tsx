@@ -84,7 +84,7 @@ export default function InteractiveDutyChecklist({
   }
 
   return (
-    <div className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
+    <div className="w-full min-w-0 rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[#9a6c37]">
