@@ -149,7 +149,7 @@ export default function InteractiveDutyChecklist({
   const isCurrentActiveNext = currentAssignment._id === activeOrNextAssignment?._id;
 
   return (
-    <div className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-xs">
+    <div className="w-full min-w-0 rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f2ede6] pb-3.5">
         <div className="flex items-center gap-2 text-[#9a6c37]">

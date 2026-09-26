@@ -62,6 +62,8 @@ export default function StaffProfilePage() {
   const [passError, setPassError] = useState("");
 
   const loadProfile = async () => {
+    setLoading(true);
+
     try {
       if (!token) {
         setError("You are not authenticated.");
@@ -208,83 +210,103 @@ export default function StaffProfilePage() {
         <>
           {/* Main Hero Profile Banner */}
           <section className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm">
-            <div className="bg-gradient-to-r from-[#29241f] via-[#3d362e] to-[#1f1b18] p-6 text-white sm:p-8">
-              <div className="flex flex-col items-center text-center sm:flex-row sm:text-left">
+
+            {/* Profile Header */}
+            <div className="relative overflow-hidden border-b border-[#eee8e1] bg-[#f7f2eb] px-5 py-6 sm:px-8 sm:py-7">
+              {/* Decorative background */}
+              <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#b8894b]/10" />
+              <div className="absolute -bottom-16 right-20 h-28 w-28 rounded-full bg-[#9a6c37]/5" />
+
+              <div className="relative flex items-center gap-4 sm:gap-5">
+
                 {/* Avatar */}
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-[#9a6c37] to-[#b8894b] font-bold text-white shadow-xl">
-                  <UserRound size={40} />
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-[#9a6c37] to-[#c3975d] text-white shadow-md sm:h-20 sm:w-20">
+                  <UserRound size={30} className="sm:hidden" />
+                  <UserRound size={36} className="hidden sm:block" />
                 </div>
 
-                {/* Main Information */}
-                <div className="mt-5 sm:ml-6 sm:mt-0">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-white">
+                {/* Main Info */}
+                <div className="min-w-0 flex-1">
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-xl font-extrabold tracking-tight text-[#29241f] sm:text-2xl">
                       {profile.name}
                     </h2>
-                    <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-bold text-emerald-300 border border-emerald-500/30">
+
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       {profile.status}
                     </span>
                   </div>
 
-                  <p className="mt-1 text-xs font-medium text-amber-200/90 capitalize">
+                  <p className="mt-1 text-xs font-semibold capitalize text-[#9a6c37]">
                     {profile.role} · {profile.department || "Event Operations"}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap justify-center sm:justify-start items-center gap-3 text-xs text-gray-300">
-                    <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1">
-                      <Hash size={13} className="text-amber-400" />
-                      ID: {profile.employeeId || "EMP-" + profile.id.slice(-6).toUpperCase()}
+                  {/* Meta information */}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[#756d64]">
+                    <span className="inline-flex items-center gap-1">
+                      <Hash size={12} className="text-[#a7773f]" />
+                      {profile.employeeId || "EMP-" + profile.id.slice(-6).toUpperCase()}
                     </span>
 
-                    <span className="flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1">
-                      <BadgeCheck size={13} className="text-amber-400" />
+                    <span className="inline-flex items-center gap-1">
+                      <BadgeCheck size={12} className="text-[#a7773f]" />
                       {profile.employmentType || "Full-Time"}
                     </span>
                   </div>
+
                 </div>
               </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-[#eee8e1] bg-[#faf8f5] px-6">
-              <button
-                type="button"
-                onClick={() => setActiveTab("details")}
-                className={`flex items-center gap-2 border-b-2 py-3.5 px-3 text-xs font-bold transition ${
-                  activeTab === "details"
-                    ? "border-[#9a6c37] text-[#9a6c37]"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <User size={15} />
-                Profile Information
-              </button>
+            <div className="border-b border-[#eee8e1] bg-[#faf8f5] p-2 sm:px-6 sm:pt-0 sm:pb-0">
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-[#eee8e1] p-1 sm:flex sm:gap-0 sm:rounded-none sm:bg-transparent sm:p-0">
 
-              <button
-                type="button"
-                onClick={() => setActiveTab("edit")}
-                className={`flex items-center gap-2 border-b-2 py-3.5 px-3 text-xs font-bold transition ${
-                  activeTab === "edit"
-                    ? "border-[#9a6c37] text-[#9a6c37]"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <Edit3 size={15} />
-                Edit Profile
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("details")}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[11px] font-bold transition sm:rounded-none sm:border-b-2 sm:px-3 sm:py-3.5 sm:text-xs ${
+                    activeTab === "details"
+                      ? "bg-white text-[#9a6c37] shadow-sm sm:border-[#9a6c37] sm:bg-transparent sm:shadow-none"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <User size={14} className="shrink-0" />
+                  <span className="sm:hidden">Profile</span>
+                  <span className="hidden sm:inline">Profile Information</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab("security")}
-                className={`flex items-center gap-2 border-b-2 py-3.5 px-3 text-xs font-bold transition ${
-                  activeTab === "security"
-                    ? "border-[#9a6c37] text-[#9a6c37]"
-                    : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <ShieldCheck size={15} />
-                Security & Password
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("edit")}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[11px] font-bold transition sm:rounded-none sm:border-b-2 sm:px-3 sm:py-3.5 sm:text-xs ${
+                    activeTab === "edit"
+                      ? "bg-white text-[#9a6c37] shadow-sm sm:border-[#9a6c37] sm:bg-transparent sm:shadow-none"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <Edit3 size={14} className="shrink-0" />
+                  <span className="sm:hidden">Edit</span>
+                  <span className="hidden sm:inline">Edit Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("security")}
+                  className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[11px] font-bold transition sm:rounded-none sm:border-b-2 sm:px-3 sm:py-3.5 sm:text-xs ${
+                    activeTab === "security"
+                      ? "bg-white text-[#9a6c37] shadow-sm sm:border-[#9a6c37] sm:bg-transparent sm:shadow-none"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <ShieldCheck size={14} className="shrink-0" />
+                  <span className="sm:hidden">Security</span>
+                  <span className="hidden sm:inline">Security & Password</span>
+                </button>
+
+              </div>
             </div>
 
             {/* Tab 1: Profile Details */}
