@@ -144,113 +144,159 @@ export default function HeroActiveShiftWidget({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#9a6c37]/20 bg-gradient-to-br from-[#29241f] via-[#38312b] to-[#1f1b18] p-6 text-white shadow-xl">
-      {/* Background Subtle Accent */}
-      <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[#9a6c37]/10 blur-2xl" />
+    <div className="relative overflow-hidden rounded-3xl border border-[#e8e1d8] bg-[#f7f2eb] shadow-sm">
+      {/* Decorative Background */}
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#b8894b]/10" />
+      <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-[#9a6c37]/5" />
 
-      {/* Header Badge */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold backdrop-blur-md">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="tracking-wide text-amber-200">TODAY'S ACTIVE SHIFT</span>
+      <div className="relative p-5 sm:p-7">
+
+        {/* Top Row */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+
+          {/* Active Shift Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#e4d8c8] bg-white/80 px-3 py-1.5 text-[10px] font-bold tracking-wider text-[#9a6c37] shadow-sm">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            TODAY'S ACTIVE SHIFT
+          </div>
+
+          {/* Status */}
+          <span
+            className={`rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider ${
+              isCheckedIn
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : isCompleted
+                ? "border-blue-200 bg-blue-50 text-blue-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            {isCheckedIn
+              ? "Shift Live"
+              : isCompleted
+              ? "Completed"
+              : "Scheduled"}
+          </span>
         </div>
 
-        <span className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
-          isCheckedIn ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" :
-          isCompleted ? "bg-blue-500/20 text-blue-300 border border-blue-500/40" :
-          "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-        }`}>
-          {isCheckedIn ? "Shift Live" : isCompleted ? "Completed" : "Scheduled"}
-        </span>
-      </div>
+        {/* Main Content */}
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
 
-      {/* Main Shift Title & Details */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">
-        <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{todayShift.dutyTitle}</h2>
-          <p className="mt-1 text-sm font-medium text-amber-200/80">
-            {event?.eventName || "Assigned Event"} · <span className="capitalize">{todayShift.role || "Crew Member"}</span>
-          </p>
+          {/* Shift Information */}
+          <div className="min-w-0">
 
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-300">
-            <div className="flex items-center gap-1.5">
-              <Clock size={15} className="text-amber-400" />
-              <span>{todayShift.startTime} - {todayShift.endTime}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <MapPin size={15} className="text-amber-400" />
-              <span>{event?.location || "Venue location pending"}</span>
-            </div>
-          </div>
-        </div>
+            <h2 className="break-words text-xl font-extrabold tracking-tight text-[#29241f] sm:text-2xl">
+              {todayShift.dutyTitle}
+            </h2>
 
-        {/* Live Timer Widget */}
-        <div className="flex flex-col items-start justify-center rounded-2xl bg-white/5 p-4 backdrop-blur-sm lg:items-end">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Shift Elapsed Time</p>
-          <div className="mt-1 font-mono text-3xl font-black tracking-wider text-amber-400">
-            {formatTimer(elapsedSeconds)}
-          </div>
-          {checkInTime && (
-            <p className="mt-1 text-[10px] text-gray-400">
-              In at: {checkInTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <p className="mt-1 text-xs font-semibold text-[#9a6c37] sm:text-sm">
+              {event?.eventName || "Assigned Event"}{" "}
+              <span className="text-[#b6a28c]">·</span>{" "}
+              <span className="capitalize">
+                {todayShift.role || "Crew Member"}
+              </span>
             </p>
+
+            {/* Shift Details */}
+            <div className="mt-4 flex flex-wrap gap-2.5">
+
+              <div className="inline-flex items-center gap-2 rounded-xl border border-[#e8e1d8] bg-white/80 px-3 py-2 text-xs font-medium text-[#756d64]">
+                <Clock size={14} className="shrink-0 text-[#a7773f]" />
+                <span>
+                  {todayShift.startTime} - {todayShift.endTime}
+                </span>
+              </div>
+
+              <div className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-[#e8e1d8] bg-white/80 px-3 py-2 text-xs font-medium text-[#756d64]">
+                <MapPin size={14} className="shrink-0 text-[#a7773f]" />
+                <span className="break-words">
+                  {event?.location || "Venue location pending"}
+                </span>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div className="rounded-2xl border border-[#e4d8c8] bg-white px-5 py-4 shadow-sm lg:min-w-[210px]">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#9b938a]">
+              Shift Elapsed Time
+            </p>
+
+            <div className="mt-1 font-mono text-3xl font-black tracking-wider text-[#9a6c37]">
+              {formatTimer(elapsedSeconds)}
+            </div>
+
+            {checkInTime && (
+              <p className="mt-1 text-[10px] font-medium text-[#9b938a]">
+                In at:{" "}
+                {checkInTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Error */}
+        {actionError && (
+          <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            <span>{actionError}</span>
+          </div>
+        )}
+
+        {/* Shift Notes */}
+        {!isCompleted && (
+          <div className="mt-5">
+            <input
+              type="text"
+              value={shiftNotes}
+              onChange={(e) => setShiftNotes(e.target.value)}
+              placeholder="Add optional shift note or equipment status..."
+              className="h-11 w-full rounded-xl border border-[#e3d9cd] bg-white px-3.5 text-xs text-[#403a34] placeholder-[#aaa097] outline-none transition focus:border-[#b8894b] focus:ring-2 focus:ring-[#b8894b]/10"
+            />
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-5 border-t border-[#e4dcd2] pt-5">
+
+          {!isCheckedIn && !isCompleted && (
+            <button
+              type="button"
+              onClick={handleCheckIn}
+              disabled={actionLoading}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-[#9a6c37] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#855b2d] active:scale-[0.98] disabled:opacity-60"
+            >
+              <Play size={18} className="fill-white" />
+              <span>
+                {actionLoading ? "Checking In..." : "Check In Now"}
+              </span>
+            </button>
+          )}
+
+          {isCheckedIn && (
+            <button
+              type="button"
+              onClick={handleCheckOut}
+              disabled={actionLoading}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl bg-rose-600 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700 active:scale-[0.98] disabled:opacity-60"
+            >
+              <Square size={18} className="fill-white" />
+              <span>
+                {actionLoading ? "Checking Out..." : "Check Out Shift"}
+              </span>
+            </button>
+          )}
+
+          {isCompleted && (
+            <div className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700">
+              <CheckCircle2 size={16} />
+              <span>Shift Completed & Logged</span>
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Error Banner */}
-      {actionError && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-500/20 p-3 text-xs text-red-300 border border-red-500/30">
-          <AlertCircle size={15} className="shrink-0" />
-          <span>{actionError}</span>
-        </div>
-      )}
-
-      {/* Optional Shift Notes & Geolocation capture */}
-      {!isCompleted && (
-        <div className="mt-4">
-          <input
-            type="text"
-            value={shiftNotes}
-            onChange={(e) => setShiftNotes(e.target.value)}
-            placeholder="Add optional shift note or equipment status..."
-            className="h-10 w-full rounded-xl border border-white/15 bg-white/10 px-3.5 text-xs text-white placeholder-gray-400 outline-none backdrop-blur-md focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
-          />
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="mt-4 border-t border-white/10 pt-4 flex flex-wrap items-center gap-3">
-        {!isCheckedIn && !isCompleted && (
-          <button
-            type="button"
-            onClick={handleCheckIn}
-            disabled={actionLoading}
-            className="inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-          >
-            <Play size={18} className="fill-white" />
-            <span>{actionLoading ? "Checking In..." : "Check In Now"}</span>
-          </button>
-        )}
-
-        {isCheckedIn && (
-          <button
-            type="button"
-            onClick={handleCheckOut}
-            disabled={actionLoading}
-            className="inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-6 text-sm font-bold text-white shadow-lg transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-          >
-            <Square size={18} className="fill-white" />
-            <span>{actionLoading ? "Checking Out..." : "Check Out Shift"}</span>
-          </button>
-        )}
-
-        {isCompleted && (
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500/20 py-3 text-xs font-bold text-emerald-300 border border-emerald-500/30">
-            <CheckCircle2 size={16} />
-            <span>Shift Completed & Logged</span>
-          </div>
-        )}
       </div>
     </div>
   );
