@@ -78,7 +78,14 @@ export default function ClientDocumentModal({
   };
 
   const handlePrint = () => {
-    window.print();
+    if (activeTab !== "preview") {
+      setActiveTab("preview");
+      setTimeout(() => {
+        window.print();
+      }, 150);
+    } else {
+      window.print();
+    }
   };
 
   const whatsappUrl = createWhatsAppUrl(
@@ -91,24 +98,48 @@ export default function ClientDocumentModal({
       {/* Print-specific style block to cleanly print ONLY the document container */}
       <style jsx global>{`
         @media print {
+          html, body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+          }
           body * {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           #printable-client-document,
           #printable-client-document * {
-            visibility: visible;
+            visibility: visible !important;
+          }
+          .fixed,
+          .overflow-hidden,
+          .overflow-y-auto,
+          [class*="max-h-"],
+          [class*="backdrop-blur"] {
+            position: static !important;
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            border: none !important;
+            transform: none !important;
           }
           #printable-client-document {
-            position: absolute;
-            left: 0;
-            top: 0;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            margin: 0 !important;
+            padding: 24px !important;
             box-shadow: none !important;
             border: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: white !important;
+            background: #ffffff !important;
+            color: #29241f !important;
           }
           .no-print {
             display: none !important;

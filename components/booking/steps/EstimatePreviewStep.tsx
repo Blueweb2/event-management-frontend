@@ -22,6 +22,10 @@ import {
   type Estimate,
 } from "@/lib/estimates.api";
 import EstimateExportActions from "@/components/estimates/EstimateExportActions";
+import {
+  type ClientDocumentData,
+  defaultCompanyDetails,
+} from "@/lib/document-formatter";
 
 type EstimatePreviewStepProps = {
   formData: BookingFormData;
@@ -185,6 +189,72 @@ export default function EstimatePreviewStep({
   const grandTotal =
     estimate?.total ??
     previewGrandTotal;
+
+  // ==========================================
+  // Client Document Payload for Export Studio / PDF / WhatsApp
+  // ==========================================
+
+  const constructedDocumentData: ClientDocumentData = {
+    documentType: "ESTIMATE",
+    documentNumber: estimate?.estimateNumber || "DRAFT",
+    date: estimate?.createdAt
+      ? new Date(estimate.createdAt).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+    status: estimate ? "PROPOSED" : "DRAFT",
+    company: defaultCompanyDetails,
+    client: {
+      name: formData.name.trim() || "Valued Client",
+      phone: formData.phone.trim() || "",
+      email: formData.email.trim() || "",
+      address: "",
+    },
+    event: {
+      name: formData.eventName.trim() || "Untitled Event",
+      type: formData.eventType.trim() || "Celebration",
+      date: formData.eventDate || new Date().toISOString().slice(0, 10),
+      time: formData.eventTime || "",
+      guests: Number(formData.guests || 100),
+      location: formData.location.trim() || "Client Designated Venue",
+      description: formData.description?.trim() || "",
+    },
+    services: formData.services.map((item, idx) => ({
+      id: item.serviceId || String(idx + 1),
+      name: item.name || "Event Service",
+      category: item.category || "Service",
+      quantity: Number(item.quantity || 1),
+      unitLabel: item.unitLabel || "unit",
+      unitPrice: Number(item.unitPrice || 0),
+      total: Number(item.quantity || 1) * Number(item.unitPrice || 0),
+    })),
+    catering: formData.foodMenu?.included
+      ? {
+          included: true,
+          servingType: formData.foodMenu.servingType || "Buffet",
+          ratePerGuest: formData.foodMenu.ratePerGuest,
+          totalFoodAmount: previewFoodAmount,
+          guestCount: Number(formData.guests || 100),
+          notes: formData.foodMenu.notes,
+          items: (formData.foodMenu.items || []).map((food) => ({
+            name: food.name,
+            category: food.category,
+            dietary: food.dietary,
+            quantity: food.quantity,
+            rate: food.rate,
+            amount: food.amount,
+          })),
+        }
+      : undefined,
+    subtotal: subtotal,
+    discount: discount,
+    discountType: formData.discountType || "percentage",
+    discountValue: Number(formData.discountValue || 0),
+    additionalCharges: additionalCharges,
+    gstRate: gstRate,
+    gstAmount: gstAmount,
+    total: grandTotal,
+    currency: "INR",
+    notes: formData.message?.trim() || "",
+  };
 
   // ==========================================
   // Create Estimate
@@ -1187,6 +1257,7 @@ export default function EstimatePreviewStep({
             eventDate={formData.eventDate || new Date().toISOString()}
             total={grandTotal}
             currency="INR"
+            documentData={constructedDocumentData}
           />
         </div>
 

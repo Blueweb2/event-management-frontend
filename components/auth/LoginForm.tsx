@@ -128,6 +128,7 @@ export default function LoginForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value) }
             leftIcon={ <Mail size={18} className="text-[#D2B47A]" /> }
+            variant="dark"
             required
             autoComplete="email" 
           />
@@ -140,6 +141,7 @@ export default function LoginForm() {
             placeholder="Enter your password"
             value={password} onChange={(event) => setPassword(event.target.value) }
             leftIcon={ <LockKeyhole size={18} className="text-[#D2B47A]" /> }
+            variant="dark"
             rightIcon={ <button type="button" onClick={() => setShowPassword((previous) => !previous) }
             aria-label={ showPassword ? "Hide password" : "Show password" }
             className="pointer-events-auto rounded-md p-1 text-gray-500 transition hover:text-[#D2B47A]" >{showPassword ? ( <EyeOff size={18} /> ) : ( <Eye size={18} /> )} </button> }

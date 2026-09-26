@@ -28,12 +28,12 @@ export default function EventDetailsStep({
 }: EventDetailsStepProps) {
   return (
     <Card
+      padding="md"
       title="Event Details"
       description="Tell us the basic details of your event."
       className="border-[#e8e1d8] shadow-sm"
     >
-      <div className="space-y-6 mt-5">
-
+      <div className="space-y-5">
         {/* Event Name */}
         <Input
           id="eventName"
@@ -48,11 +48,12 @@ export default function EventDetailsStep({
           }
           required
         />
+
         {/* Event Type */}
-        <div className="px-3">
+        <div>
           <label
             htmlFor="eventType"
-            className="mb-2 block text-sm font-semibold text-[#403a34]"
+            className="mb-1.5 block text-sm font-semibold text-[#29241f]"
           >
             Event Type
             <span className="ml-1 text-[#b8894b]">
@@ -70,14 +71,7 @@ export default function EventDetailsStep({
               )
             }
             required
-            className={[
-              "w-full rounded-xl border bg-white px-4 py-3",
-              "text-sm text-[#403a34]",
-              "outline-none transition-all duration-200",
-              "border-[#d9d0c6]",
-              "focus:border-[#b8894b]",
-              "focus:ring-2 focus:ring-[#b8894b]/15",
-            ].join(" ")}
+            className="h-11 w-full rounded-xl border border-[#d8cfc4] bg-white px-3.5 text-sm font-medium text-[#29241f] outline-none transition-all duration-200 focus:border-[#b49a6a] focus:ring-2 focus:ring-[#b49a6a]/20 shadow-2xs"
           >
             <option value="">
               Select event type
@@ -101,7 +95,7 @@ export default function EventDetailsStep({
         </div>
 
         {/* Date & Time */}
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Input
             id="eventDate"
             label="Event Date"
@@ -172,10 +166,10 @@ export default function EventDetailsStep({
         />
 
         {/* Event Description */}
-        <div className="px-3">
+        <div>
           <label
             htmlFor="description"
-            className="mb-2 block text-sm font-semibold text-[#403a34]"
+            className="mb-1.5 block text-sm font-semibold text-[#29241f]"
           >
             Event Description
             <span className="ml-1 text-[#b8894b]">*</span>
@@ -183,26 +177,16 @@ export default function EventDetailsStep({
 
           <textarea
             id="description"
-            rows={5}
+            rows={4}
             placeholder="Describe your event, including the theme, special requirements, or any other details..."
             value={formData.description}
             onChange={(event) =>
               updateField("description", event.target.value)
             }
             required
-            className={[
-              "w-full resize-none rounded-xl border bg-white px-4 py-3",
-              "text-sm text-[#403a34]",
-              "placeholder:text-[#a69b90]",
-              "outline-none transition-all duration-200",
-              "border-[#d9d0c6]",
-              "focus:border-[#b8894b]",
-              "focus:ring-2 focus:ring-[#b8894b]/15",
-            ].join(" ")}
+            className="w-full resize-none rounded-xl border border-[#d8cfc4] bg-white p-3.5 text-sm text-[#29241f] placeholder:text-gray-400 outline-none transition-all duration-200 focus:border-[#b49a6a] focus:ring-2 focus:ring-[#b49a6a]/20 shadow-2xs"
           />
         </div>
-
-
       </div>
     </Card>
   );

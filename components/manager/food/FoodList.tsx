@@ -252,7 +252,7 @@ export default function FoodList({
                           <img
                             src={getFoodImageUrl(item.imageUrl)}
                             alt={item.name}
-                            className="mb-3 h-36 w-full rounded-xl object-cover"
+                            className="mb-3 h-72 w-full rounded-xl object-cover"
                           />
                         ) : null}
                         {/* Top Meta */}

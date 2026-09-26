@@ -23,6 +23,7 @@ const filters: AssignmentFilter[] = [
   "ACCEPTED",
   "IN_PROGRESS",
   "COMPLETED",
+  "REJECTED",
   "CANCELLED",
 ];
 
@@ -35,6 +36,7 @@ const filterLabels: Record<
   ACCEPTED: "Accepted",
   IN_PROGRESS: "In Progress",
   COMPLETED: "Completed",
+  REJECTED: "Declined",
   CANCELLED: "Cancelled",
 };
 

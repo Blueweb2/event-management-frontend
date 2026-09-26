@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import PageHeader from "@/components/common/PageHeader";
 import StaffList from "@/components/manager/staff/StaffList";
@@ -20,6 +20,14 @@ export default function ManagerStaffPage() {
   const [isAddModalOpen, setIsAddModalOpen] =
     useState(false);
 
+  const filters = useMemo(
+    () => ({
+      page: 1,
+      limit: 20,
+    }),
+    [],
+  );
+
   const {
     staff,
     pagination,
@@ -30,60 +38,41 @@ export default function ManagerStaffPage() {
     clearError,
   } = useStaff({
     token,
-    filters: {
-      page: 1,
-      limit: 20,
-    },
+    filters,
   });
 
   /*
    * Open Add Staff modal
    */
-  const handleOpenAddStaff = () => {
+  const handleOpenAddStaff = useCallback(() => {
     clearError();
     setIsAddModalOpen(true);
-  };
+  }, [clearError]);
 
   /*
    * Close Add Staff modal
    */
-  const handleCloseAddStaff = () => {
+  const handleCloseAddStaff = useCallback(() => {
     setIsAddModalOpen(false);
-  };
+  }, []);
 
   /*
    * Create Staff
-   *
-   * IMPORTANT:
-   * This function MUST return Staff because
-   * AddStaffModal expects:
-   *
-   * (payload: CreateStaffPayload) => Promise<Staff>
    */
-  const handleCreateStaff = async (
-    payload: CreateStaffPayload,
-  ): Promise<Staff> => {
-    const newStaff = await addStaff(payload);
+  const handleCreateStaff = useCallback(
+    async (payload: CreateStaffPayload): Promise<Staff> => {
+      const newStaff = await addStaff(payload);
 
-    /*
-     * Refresh the list from backend.
-     */
-    await fetchStaff({
-      page: 1,
-      limit: 20,
-    });
+      await fetchStaff({
+        page: 1,
+        limit: 20,
+      });
 
-    /*
-     * Close modal.
-     */
-    setIsAddModalOpen(false);
-
-    /*
-     * VERY IMPORTANT:
-     * Return the created staff.
-     */
-    return newStaff;
-  };
+      setIsAddModalOpen(false);
+      return newStaff;
+    },
+    [addStaff, fetchStaff],
+  );
 
   /*
    * Retry loading staff

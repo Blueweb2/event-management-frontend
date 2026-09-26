@@ -11,6 +11,7 @@ import {
   Disc,
   Info,
   Layers,
+  ListChecks,
   Loader2,
   Lock,
   Music,
@@ -31,8 +32,10 @@ import {
   StaffingStream,
   DepartmentStaffMember,
 } from "@/lib/department.api";
-import { createAssignment } from "@/lib/assignment.api";
+import { createAssignment, updateAssignmentChecklist } from "@/lib/assignment.api";
 import { useAuth } from "@/hooks/useAuth";
+import ManageChecklistModal from "@/components/manager/duties/ManageChecklistModal";
+import type { Duty } from "@/components/manager/duties/constants";
 
 interface EventServiceStaffingMatrixProps {
   eventId: string;
@@ -69,6 +72,9 @@ export default function EventServiceStaffingMatrix({
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
   const [successToast, setSuccessToast] = useState("");
+
+  // Managing Sub-duties Checklist Modal State
+  const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
 
   const loadMatrix = async () => {
     try {
@@ -404,26 +410,120 @@ export default function EventServiceStaffingMatrix({
                     <p className="text-xs font-bold text-[#29241f]">
                       Assigned Personnel ({stream.assignedDuties.length}):
                     </p>
-                    <div className="mt-2 space-y-1.5">
-                      {stream.assignedDuties.map((duty) => (
-                        <div
-                          key={duty._id}
-                          className="flex items-center justify-between rounded-xl bg-emerald-50/60 border border-emerald-100 px-3 py-2 text-xs"
-                        >
-                          <div className="flex items-center gap-2">
-                            <UserCheck size={14} className="text-emerald-600" />
-                            <span className="font-bold text-[#29241f]">
-                              {duty.staff?.name || "Assigned Staff"}
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                              · {duty.dutyTitle}
-                            </span>
+                    <div className="mt-2 space-y-2">
+                      {stream.assignedDuties.map((duty) => {
+                        const isAccepted = duty.status === "ACCEPTED";
+                        const isRejected = duty.status === "REJECTED";
+                        const checklistCount = (duty as any).checklist?.length || 0;
+                        const completedCount = ((duty as any).checklist || []).filter(
+                          (i: any) => i.completed
+                        ).length;
+
+                        return (
+                          <div
+                            key={duty._id}
+                            className={`rounded-2xl border p-3 text-xs transition ${
+                              isAccepted
+                                ? "border-emerald-300 bg-emerald-50/70"
+                                : isRejected
+                                ? "border-rose-200 bg-rose-50/70"
+                                : "border-amber-200 bg-amber-50/50"
+                            }`}
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <UserCheck
+                                  size={15}
+                                  className={
+                                    isAccepted
+                                      ? "text-emerald-600"
+                                      : isRejected
+                                      ? "text-rose-600"
+                                      : "text-amber-600"
+                                  }
+                                />
+                                <div>
+                                  <span className="font-extrabold text-[#29241f]">
+                                    {duty.staff?.name || "Assigned Staff"}
+                                  </span>
+                                  <span className="ml-1 text-[11px] text-gray-600">
+                                    · {duty.dutyTitle}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                                    isAccepted
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : isRejected
+                                      ? "bg-rose-100 text-rose-800"
+                                      : "bg-amber-100 text-amber-800"
+                                  }`}
+                                >
+                                  {isAccepted
+                                    ? "✓ Confirmed by Staff"
+                                    : isRejected
+                                    ? "Declined"
+                                    : "Pending Acceptance"}
+                                </span>
+
+                                <span className="rounded-md bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-700">
+                                  {duty.startTime} - {duty.endTime}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Sub-duty / instructions callout */}
+                            <div className="mt-2.5 flex items-center justify-between border-t border-black/5 pt-2">
+                              <span className="text-[11px] font-semibold text-gray-600">
+                                {checklistCount > 0
+                                  ? `Sub-tasks: ${completedCount}/${checklistCount} completed`
+                                  : isAccepted
+                                  ? "Staff accepted! Assign sub-duty instructions below."
+                                  : "Sub-duty instructions pending."}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const dutyObj: Duty = {
+                                    id: duty._id,
+                                    eventId: data.event.id,
+                                    title: duty.dutyTitle,
+                                    event: data.event.eventName,
+                                    eventDate: data.targetDate ? data.targetDate.slice(0, 10) : "",
+                                    startTime: duty.startTime,
+                                    endTime: duty.endTime,
+                                    location: data.event.location || "",
+                                    staffId: duty.staff?._id || "",
+                                    staffName: duty.staff?.name || "Assigned Staff",
+                                    description: (duty as any).description || "",
+                                    status: (duty.status as any) || "ASSIGNED",
+                                    department: stream.department,
+                                    serviceName: stream.title,
+                                    checklist: (duty as any).checklist || [],
+                                  };
+                                  setManagingChecklistDuty(dutyObj);
+                                }}
+                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition shadow-2xs ${
+                                  isAccepted
+                                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                                    : "bg-[#29241f] text-white hover:bg-black"
+                                }`}
+                              >
+                                <ListChecks size={13} />
+                                <span>
+                                  {checklistCount > 0
+                                    ? `Manage Sub-duties (${checklistCount})`
+                                    : "+ Assign Sub-duties"}
+                                </span>
+                              </button>
+                            </div>
                           </div>
-                          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                            {duty.startTime} - {duty.endTime}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -760,6 +860,21 @@ export default function EventServiceStaffingMatrix({
           </div>
         </div>
       )}
+
+      {/* Sub-duty Checklist Instructions Modal */}
+      <ManageChecklistModal
+        isOpen={Boolean(managingChecklistDuty)}
+        duty={managingChecklistDuty}
+        onClose={() => setManagingChecklistDuty(null)}
+        onSaveChecklist={async (dutyId, checklist) => {
+          await updateAssignmentChecklist(dutyId, checklist, token);
+          setSuccessToast("Sub-duty instructions assigned & saved successfully!");
+          setTimeout(() => setSuccessToast(""), 4000);
+          setManagingChecklistDuty(null);
+          await loadMatrix();
+          if (onAssignmentCreated) onAssignmentCreated();
+        }}
+      />
     </div>
   );
 }

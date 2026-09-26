@@ -82,28 +82,32 @@ export default function AddStaffModal({
   ] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setFormData(initialFormData);
-      setError(null);
-      setIsSaving(false);
-      setShowPassword(false);
-      setShowConfirmPassword(false);
+    if (!isOpen) return;
 
-      void getDepartmentAndServiceOptions().then((opts) => {
-        setDepartmentOptions(opts);
-      });
+    setFormData(initialFormData);
+    setError(null);
+    setIsSaving(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          onClose();
-        }
-      };
+    void getDepartmentAndServiceOptions().then((opts) => {
+      setDepartmentOptions(opts);
+    });
+  }, [isOpen]);
 
-      window.addEventListener("keydown", handleKeyDown);
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-      };
-    }
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) {
@@ -175,9 +179,13 @@ export default function AddStaffModal({
       return;
     }
 
+    const rawUsername = email.includes("@") ? email.split("@")[0] : email;
+    const sanitizedUsername = rawUsername.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
+    const validUsername = sanitizedUsername.length >= 3 ? sanitizedUsername.slice(0, 30) : `${sanitizedUsername}staff`;
+
     const payload: CreateStaffPayload = {
       name,
-      username: email,
+      username: validUsername,
       email,
       phone: phone || undefined,
       role,
@@ -210,23 +218,21 @@ export default function AddStaffModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close add staff modal"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Backdrop overlay */}
+      <div
         onClick={handleClose}
-        className="absolute inset-0 bg-black/40"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
       />
 
-      {/* Mobile bottom sheet */}
+      {/* Modal Dialog Box */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-staff-title"
-        className="absolute inset-x-0 bottom-0 max-h-[94vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+        className="relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-2xl sm:max-w-md animate-in fade-in zoom-in-95 duration-200"
       >
-        {/* Drag handle */}
+        {/* Mobile drag bar */}
         <div className="flex justify-center pt-3 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-gray-200" />
         </div>
@@ -292,7 +298,7 @@ export default function AddStaffModal({
               placeholder="Enter full name"
               autoComplete="name"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -314,7 +320,7 @@ export default function AddStaffModal({
               placeholder="Enter email address"
               autoComplete="email"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -335,7 +341,7 @@ export default function AddStaffModal({
               placeholder="Enter phone number"
               autoComplete="tel"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -356,7 +362,7 @@ export default function AddStaffModal({
               }
               placeholder="e.g. Event Staff"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -376,7 +382,7 @@ export default function AddStaffModal({
               }
               disabled={isSaving}
               required
-              className="form-input bg-white cursor-pointer"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
             >
               <option value="">Select a department / service</option>
               {departmentOptions.map((dept) => (
@@ -385,6 +391,9 @@ export default function AddStaffModal({
                 </option>
               ))}
             </select>
+            <p className="mt-1.5 text-[10px] text-gray-400">
+              Populated from active services configured in your Service Menu.
+            </p>
           </FormField>
 
           {/* Password */}
@@ -410,7 +419,7 @@ export default function AddStaffModal({
                 placeholder="Create password"
                 autoComplete="new-password"
                 disabled={isSaving}
-                className="form-input pr-12"
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-3.5 pr-12 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
               />
 
               <button
@@ -426,12 +435,12 @@ export default function AddStaffModal({
                     ? "Hide password"
                     : "Show password"
                 }
-                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
               >
                 {showPassword ? (
-                  <EyeOff size={18} />
+                  <EyeOff size={16} />
                 ) : (
-                  <Eye size={18} />
+                  <Eye size={16} />
                 )}
               </button>
             </div>
@@ -466,7 +475,7 @@ export default function AddStaffModal({
                 placeholder="Confirm password"
                 autoComplete="new-password"
                 disabled={isSaving}
-                className="form-input pr-12"
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-3.5 pr-12 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
               />
 
               <button
@@ -482,12 +491,12 @@ export default function AddStaffModal({
                     ? "Hide password"
                     : "Show password"
                 }
-                className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
               >
                 {showConfirmPassword ? (
-                  <EyeOff size={18} />
+                  <EyeOff size={16} />
                 ) : (
-                  <Eye size={18} />
+                  <Eye size={16} />
                 )}
               </button>
             </div>
@@ -542,39 +551,6 @@ export default function AddStaffModal({
           </div>
         </form>
       </div>
-
-      <style jsx>{`
-        .form-input {
-          width: 100%;
-          min-height: 48px;
-          border-radius: 12px;
-          border: 1px solid #e5e7eb;
-          background: white;
-          padding: 0 12px;
-          font-size: 13px;
-          color: #1f1f1f;
-          outline: none;
-          transition:
-            border-color 150ms ease,
-            box-shadow 150ms ease;
-        }
-
-        .form-input::placeholder {
-          color: #9ca3af;
-        }
-
-        .form-input:focus {
-          border-color: #9a7b4f;
-          box-shadow: 0 0 0 3px
-            rgba(154, 123, 79, 0.1);
-        }
-
-        .form-input:disabled {
-          cursor: not-allowed;
-          background: #f9fafb;
-          opacity: 0.7;
-        }
-      `}</style>
     </div>
   );
 }

@@ -72,9 +72,13 @@ export default function EditStaffModal({
 
     setError(null);
 
-    void getDepartmentAndServiceOptions().then((opts) => {
+    void getDepartmentAndServiceOptions(staff.department).then((opts) => {
       setDepartmentOptions(opts);
     });
+  }, [staff, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -86,7 +90,7 @@ export default function EditStaffModal({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [staff, isOpen, onClose]);
+  }, [isOpen, onClose]);
 
   /*
    * Don't render when closed.
@@ -165,27 +169,25 @@ export default function EditStaffModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close edit staff modal"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Backdrop overlay */}
+      <div
         onClick={() => {
           if (!isSaving) {
             onClose();
           }
         }}
-        className="absolute inset-0 bg-black/40"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
       />
 
-      {/* Mobile bottom sheet */}
+      {/* Modal Dialog Box */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-staff-title"
-        className="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+        className="relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-2xl sm:max-w-md animate-in fade-in zoom-in-95 duration-200"
       >
-        {/* Drag handle */}
+        {/* Mobile drag handle */}
         <div className="flex justify-center pt-3 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-gray-200" />
         </div>
@@ -238,7 +240,7 @@ export default function EditStaffModal({
               }
               placeholder="Enter full name"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -259,7 +261,7 @@ export default function EditStaffModal({
               }
               placeholder="Enter email address"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -279,7 +281,7 @@ export default function EditStaffModal({
               }
               placeholder="Enter phone number"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -300,7 +302,7 @@ export default function EditStaffModal({
               }
               placeholder="e.g. Event Staff"
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
           </FormField>
 
@@ -318,7 +320,7 @@ export default function EditStaffModal({
                 )
               }
               disabled={isSaving}
-              className="form-input"
+              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
             >
               <option value="">Select a department or service...</option>
               {departmentOptions.map((opt) => (
@@ -327,6 +329,9 @@ export default function EditStaffModal({
                 </option>
               ))}
             </select>
+            <p className="mt-1.5 text-[10px] text-gray-400">
+              Populated from active services configured in your Service Menu.
+            </p>
           </FormField>
 
           {/* Error */}
@@ -372,38 +377,6 @@ export default function EditStaffModal({
           </div>
         </form>
       </div>
-
-      <style jsx>{`
-        .form-input {
-          width: 100%;
-          min-height: 48px;
-          border-radius: 12px;
-          border: 1px solid #e5e7eb;
-          background: white;
-          padding: 0 12px;
-          font-size: 13px;
-          color: #1f1f1f;
-          outline: none;
-          transition: border-color 150ms ease,
-            box-shadow 150ms ease;
-        }
-
-        .form-input::placeholder {
-          color: #9ca3af;
-        }
-
-        .form-input:focus {
-          border-color: #9a7b4f;
-          box-shadow: 0 0 0 3px
-            rgba(154, 123, 79, 0.1);
-        }
-
-        .form-input:disabled {
-          cursor: not-allowed;
-          background: #f9fafb;
-          opacity: 0.7;
-        }
-      `}</style>
     </div>
   );
 }

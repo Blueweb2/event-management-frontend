@@ -55,6 +55,8 @@ export const useAssignments = ({
   const [error, setError] =
     useState<string | null>(null);
 
+  const filtersKey = JSON.stringify(filters);
+
   // ==========================================
   // GET ASSIGNMENTS
   // ==========================================
@@ -91,7 +93,7 @@ export const useAssignments = ({
         setLoading(false);
       }
     },
-    [token, filters],
+    [token, filtersKey],
   );
 
   // ==========================================
@@ -142,7 +144,7 @@ export const useAssignments = ({
         setLoading(false);
       }
     },
-    [token, filters],
+    [token, filtersKey],
   );
 
   // ==========================================

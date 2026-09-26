@@ -51,25 +51,29 @@ export default function ResetPasswordModal({
     useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setPassword("");
-      setConfirmPassword("");
-      setShowPassword(false);
-      setShowConfirmPassword(false);
-      setError(null);
-      setIsSaving(false);
+    if (!isOpen) return;
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
-          onClose();
-        }
-      };
+    setPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setError(null);
+    setIsSaving(false);
+  }, [isOpen]);
 
-      window.addEventListener("keydown", handleKeyDown);
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-      };
-    }
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) {
@@ -126,21 +130,19 @@ export default function ResetPasswordModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close reset password modal"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Backdrop overlay */}
+      <div
         onClick={handleClose}
-        className="absolute inset-0 bg-black/40"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
       />
 
-      {/* Mobile bottom sheet */}
+      {/* Modal Dialog Box */}
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="reset-password-title"
-        className="absolute inset-x-0 bottom-0 max-h-[92vh] overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:w-[calc(100%-2rem)] sm:max-w-md sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
+        className="relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-2xl sm:max-w-md animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 sm:hidden">

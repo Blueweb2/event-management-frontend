@@ -38,6 +38,12 @@ const statusConfig: Record<
     dotClassName: "bg-[#4CAF50]",
   },
 
+  REJECTED: {
+    label: "Declined",
+    className: "bg-red-50 text-red-600",
+    dotClassName: "bg-red-500",
+  },
+
   CANCELLED: {
     label: "Cancelled",
     className: "bg-gray-100 text-gray-500",

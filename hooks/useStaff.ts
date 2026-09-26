@@ -54,6 +54,8 @@ export const useStaff = ({
   const [error, setError] =
     useState<string | null>(null);
 
+  const filtersKey = JSON.stringify(filters);
+
   // ==========================================
   // GET STAFF
   // ==========================================
@@ -86,7 +88,7 @@ export const useStaff = ({
         setLoading(false);
       }
     },
-    [token, filters],
+    [token, filtersKey],
   );
 
   // ==========================================

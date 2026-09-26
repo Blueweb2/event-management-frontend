@@ -29,9 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body
-        className={`${inter.variable} bg-[#0b0b0a] text-gray-900 antialiased`}
+        className={`${inter.variable} bg-[#f7f4ec] text-[#29241f] antialiased`}
       >
         <ToastProvider>{children}</ToastProvider>
       </body>
