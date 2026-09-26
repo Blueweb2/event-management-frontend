@@ -144,12 +144,21 @@ export default function DutyCard({
                           type="button"
                           onClick={() => {
                             setMenuOpen(false);
+                            if (duty.status !== "ACCEPTED") {
+                              alert("Sub-tasks can only be assigned after the staff member accepts the duty.");
+                              return;
+                            }
                             onManageChecklist(duty);
                           }}
-                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-[#a7773f] hover:bg-[#faf6f0]"
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold ${
+                            duty.status === "ACCEPTED"
+                              ? "text-[#a7773f] hover:bg-[#faf6f0]"
+                              : "text-gray-400 hover:bg-gray-50"
+                          }`}
+                          title={duty.status !== "ACCEPTED" ? "Sub-tasks can only be assigned after staff accepts duty" : ""}
                         >
                           <ListChecks size={14} />
-                          Manage Subtasks
+                          <span>Manage Subtasks {duty.status !== "ACCEPTED" ? "(Awaiting Acceptance)" : ""}</span>
                         </button>
                       )}
 
@@ -275,13 +284,13 @@ export default function DutyCard({
                   {duty.totalHours ? `${duty.totalHours} hrs` : "Calculated upon schedule"}
                 </strong>
                 {duty.hourlyRate ? (
-                  <span className="text-[11px] text-gray-500"> (@ ${duty.hourlyRate.toFixed(2)}/hr)</span>
+                  <span className="text-[11px] text-gray-500"> (@ ₹{duty.hourlyRate.toFixed(2)}/hr)</span>
                 ) : null}
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-bold text-[#b8894b]">
-                  ${(duty.totalAmount || (duty.totalHours && duty.hourlyRate ? duty.totalHours * duty.hourlyRate : 0)).toFixed(2)}
+                  ₹{(duty.totalAmount || (duty.totalHours && duty.hourlyRate ? duty.totalHours * duty.hourlyRate : 0)).toFixed(2)}
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -320,13 +329,19 @@ export default function DutyCard({
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-[#9a6c37]">{progressPercent}%</span>
                 {onManageChecklist && (
-                  <button
-                    type="button"
-                    onClick={() => onManageChecklist(duty)}
-                    className="rounded-md bg-white border border-[#d8cfc4] px-2 py-0.5 text-[10px] font-bold text-[#403a34] hover:bg-[#f7efe4]"
-                  >
-                    Edit
-                  </button>
+                  duty.status === "ACCEPTED" ? (
+                    <button
+                      type="button"
+                      onClick={() => onManageChecklist(duty)}
+                      className="rounded-md bg-white border border-[#d8cfc4] px-2 py-0.5 text-[10px] font-bold text-[#403a34] hover:bg-[#f7efe4]"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                      Awaiting Acceptance
+                    </span>
+                  )
                 )}
               </div>
             </div>

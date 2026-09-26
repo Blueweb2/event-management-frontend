@@ -41,6 +41,8 @@ const initialFormData: BookingFormData = {
   email: "",
   message: "",
   address: "",
+  referralSource: "",
+  customReferral: "",
 
   // ========================================
   // Food & Catering Menu

@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   CalendarDays,
   Clock,
-  DollarSign,
+  IndianRupee,
   User,
   CreditCard,
   Building2,
@@ -186,13 +186,13 @@ export default function StaffProfile({
 
           {/* Total Earnings */}
           <div className="rounded-xl bg-emerald-50/60 p-3 text-center">
-            <DollarSign
+            <IndianRupee
               size={17}
               className="mx-auto text-emerald-700"
               strokeWidth={1.8}
             />
             <p className="mt-1.5 text-lg font-bold text-emerald-900">
-              ${totalEarnings.toFixed(2)}
+              ₹{totalEarnings.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-emerald-700">Total Compensation</p>
           </div>
@@ -327,8 +327,8 @@ export default function StaffProfile({
                             {hours} hrs
                           </td>
                           <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <p className="font-bold text-gray-900">${pay.toFixed(2)}</p>
-                            <p className="text-[10px] text-gray-500">@ ${rate.toFixed(2)}/hr</p>
+                            <p className="font-bold text-gray-900">₹{pay.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+                            <p className="text-[10px] text-gray-500">@ ₹{rate.toFixed(2)}/hr</p>
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <span

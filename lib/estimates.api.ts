@@ -46,6 +46,7 @@ export type CreateEstimatePayload = {
     phone: string;
     email: string;
     message?: string;
+    referralSource?: string;
   };
 
   services: CreateEstimateService[];
@@ -91,6 +92,7 @@ export type Estimate = {
     phone: string;
     email: string;
     message?: string;
+    referralSource?: string;
   };
 
   items: EstimateItem[];

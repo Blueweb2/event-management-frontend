@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckSquare, Square, Plus, CheckCircle2, ListTodo, Sparkles } from "lucide-react";
 import type { Assignment } from "@/types/assignment";
 import { updateAssignment } from "@/lib/assignment.api";
@@ -41,6 +41,15 @@ export default function InteractiveDutyChecklist({
       }));
 
   const [items, setItems] = useState<ChecklistItem[]>(initialItems);
+
+  useEffect(() => {
+    if ((assignment as any)?.checklist?.length) {
+      setItems((assignment as any).checklist);
+    } else if (assignment) {
+      const defaults = DEFAULT_SUBTASKS[assignment.role || "Default"] || DEFAULT_SUBTASKS.Default;
+      setItems(defaults.map((text) => ({ text, completed: false })));
+    }
+  }, [assignment]);
 
   const completedCount = items.filter((i) => i.completed).length;
   const progressPct = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;

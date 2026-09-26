@@ -320,6 +320,10 @@ export default function EstimatePreviewStep({
               message:
                 formData.message?.trim() ||
                 "",
+              referralSource:
+                formData.referralSource === "Other" && formData.customReferral
+                  ? `Other (${formData.customReferral.trim()})`
+                  : formData.referralSource || "",
             },
 
             services:
@@ -876,6 +880,20 @@ export default function EstimatePreviewStep({
               className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--ivory)] px-3 py-3 text-sm outline-none transition focus:border-[var(--sage)]"
             />
           </div>
+
+          {/* Referral Source */}
+          {formData.referralSource && (
+            <div className="mt-4 rounded-xl border border-[#e8e1d8] bg-[#faf6f0] p-3 text-xs">
+              <span className="font-bold uppercase tracking-wider text-[#9a6c37]">
+                How Discovered / Referral Source:{" "}
+              </span>
+              <span className="font-semibold text-[#29241f]">
+                {formData.referralSource === "Other" && formData.customReferral
+                  ? `Other (${formData.customReferral.trim()})`
+                  : formData.referralSource}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ==================================== */}

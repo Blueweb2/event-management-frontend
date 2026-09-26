@@ -425,8 +425,8 @@ export default function StaffDutiesPage() {
                           Compensation
                         </p>
                         <p className="mt-0.5 truncate text-xs font-black text-emerald-800">
-                          {assignment.hourlyRate ? `$${assignment.hourlyRate}/hr` : "Standard Rate"}
-                          {assignment.totalAmount ? ` · $${assignment.totalAmount.toFixed(2)}` : ""}
+                          {assignment.hourlyRate ? `₹${assignment.hourlyRate}/hr` : "Standard Rate"}
+                          {assignment.totalAmount ? ` · ₹${assignment.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : ""}
                         </p>
                         <div className="mt-0.5">
                           {assignment.paymentStatus === "PAID" ? (

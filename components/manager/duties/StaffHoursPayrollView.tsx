@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   Clock,
-  DollarSign,
+  IndianRupee,
   CheckCircle2,
   AlertCircle,
   Search,
@@ -110,9 +110,9 @@ export default function StaffHoursPayrollView({
 
     return {
       totalHours: totalHours.toFixed(1),
-      totalPayroll: totalPayroll.toFixed(2),
-      paidAmount: paidAmount.toFixed(2),
-      pendingAmount: pendingAmount.toFixed(2),
+      totalPayroll,
+      paidAmount,
+      pendingAmount,
       totalShifts: duties.length,
     };
   }, [duties]);
@@ -152,8 +152,8 @@ export default function StaffHoursPayrollView({
       "Start Time",
       "End Time",
       "Hours Worked",
-      "Hourly Rate ($)",
-      "Total Pay ($)",
+      "Hourly Rate (₹)",
+      "Total Pay (₹)",
       "Confirmation Status",
       "Payment Status",
       "Paid Date",
@@ -231,10 +231,12 @@ export default function StaffHoursPayrollView({
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500">Total Payroll</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
-              <DollarSign size={16} />
+              <IndianRupee size={16} />
             </span>
           </div>
-          <p className="mt-2 text-2xl font-black text-[#29241f]">${metrics.totalPayroll}</p>
+          <p className="mt-2 text-2xl font-black text-[#29241f]">
+            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.totalPayroll)}
+          </p>
           <p className="mt-1 text-[11px] text-gray-400">Gross compensation due</p>
         </div>
 
@@ -245,7 +247,9 @@ export default function StaffHoursPayrollView({
               <Check size={16} />
             </span>
           </div>
-          <p className="mt-2 text-2xl font-black text-emerald-900">${metrics.paidAmount}</p>
+          <p className="mt-2 text-2xl font-black text-emerald-900">
+            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.paidAmount)}
+          </p>
           <p className="mt-1 text-[11px] text-emerald-700">Completed disbursements</p>
         </div>
 
@@ -256,7 +260,9 @@ export default function StaffHoursPayrollView({
               <CreditCard size={16} />
             </span>
           </div>
-          <p className="mt-2 text-2xl font-black text-amber-900">${metrics.pendingAmount}</p>
+          <p className="mt-2 text-2xl font-black text-amber-900">
+            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.pendingAmount)}
+          </p>
           <p className="mt-1 text-[11px] text-amber-700">Awaiting disbursement</p>
         </div>
       </section>
@@ -418,13 +424,19 @@ export default function StaffHoursPayrollView({
                               </button>
                             ) : (
                               onManageChecklist && (
-                                <button
-                                  type="button"
-                                  onClick={() => onManageChecklist(duty)}
-                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-[#9a6c37] transition"
-                                >
-                                  + Assign Subtasks
-                                </button>
+                                duty.status === "ACCEPTED" ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => onManageChecklist(duty)}
+                                    className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9a6c37] hover:underline transition"
+                                  >
+                                    + Assign Subtasks
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] font-medium text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                    Awaiting Staff Acceptance
+                                  </span>
+                                )
                               )
                             )}
                           </div>
@@ -432,8 +444,12 @@ export default function StaffHoursPayrollView({
 
                         {/* Rate & Total Pay */}
                         <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          <p className="font-black text-gray-900 text-sm">${totalPay.toFixed(2)}</p>
-                          <p className="text-[10px] text-gray-500">@ ${rate.toFixed(2)} / hr</p>
+                          <p className="font-black text-gray-900 text-sm">
+                            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(totalPay)}
+                          </p>
+                          <p className="text-[10px] text-gray-500">
+                            @ {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(rate)} / hr
+                          </p>
                         </td>
 
                         {/* Confirmation Status */}
@@ -474,7 +490,7 @@ export default function StaffHoursPayrollView({
                               </>
                             ) : (
                               <>
-                                <DollarSign size={12} />
+                                <IndianRupee size={12} />
                                 <span>Mark as Paid</span>
                               </>
                             )}
