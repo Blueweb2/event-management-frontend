@@ -43,7 +43,7 @@ const formatDate = (value: string) =>
 
 export default function ManagerAvailabilityPage() {
   const { token } = useAuth();
-  const { staff } = useStaff({ token });
+  const { staff } = useStaff({ token, filters: { limit: 100 } });
 
   const [date, setDate] = useState(localToday());
   const [availability, setAvailabilityState] = useState<Availability[]>([]);
@@ -52,6 +52,7 @@ export default function ManagerAvailabilityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [modalOpen, setModalOpen] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const loadAvailability = useCallback(async () => {
     if (!token) return;
@@ -80,28 +81,94 @@ export default function ManagerAvailabilityPage() {
     setDate(curr.toISOString().slice(0, 10));
   };
 
-  const filteredAvailability = useMemo(() => {
-    return availability.filter((item) => {
-      const staffName =
+  // Combine explicit availability records with all active staff members
+  const fullRoster = useMemo(() => {
+    const list: Array<Availability & { isExplicit?: boolean }> = [...availability.map(a => ({ ...a, isExplicit: true }))];
+    
+    const existingStaffIds = new Set(
+      availability.map((item) =>
         typeof item.staff === "object" && item.staff !== null
-          ? item.staff.name || ""
-          : "";
-      const matchesSearch = staffName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+          ? item.staff._id || (item.staff as any).id
+          : String(item.staff)
+      )
+    );
+
+    staff.forEach((s) => {
+      if (s.isActive && !existingStaffIds.has(s.id)) {
+        list.push({
+          _id: `virtual-${s.id}`,
+          staff: {
+            _id: s.id,
+            id: s.id,
+            name: s.name,
+            username: s.username || s.name,
+            email: s.email,
+            employeeId: s.employeeId || s.id,
+            department: s.department || "General Staff",
+            phone: s.phone,
+          },
+          date,
+          status: "AVAILABLE",
+          startTime: "09:00",
+          endTime: "18:00",
+          notes: "Available by default",
+          createdAt: date,
+          updatedAt: date,
+          isExplicit: false,
+        });
+      }
+    });
+
+    return list;
+  }, [availability, staff, date]);
+
+  const filteredAvailability = useMemo(() => {
+    return fullRoster.filter((item) => {
+      const staffObj = typeof item.staff === "object" && item.staff !== null ? item.staff : null;
+      const staffName = staffObj?.name || "";
+      const department = staffObj?.department || "";
+      const matchesSearch =
+        staffName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        department.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus =
         statusFilter === "ALL" || item.status.toUpperCase() === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [availability, searchTerm, statusFilter]);
+  }, [fullRoster, searchTerm, statusFilter]);
 
   const counts = useMemo(() => {
-    const available = availability.filter((i) => i.status === "AVAILABLE").length;
-    const leave = availability.filter((i) => i.status === "ON_LEAVE").length;
-    const unavailable = availability.filter((i) => i.status === "UNAVAILABLE").length;
-    const total = availability.length;
+    const available = fullRoster.filter((i) => i.status === "AVAILABLE").length;
+    const leave = fullRoster.filter((i) => i.status === "ON_LEAVE").length;
+    const unavailable = fullRoster.filter((i) => i.status === "UNAVAILABLE").length;
+    const total = fullRoster.length;
     return { available, leave, unavailable, total };
-  }, [availability]);
+  }, [fullRoster]);
+
+  const handleQuickSetStatus = async (
+    staffId: string,
+    newStatus: AvailabilityStatus
+  ) => {
+    if (!token) return;
+    try {
+      setActionLoadingId(staffId);
+      await setAvailability(
+        {
+          staff: staffId,
+          date,
+          status: newStatus,
+          startTime: newStatus === "AVAILABLE" ? "09:00" : "",
+          endTime: newStatus === "AVAILABLE" ? "18:00" : "",
+          notes: `Set to ${newStatus.replace("_", " ")} by Manager`,
+        },
+        token
+      );
+      await loadAvailability();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!token) return;
@@ -349,16 +416,77 @@ export default function ManagerAvailabilityPage() {
                   )}
                 </div>
 
-                <div className="mt-4 border-t border-gray-100 pt-3 flex justify-between items-center text-[11px] text-gray-400">
-                  <span>Date: {date}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(item._id)}
-                    className="text-gray-400 hover:text-red-500 transition p-1"
-                    title="Delete Availability Record"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div className="mt-4 border-t border-gray-100 pt-3 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-gray-400">
+                    <span>Date: {date}</span>
+                    {item.isExplicit && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(item._id)}
+                        className="text-gray-400 hover:text-red-500 transition p-1"
+                        title="Delete Custom Availability Record"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Status Action Buttons */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === ((staffObj as any)?.id || (staffObj as any)?._id)}
+                      onClick={() =>
+                        handleQuickSetStatus(
+                          (staffObj as any)?.id || (staffObj as any)?._id,
+                          "AVAILABLE"
+                        )
+                      }
+                      className={`flex-1 rounded-lg py-1 px-2 text-[10px] font-bold border transition ${
+                        isAvailable
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-white text-gray-600 border-gray-200 hover:bg-emerald-50 hover:text-emerald-700"
+                      }`}
+                    >
+                      Available
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === ((staffObj as any)?.id || (staffObj as any)?._id)}
+                      onClick={() =>
+                        handleQuickSetStatus(
+                          (staffObj as any)?.id || (staffObj as any)?._id,
+                          "ON_LEAVE"
+                        )
+                      }
+                      className={`flex-1 rounded-lg py-1 px-2 text-[10px] font-bold border transition ${
+                        isOnLeave
+                          ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                          : "bg-white text-gray-600 border-gray-200 hover:bg-amber-50 hover:text-amber-700"
+                      }`}
+                    >
+                      On Leave
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={actionLoadingId === ((staffObj as any)?.id || (staffObj as any)?._id)}
+                      onClick={() =>
+                        handleQuickSetStatus(
+                          (staffObj as any)?.id || (staffObj as any)?._id,
+                          "UNAVAILABLE"
+                        )
+                      }
+                      className={`flex-1 rounded-lg py-1 px-2 text-[10px] font-bold border transition ${
+                        item.status === "UNAVAILABLE"
+                          ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                          : "bg-white text-gray-600 border-gray-200 hover:bg-rose-50 hover:text-rose-700"
+                      }`}
+                    >
+                      Unavailable
+                    </button>
+                  </div>
                 </div>
               </div>
             );

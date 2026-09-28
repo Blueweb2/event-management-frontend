@@ -129,6 +129,7 @@ export default function StaffProfilePage() {
 
       <StaffProfile
         staff={selectedStaff}
+        token={token ?? undefined}
         onStaffUpdated={handleEdit}
         onStatusChange={handleStatusChange}
         onPasswordReset={handleResetPassword}

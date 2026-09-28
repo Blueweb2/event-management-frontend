@@ -476,9 +476,27 @@ export default function FoodMenuStep({
                                 >
                                   <Minus size={12} />
                                 </button>
-                                <span className="min-w-6 text-center text-xs font-bold text-gray-900">
-                                  {quantity}
-                                </span>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={quantity}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => {
+                                    const newQty = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                    updateFoodMenu({
+                                      items: currentMenu.items.map((food) =>
+                                        food.foodItemId === item._id || food.name === item.name
+                                          ? {
+                                              ...food,
+                                              quantity: newQty,
+                                              amount: Number(food.rate || 0) * newQty,
+                                            }
+                                          : food,
+                                      ),
+                                    });
+                                  }}
+                                  className="w-10 text-center text-xs font-bold text-gray-900 bg-transparent focus:outline-none focus:ring-1 focus:ring-[#6B5B95] rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
                                 <button
                                   type="button"
                                   aria-label={`Increase ${item.name} quantity`}
