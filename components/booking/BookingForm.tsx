@@ -11,9 +11,11 @@ import ClientDetailsStep from "./steps/ClientDetailsStep";
 import FoodMenuStep from "./steps/FoodMenuStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
+import Button from "@/components/ui/Button";
 
 import type { BookingFormData } from "./types";
 import { createEstimate, type Estimate } from "@/lib/estimates.api";
+import { ArrowLeft } from "lucide-react";
 
 // ==========================================
 // INITIAL FORM DATA
@@ -77,36 +79,17 @@ const initialFormData: BookingFormData = {
 // ==========================================
 
 export default function BookingForm() {
+
   const router = useRouter();
 
-  // ========================================
-  // State
-  // ========================================
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<BookingFormData>(initialFormData);
+  const [error, setError] = useState("");
+  const [createdEstimate, setCreatedEstimate] = useState<Estimate | null>(null);
+  const [isCreatingEstimate, setIsCreatingEstimate] = useState(false);
 
-  const [currentStep, setCurrentStep] =
-    useState(1);
-
-  const [formData, setFormData] =
-    useState<BookingFormData>(
-      initialFormData,
-    );
-
-  const [error, setError] =
-    useState("");
-
-  const [createdEstimate, setCreatedEstimate] =
-    useState<Estimate | null>(null);
-
-  const [isCreatingEstimate, setIsCreatingEstimate] =
-    useState(false);
-
-  // ========================================
   // Update Field
-  // ========================================
-
-  const updateField = <
-    K extends keyof BookingFormData,
-  >(
+  const updateField = < K extends keyof BookingFormData>(
     field: K,
     value: BookingFormData[K],
   ) => {
@@ -120,13 +103,8 @@ export default function BookingForm() {
     }
   };
 
-  // ========================================
   // Update Services
-  // ========================================
-
-  const updateServices = (
-    services: BookingFormData["services"],
-  ) => {
+  const updateServices = (services: BookingFormData["services"]) => {
     setFormData((previous) => ({
       ...previous,
       services,
@@ -137,17 +115,11 @@ export default function BookingForm() {
     }
   };
 
-  // ==========================================
   // VALIDATE STEP
-  // ==========================================
-
   const validateStep = () => {
     setError("");
 
-    // ========================================
     // STEP 1 - EVENT DETAILS
-    // ========================================
-
     if (currentStep === 1) {
       if (!formData.eventName.trim()) {
         setError(
@@ -221,10 +193,7 @@ export default function BookingForm() {
       }
     }
 
-    // ========================================
     // STEP 2 - CLIENT DETAILS
-    // ========================================
-
     if (currentStep === 2) {
       if (!formData.name.trim()) {
         setError(
@@ -266,10 +235,7 @@ export default function BookingForm() {
       }
     }
 
-    // ========================================
     // STEP 3 - FOOD MENU
-    // ========================================
-
     if (currentStep === 3) {
       if (formData.foodMenu?.included) {
         const invalidFoodItem = formData.foodMenu.items.some((item) => {
@@ -290,10 +256,7 @@ export default function BookingForm() {
       }
     }
 
-    // ========================================
     // STEP 4 - SERVICES & ITEMS
-    // ========================================
-
     if (currentStep === 4) {
       if (
         formData.services.length === 0
@@ -340,10 +303,7 @@ export default function BookingForm() {
       }
     }
 
-    // ========================================
     // STEP 5 - ESTIMATE PREVIEW
-    // ========================================
-
     if (currentStep === 5) {
       const discount = Number(
         formData.discountValue,
@@ -394,10 +354,7 @@ export default function BookingForm() {
     return true;
   };
 
-  // ==========================================
   // NEXT STEP
-  // ==========================================
-
   const nextStep = () => {
     if (!validateStep()) {
       return;
@@ -417,10 +374,7 @@ export default function BookingForm() {
     });
   };
 
-  // ==========================================
   // PREVIOUS STEP
-  // ==========================================
-
   const previousStep = () => {
     setError("");
 
@@ -438,10 +392,7 @@ export default function BookingForm() {
     });
   };
 
-  // ==========================================
   // CREATE ESTIMATE
-  // ==========================================
-
   const handleCreateEstimate = async () => {
     if (isCreatingEstimate || createdEstimate) {
       return;
@@ -493,10 +444,7 @@ export default function BookingForm() {
     }
   };
 
-  // ==========================================
   // SUBMIT
-  // ==========================================
-
   const submitBooking = () => {
     if (!validateStep()) {
       return;
@@ -532,31 +480,32 @@ export default function BookingForm() {
     nextStep();
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
 
+
+  // RENDER
   return (
     <>
-      {/* ====================================== */}
+
       {/* Progress */}
-      {/* ====================================== */}
+      <BookingProgress currentStep={currentStep} />
 
-      <BookingProgress
-        currentStep={currentStep}
-      />
+      <Button
+        type="button"
+        variant="secondary"
+        size="md"
+        onClick={previousStep}
+        disabled={isCreatingEstimate}
+        icon={<ArrowLeft size={17} />}
+        className="mt-4 mx-4 md:hidden"
+      >
+        Back
+      </Button>
 
-      {/* ====================================== */}
       {/* Main Content */}
-      {/* ====================================== */}
-
-      <section className="px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <section className="px-4 py-2 sm:px-6 sm:py-12 lg:px-8">
         <div className="mx-auto max-w-4xl">
 
-          {/* ====================================
-              STEP 1 - EVENT DETAILS
-          ==================================== */}
-
+          {/* STEP 1 - EVENT DETAILS */}
           {currentStep === 1 && (
             <EventDetailsStep
               formData={formData}
@@ -564,10 +513,7 @@ export default function BookingForm() {
             />
           )}
 
-          {/* ====================================
-              STEP 2 - CLIENT DETAILS
-          ==================================== */}
-
+          {/* STEP 2 - CLIENT DETAILS */}
           {currentStep === 2 && (
             <ClientDetailsStep
               formData={formData}

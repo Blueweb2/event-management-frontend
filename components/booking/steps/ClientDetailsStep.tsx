@@ -71,9 +71,7 @@ export default function ClientDetailsStep({
 }: ClientDetailsStepProps) {
   return (
     <div className="space-y-6">
-      {/* ============================================================
-          HEADER
-      ============================================================ */}
+      {/* HEADER */}
       <div>
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-900">
           Client Details
@@ -84,9 +82,7 @@ export default function ClientDetailsStep({
         </p>
       </div>
 
-      {/* ============================================================
-          CONTACT INFORMATION
-      ============================================================ */}
+      {/* CONTACT INFORMATION */}
       <Card>
         <div className="space-y-6 p-3">
           {/* Section Heading */}
@@ -307,18 +303,24 @@ export default function ClientDetailsStep({
           </div>
 
           {/* Custom text field if 'Other' is selected */}
-          {formData.referralSource === "Other" && (
+          {(formData.referralSource === "Other" || formData.referralSource === "Social Media") && (
             <div className="mt-3">
               <label
                 htmlFor="customReferral"
                 className="mb-1.5 block text-xs font-semibold text-neutral-700"
               >
-                Please specify how you heard about us:
+                {formData.referralSource === "Social Media"
+                ? "Please specify which social media platform:"
+                : "Please specify how you heard about us:"}
               </label>
               <input
                 id="customReferral"
                 type="text"
-                placeholder="e.g. Local magazine, corporate partner, radio ad..."
+                placeholder={
+                  formData.referralSource === "Social Media"
+                    ? "e.g. Instagram, Facebook, LinkedIn..."
+                    : "e.g. Local magazine, corporate partner, radio ad..."
+                }
                 value={formData.customReferral || ""}
                 onChange={(event) =>
                   updateField("customReferral", event.target.value)
