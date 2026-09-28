@@ -756,8 +756,6 @@ export default function EstimatesPage() {
                       </tr>
                     </thead>
 
-
-
                     <tbody>
                       {filteredEstimates.map(
                         (estimate) => (
@@ -936,49 +934,75 @@ export default function EstimatesPage() {
                   {filteredEstimates.map((estimate) => (
                     <article
                       key={estimate._id}
-                      className="rounded-xl border border-[var(--line)] p-4"
+                      className="overflow-hidden rounded-2xl border border-[#e8e1d8] bg-[#faf8f5] shadow-sm"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-                            {estimate.estimateNumber}
-                          </p>
-                          <h2 className="mt-1 truncate text-base font-semibold text-[var(--ink)]">
-                            {estimate.eventName}
-                          </h2>
-                          <p className="mt-1 truncate text-sm text-[var(--muted)]">
-                            {estimate.client.name}
-                          </p>
+                      {/* Main Information */}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            {/* Estimate Number */}
+                            <span className="inline-flex rounded-lg bg-[#f0e4d3] px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#9a6c37]">
+                              {estimate.estimateNumber}
+                            </span>
+
+                            {/* Event */}
+                            <h2 className="mt-2 truncate text-base font-extrabold text-[#29241f]">
+                              {estimate.eventName}
+                            </h2>
+
+                            {/* Client */}
+                            <p className="mt-1 truncate text-xs font-medium text-[#756d64]">
+                              {estimate.client.name}
+                            </p>
+                          </div>
+
+                          {/* Status */}
+                          <span
+                            className={`shrink-0 rounded-full px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider ${
+                              statusStyles[estimate.status]
+                            }`}
+                          >
+                            {statusLabels[estimate.status]}
+                          </span>
                         </div>
 
-                        <span
-                          className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${statusStyles[estimate.status]}`}
-                        >
-                          {statusLabels[estimate.status]}
-                        </span>
-                      </div>
+                        {/* Details */}
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          {/* Date */}
+                          <div className="rounded-xl border border-[#e8e1d8] bg-white px-3 py-2.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#aaa097]">
+                              Event Date
+                            </p>
 
-                      <div className="mt-4 grid grid-cols-2 gap-3 border-y border-[var(--line)] py-3">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
-                            Event date
-                          </p>
-                          <div className="mt-1 flex items-center gap-1.5 text-sm text-[var(--ink)]">
-                            <CalendarDays size={14} className="text-[var(--muted)]" />
-                            {formatDate(estimate.eventDate)}
+                            <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#51483f]">
+                              <CalendarDays
+                                size={14}
+                                className="shrink-0 text-[#9a6c37]"
+                              />
+                              <span className="truncate">
+                                {formatDate(estimate.eventDate)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Total */}
+                          <div className="rounded-xl border border-[#e8e1d8] bg-white px-3 py-2.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#aaa097]">
+                              Total
+                            </p>
+
+                            <p className="mt-1.5 truncate text-sm font-extrabold text-[#29241f]">
+                              {formatCurrency(
+                                estimate.total,
+                                estimate.currency
+                              )}
+                            </p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
-                            Total
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
-                            {formatCurrency(estimate.total, estimate.currency)}
-                          </p>
-                        </div>
                       </div>
 
-                      <div className="flex flex-col gap-2 sm:flex-row">
+                      {/* Actions */}
+                      <div className="border-t border-[#e8e1d8] bg-white/60 p-3">
                         {(estimate.status === "DRAFT" ||
                           estimate.status === "SENT" ||
                           estimate.status === "VIEWED") && (
@@ -989,19 +1013,25 @@ export default function EstimatesPage() {
                               Boolean(convertingId)
                             }
                             onClick={() =>
-                              handleAccept(estimate._id, estimate.eventName)
+                              handleAccept(
+                                estimate._id,
+                                estimate.eventName
+                              )
                             }
-                            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+                            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#9a6c37] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#855b2d] active:scale-[0.98] disabled:opacity-50"
                           >
                             {acceptingId === estimate._id ? (
                               <>
-                                <Loader2 size={15} className="animate-spin" />
+                                <Loader2
+                                  size={15}
+                                  className="animate-spin"
+                                />
                                 Accepting...
                               </>
                             ) : (
                               <>
                                 <CheckCircle2 size={15} />
-                                Accept estimate
+                                Accept Estimate
                               </>
                             )}
                           </button>
@@ -1012,39 +1042,53 @@ export default function EstimatesPage() {
                             type="button"
                             disabled={convertingId === estimate._id}
                             onClick={() =>
-                              handleConvert(estimate._id, estimate.eventName)
+                              handleConvert(
+                                estimate._id,
+                                estimate.eventName
+                              )
                             }
-                            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50"
                           >
                             {convertingId === estimate._id ? (
                               <>
-                                <Loader2 size={15} className="animate-spin" />
+                                <Loader2
+                                  size={15}
+                                  className="animate-spin"
+                                />
                                 Converting...
                               </>
                             ) : (
                               <>
                                 <ArrowRight size={15} />
-                                Convert to event
+                                Convert to Event
                               </>
                             )}
                           </button>
                         ) : (
-                          <div className="flex flex-1 gap-2">
+                          <div className="grid grid-cols-[auto_1fr] gap-2">
                             <button
                               type="button"
-                              onClick={() => handleOpenStudio(estimate)}
-                              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#29241F] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95"
+                              onClick={() =>
+                                handleOpenStudio(estimate)
+                              }
+                              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[#29241f] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98]"
                             >
-                              <Sparkles size={14} className="text-[#D4AF37]" />
+                              <Sparkles
+                                size={14}
+                                className="text-[#d4af37]"
+                              />
                               Export
                             </button>
+
                             <button
                               type="button"
-                              onClick={() => handleSelectEstimate(estimate)}
-                              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ivory)]"
+                              onClick={() =>
+                                handleSelectEstimate(estimate)
+                              }
+                              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#e1d7cc] bg-white px-3 py-2.5 text-sm font-semibold text-[#51483f] transition hover:bg-[#f7f2eb] active:scale-[0.98]"
                             >
                               <Eye size={16} />
-                              View details
+                              View Details
                             </button>
                           </div>
                         )}
