@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import type { Duty } from "./constants";
 import { updateAssignmentPayment } from "@/lib/assignment.api";
-import { formatTime24to12 } from "@/lib/duty-mapper";
+import { formatTime24to12, calculateHoursFromTime } from "@/lib/duty-mapper";
 
 interface StaffHoursPayrollViewProps {
   duties: Duty[];
@@ -87,19 +87,7 @@ export default function StaffHoursPayrollView({
     let pendingAmount = 0;
 
     duties.forEach((d) => {
-      // Calculate hours from duty if totalHours not saved
-      let hours = d.totalHours || 0;
-      if (!hours && d.startTime && d.endTime) {
-        const [sH, sM] = d.startTime.split(":").map(Number);
-        const [eH, eM] = d.endTime.split(":").map(Number);
-        if (!isNaN(sH) && !isNaN(eH)) {
-          let startMin = sH * 60 + (sM || 0);
-          let endMin = eH * 60 + (eM || 0);
-          if (endMin < startMin) endMin += 24 * 60;
-          hours = Math.round(((endMin - startMin) / 60) * 100) / 100;
-        }
-      }
-
+      let hours = d.totalHours || calculateHoursFromTime(d.startTime, d.endTime);
       const rate = d.hourlyRate || 0;
       const amount = d.totalAmount || hours * rate;
 
@@ -351,15 +339,7 @@ export default function StaffHoursPayrollView({
                 </thead>
                 <tbody className="divide-y divide-[#f0eae1]">
                   {filteredDuties.map((duty) => {
-                    let hours = duty.totalHours || 0;
-                    if (!hours && duty.startTime && duty.endTime) {
-                      const [sH, sM] = duty.startTime.split(":").map(Number);
-                      const [eH, eM] = duty.endTime.split(":").map(Number);
-                      let startMin = sH * 60 + (sM || 0);
-                      let endMin = eH * 60 + (eM || 0);
-                      if (endMin < startMin) endMin += 24 * 60;
-                      hours = Math.round(((endMin - startMin) / 60) * 100) / 100;
-                    }
+                    const hours = duty.totalHours || calculateHoursFromTime(duty.startTime, duty.endTime);
                     const rate = duty.hourlyRate || 0;
                     const totalPay = duty.totalAmount || hours * rate;
 

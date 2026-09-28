@@ -8,7 +8,6 @@ import {
   ClipboardList,
   IndianRupee,
   FileText,
-  Clock,
 } from "lucide-react";
 
 import ManagerStatCard from "./ManagerStatCard";
@@ -123,16 +122,16 @@ export default function ManagerStats() {
       description: "Awaiting client response",
     },
     {
-      label: "Event Volume",
+      label: "Event",
       value: counts.loaded ? String(counts.upcomingEvents) : "...",
       icon: CalendarDays,
       description: "Total events in pipeline",
     },
     {
-      label: "Staff Hours Worked",
-      value: counts.loaded ? `${counts.totalStaffHours} hrs` : "...",
-      icon: Clock,
-      description: "Log hours across shifts",
+      label: "Total Staff",
+      value: counts.loaded ? String(counts.totalStaff) : "...",
+      icon: Users,
+      description: "Active team members",
     },
   ];
 

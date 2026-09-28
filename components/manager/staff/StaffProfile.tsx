@@ -20,6 +20,7 @@ import StaffStatusBadge from "./StaffStatusBadge";
 import StaffDetails from "./StaffDetails";
 import StaffActions from "./StaffActions";
 import { getAssignments } from "@/lib/assignment.api";
+import { calculateHoursFromTime } from "@/lib/duty-mapper";
 import type { Assignment } from "@/types/assignment";
 
 import type {
@@ -30,7 +31,7 @@ import type {
 
 interface StaffProfileProps {
   staff: Staff;
-  token?: string;
+  token?: string | null;
 
   onStatusChange?: (
     id: string,
@@ -59,15 +60,17 @@ export default function StaffProfile({
   const [duties, setDuties] = useState<Assignment[]>([]);
   const [loadingDuties, setLoadingDuties] = useState(false);
 
+  const targetStaffId = staff.id || (staff as any)._id;
+
   useEffect(() => {
-    if (token && staff.id) {
+    if (token && targetStaffId) {
       setLoadingDuties(true);
-      getAssignments(token, { staff: staff.id, limit: 100 })
+      getAssignments(token, { staff: targetStaffId, limit: 100 })
         .then((res) => setDuties(res.data || []))
         .catch((err) => console.warn("Could not fetch staff duty history", err))
         .finally(() => setLoadingDuties(false));
     }
-  }, [token, staff.id]);
+  }, [token, targetStaffId]);
 
   const initials = getInitials(staff.name);
 
@@ -78,17 +81,7 @@ export default function StaffProfile({
   let pendingEarnings = 0;
 
   duties.forEach((d) => {
-    let hours = d.totalHours || 0;
-    if (!hours && d.startTime && d.endTime) {
-      const [sH, sM] = d.startTime.split(":").map(Number);
-      const [eH, eM] = d.endTime.split(":").map(Number);
-      if (!isNaN(sH) && !isNaN(eH)) {
-        let startMin = sH * 60 + (sM || 0);
-        let endMin = eH * 60 + (eM || 0);
-        if (endMin < startMin) endMin += 24 * 60;
-        hours = Math.round(((endMin - startMin) / 60) * 100) / 100;
-      }
-    }
+    let hours = d.totalHours || calculateHoursFromTime(d.startTime, d.endTime);
     const rate = d.hourlyRate || 0;
     const pay = d.totalAmount || hours * rate;
     totalHours += hours;
@@ -291,17 +284,7 @@ export default function StaffProfile({
                       const eventName = eventObj?.eventName || "Event Shift";
                       const location = eventObj?.location || "";
 
-                      let hours = duty.totalHours || 0;
-                      if (!hours && duty.startTime && duty.endTime) {
-                        const [sH, sM] = duty.startTime.split(":").map(Number);
-                        const [eH, eM] = duty.endTime.split(":").map(Number);
-                        if (!isNaN(sH) && !isNaN(eH)) {
-                          let startMin = sH * 60 + (sM || 0);
-                          let endMin = eH * 60 + (eM || 0);
-                          if (endMin < startMin) endMin += 24 * 60;
-                          hours = Math.round(((endMin - startMin) / 60) * 100) / 100;
-                        }
-                      }
+                      let hours = duty.totalHours || calculateHoursFromTime(duty.startTime, duty.endTime);
                       const rate = duty.hourlyRate || 0;
                       const pay = duty.totalAmount || hours * rate;
 

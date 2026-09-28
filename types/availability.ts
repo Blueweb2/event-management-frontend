@@ -13,12 +13,13 @@ export type AvailabilityStatus =
 
 export type AvailabilityStaff = {
   _id: string;
+  id?: string;
 
   name: string;
-  username: string;
+  username?: string;
   email: string;
 
-  employeeId: string;
+  employeeId?: string;
   department: string;
 
   phone?: string;
@@ -46,9 +47,9 @@ export type Availability = {
 
   createdBy?: string | null;
 
-  createdAt: string;
+  createdAt?: string;
 
-  updatedAt: string;
+  updatedAt?: string;
 };
 
 // ==========================================
