@@ -7,7 +7,7 @@ export default function HomePage() {
       <section
         className="relative flex h-full items-center justify-center bg-cover bg-center"
         style={{
-          backgroundImage: "url('/images/home-bg.jpeg')",
+          backgroundImage: "url('/images/iPhone 16 & 17 Pro Max - 4.jpg.jpeg')",
         }}
       >
         {/* Logo  shadow-xl bg-white/90 p-3 */}
