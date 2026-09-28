@@ -433,7 +433,7 @@ export default function ServicesItemsStep({
       {/* Header */}
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sage)]">
-          Step 3
+          Step 4
         </p>
 
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--sage-dark)] sm:text-3xl">
