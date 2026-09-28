@@ -101,14 +101,17 @@ export const useAssignments = ({
   // ==========================================
 
   const fetchAllAssignments = useCallback(
-    async (customFilters?: AssignmentFilters) => {
+    async (
+      customFilters?: AssignmentFilters,
+      options?: { silent?: boolean }
+    ) => {
       if (!token) {
         setError("Authentication required");
         return;
       }
 
       try {
-        setLoading(true);
+        if (!options?.silent) setLoading(true);
         setError(null);
 
         const allAssignments: Assignment[] = [];
@@ -135,16 +138,18 @@ export const useAssignments = ({
           totalPages: 1,
         });
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to fetch assignments",
-        );
+        if (!options?.silent) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to fetch assignments"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!options?.silent) setLoading(false);
       }
     },
-    [token, filtersKey],
+    [token, filtersKey]
   );
 
   // ==========================================

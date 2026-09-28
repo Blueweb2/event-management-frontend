@@ -77,10 +77,10 @@ export default function HeroActiveShiftWidget({
     }
 
     // Verify manager has started the event
-    const eventObj = typeof todayShift.event === "object" ? todayShift.event : null;
+    const eventObj = typeof todayShift.event === "object" && todayShift.event !== null ? todayShift.event : null;
     const isEventStarted = eventObj
-      ? eventObj.status === "IN_PROGRESS" || eventObj.status === "Ongoing"
-      : false;
+      ? Boolean((eventObj as any).startedAt) || (eventObj.status && ["IN_PROGRESS", "Ongoing"].includes(eventObj.status))
+      : true;
 
     if (!isEventStarted) {
       return {

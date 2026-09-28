@@ -102,10 +102,15 @@ function OperationsHubContent() {
 
   useEffect(() => {
     if (!token) return;
-    const timer = window.setTimeout(() => {
-      void fetchAllAssignments();
-    });
-    return () => window.clearTimeout(timer);
+    // Initial fetch
+    void fetchAllAssignments();
+
+    // Real-time polling for staff checklist & duty status updates
+    const interval = setInterval(() => {
+      void fetchAllAssignments(undefined, { silent: true });
+    }, 3500);
+
+    return () => clearInterval(interval);
   }, [token, fetchAllAssignments]);
 
   useEffect(() => {

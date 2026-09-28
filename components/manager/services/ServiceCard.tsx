@@ -40,7 +40,22 @@ export default function ServiceCard({
     );
 
   return (
-    <div className="group rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5">
+    <div className="group overflow-hidden rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5">
+      {/* Service Image Preview */}
+      {service.imageUrl && (
+        <div className="-mx-5 -mt-5 mb-4 h-36 overflow-hidden bg-[#F3F4F8]">
+          <img
+            src={service.imageUrl}
+            alt={service.name}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              // Hide image container on load error
+              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+            }}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">

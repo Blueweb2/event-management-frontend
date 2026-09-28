@@ -22,27 +22,37 @@ export default function StaffHomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadDashboard = useCallback(async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      setError("");
-      const [assignmentResult, attendanceResult] = await Promise.all([
-        getAssignments(token, { page: 1, limit: 100 }),
-        getAttendance(token, { page: 1, limit: 100 }),
-      ]);
-      setAssignments(assignmentResult.data || []);
-      setAttendance(attendanceResult.data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load your dashboard.");
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const loadDashboard = useCallback(
+    async (silent = false) => {
+      if (!token) return;
+      try {
+        if (!silent) setLoading(true);
+        setError("");
+        const [assignmentResult, attendanceResult] = await Promise.all([
+          getAssignments(token, { page: 1, limit: 100 }),
+          getAttendance(token, { page: 1, limit: 100 }),
+        ]);
+        setAssignments(assignmentResult.data || []);
+        setAttendance(attendanceResult.data || []);
+      } catch (err) {
+        if (!silent) {
+          setError(err instanceof Error ? err.message : "Unable to load your dashboard.");
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [token]
+  );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadDashboard(), 0);
-    return () => window.clearTimeout(timer);
+    void loadDashboard(false);
+
+    const interval = setInterval(() => {
+      void loadDashboard(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [loadDashboard]);
 
   const activeAssignment = assignments[0];

@@ -25,6 +25,7 @@ type ServiceFormProps = {
 type OptionFormData = {
   name: string;
   description: string;
+  imageUrl: string;
   price: number;
   pricingType: PricingType;
   unitLabel: string;
@@ -35,6 +36,7 @@ type FormData = {
   name: string;
   category: string;
   description: string;
+  imageUrl: string;
   pricingType: PricingType;
   basePrice: number;
   unitLabel: string;
@@ -59,6 +61,7 @@ const defaultFormData: FormData = {
   name: "",
   category: "catering",
   description: "",
+  imageUrl: "",
   pricingType: "FIXED",
   basePrice: 0,
   unitLabel: "service",
@@ -69,6 +72,7 @@ const defaultFormData: FormData = {
 const createEmptyOption = (): OptionFormData => ({
   name: "",
   description: "",
+  imageUrl: "",
   price: 0,
   pricingType: "FIXED",
   unitLabel: "service",
@@ -98,6 +102,7 @@ export default function ServiceForm({
       name: service.name,
       category: service.category,
       description: service.description || "",
+      imageUrl: service.imageUrl || "",
       pricingType: service.pricingType,
       basePrice: service.basePrice,
       unitLabel: service.unitLabel || "service",
@@ -107,6 +112,7 @@ export default function ServiceForm({
         (option) => ({
           name: option.name,
           description: option.description || "",
+          imageUrl: option.imageUrl || "",
           price: option.price,
           pricingType: option.pricingType,
           unitLabel:
@@ -234,6 +240,9 @@ export default function ServiceForm({
         description:
           formData.description.trim(),
 
+        imageUrl:
+          formData.imageUrl.trim(),
+
         pricingType: formData.pricingType,
 
         basePrice: Number(
@@ -252,6 +261,8 @@ export default function ServiceForm({
             name: option.name.trim(),
             description:
               option.description.trim(),
+            imageUrl:
+              (option.imageUrl || "").trim(),
             price: Number(option.price),
             pricingType:
               option.pricingType,
@@ -422,6 +433,31 @@ export default function ServiceForm({
                     Number(event.target.value),
                   )
                 }
+                className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            </div>
+
+            {/* Image URL */}
+            <div className="md:col-span-2">
+              <label
+                htmlFor="serviceImageUrl"
+                className="mb-2 block text-sm font-medium text-[#5F6062]"
+              >
+                Image URL
+              </label>
+
+              <input
+                id="serviceImageUrl"
+                type="text"
+                value={formData.imageUrl}
+                disabled={loading}
+                onChange={(event) =>
+                  updateField(
+                    "imageUrl",
+                    event.target.value,
+                  )
+                }
+                placeholder="https://example.com/images/stage-decor.jpg"
                 className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
               />
             </div>
@@ -605,6 +641,28 @@ export default function ServiceForm({
                         }
                         placeholder="Describe this option..."
                         className="w-full resize-none rounded-xl border border-[#E5E7EB] bg-[#FEFEFE] px-4 py-3 text-sm leading-6 text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                    </div>
+
+                    {/* Option Image URL */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-[#5F6062]">
+                        Image URL (Optional)
+                      </label>
+
+                      <input
+                        type="text"
+                        value={option.imageUrl}
+                        disabled={loading}
+                        onChange={(event) =>
+                          updateOption(
+                            index,
+                            "imageUrl",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="https://example.com/images/royal-stage.jpg"
+                        className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#FEFEFE] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
 

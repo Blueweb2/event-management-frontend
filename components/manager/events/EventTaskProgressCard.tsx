@@ -41,18 +41,63 @@ export default function EventTaskProgressCard({
   loading = false,
   onRefresh,
 }: EventTaskProgressCardProps) {
-  const { tasks = [], summary = { totalTasks: 0, completedCount: 0, inProgressCount: 0, pendingCount: 0, overdueCount: 0, progressPercentage: 0 } } = taskProgress;
+  const rawTasks = taskProgress?.tasks || [];
+  const rawSummary = taskProgress?.summary || {};
+
+  const normalizedTasks = rawTasks.map((task: any) => {
+    const staffName =
+      task.staffName ||
+      (typeof task.assignedStaff === "object" && task.assignedStaff !== null
+        ? task.assignedStaff.name
+        : String(task.assignedStaff || "Unassigned"));
+
+    return {
+      dutyId: String(task.dutyId || ""),
+      dutyTitle: task.dutyTitle || "Duty Assignment",
+      dutyRole: task.dutyRole || "",
+      staffName,
+      taskId: String(task.taskId || task._id || Math.random()),
+      title: task.title || "Sub-task",
+      description: task.description || "",
+      plannedStartAt: task.plannedStartAt || undefined,
+      plannedEndAt: task.plannedEndAt || undefined,
+      actualStartAt: task.actualStartAt || undefined,
+      actualEndAt: task.actualEndAt || undefined,
+      status: task.status || "PENDING",
+      completionNotes: task.completionNotes || "",
+      wasOverdue: Boolean(task.wasOverdue),
+      delayMinutes: Number(task.delayMinutes || 0),
+    };
+  });
+
+  const totalTasks = rawSummary.totalTasks ?? normalizedTasks.length;
+  const completedCount = rawSummary.completedCount ?? normalizedTasks.filter((t) => t.status === "COMPLETED").length;
+  const inProgressCount = rawSummary.inProgressCount ?? normalizedTasks.filter((t) => t.status === "IN_PROGRESS").length;
+  const overdueCount = rawSummary.overdueCount ?? normalizedTasks.filter((t) => t.status === "OVERDUE" || t.wasOverdue).length;
+  const pendingCount = rawSummary.pendingCount ?? normalizedTasks.filter((t) => t.status === "PENDING").length;
+  const progressPercentage = rawSummary.progressPercentage ?? (totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0);
+
+  const summary = {
+    totalTasks,
+    completedCount,
+    inProgressCount,
+    pendingCount,
+    overdueCount,
+    progressPercentage,
+  };
 
   const formatTime = (dateStr?: string) => {
     if (!dateStr) return "--:--";
-    return new Date(dateStr).toLocaleTimeString("en-US", {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "--:--";
+    return d.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
     });
   };
 
-  const getStatusBadge = (status: EventTaskItem["status"], wasOverdue?: boolean) => {
+  const getStatusBadge = (status: string, wasOverdue?: boolean) => {
     if (status === "COMPLETED") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
@@ -66,6 +111,14 @@ export default function EventTaskProgressCard({
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 border border-blue-500/20">
           <PlayCircle className="w-3.5 h-3.5" />
           In Progress
+        </span>
+      );
+    }
+    if (status === "OVERDUE") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/20">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Overdue
         </span>
       );
     }
@@ -139,7 +192,7 @@ export default function EventTaskProgressCard({
       </div>
 
       {/* Tasks Table */}
-      {tasks.length === 0 ? (
+      {normalizedTasks.length === 0 ? (
         <div className="text-center py-6 text-slate-400 text-sm">
           No sub-tasks configured for staff duties in this event.
         </div>
@@ -157,7 +210,7 @@ export default function EventTaskProgressCard({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {tasks.map((task) => (
+              {normalizedTasks.map((task) => (
                 <tr key={`${task.dutyId}-${task.taskId}`} className="hover:bg-slate-50/80 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="font-semibold text-slate-800">{task.title}</div>

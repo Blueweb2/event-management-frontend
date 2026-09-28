@@ -152,12 +152,15 @@ export default function ManagerEventDetailsPage() {
   // ==========================================
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      void fetchEvent();
-      void fetchMonitoringData();
-    }, 0);
+    void fetchEvent();
+    void fetchMonitoringData();
 
-    return () => clearTimeout(timeout);
+    // Auto-poll live staff attendance & monitoring data every 4 seconds
+    const interval = setInterval(() => {
+      void fetchMonitoringData();
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [fetchEvent, fetchMonitoringData]);
 
   useEffect(() => {

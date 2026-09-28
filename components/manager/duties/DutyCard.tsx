@@ -147,7 +147,8 @@ export default function DutyCard({
                           type="button"
                           onClick={() => {
                             setMenuOpen(false);
-                            if (duty.status !== "ACCEPTED") {
+                            const isConfirmed = ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status);
+                            if (!isConfirmed) {
                               setWarning("Sub-tasks can only be assigned after the staff member accepts the duty.");
                               setTimeout(() => setWarning(null), 4500);
                               return;
@@ -155,14 +156,14 @@ export default function DutyCard({
                             onManageChecklist(duty);
                           }}
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold ${
-                            duty.status === "ACCEPTED"
+                            ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status)
                               ? "text-[#a7773f] hover:bg-[#faf6f0]"
                               : "text-gray-400 hover:bg-gray-50"
                           }`}
-                          title={duty.status !== "ACCEPTED" ? "Sub-tasks can only be assigned after staff accepts duty" : ""}
+                          title={!["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status) ? "Sub-tasks can only be assigned after staff accepts duty" : ""}
                         >
                           <ListChecks size={14} />
-                          <span>Manage Subtasks {duty.status !== "ACCEPTED" ? "(Awaiting Acceptance)" : ""}</span>
+                          <span>Manage Subtasks {!["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status) ? "(Awaiting Acceptance)" : ""}</span>
                         </button>
                       )}
 
@@ -346,7 +347,7 @@ export default function DutyCard({
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-[#9a6c37]">{progressPercent}%</span>
                 {onManageChecklist && (
-                  duty.status === "ACCEPTED" ? (
+                  ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status) ? (
                     <button
                       type="button"
                       onClick={() => onManageChecklist(duty)}
@@ -398,7 +399,7 @@ export default function DutyCard({
           </div>
         ) : (
           /* When no checklist items exist and shift is ACCEPTED */
-          duty.status === "ACCEPTED" && onManageChecklist && (
+          ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status) && onManageChecklist && (
             <div className="mt-3.5 flex items-center justify-between rounded-xl border border-dashed border-emerald-300 bg-emerald-50/50 p-2.5">
               <div className="text-[11px] font-semibold text-emerald-900">
                 <span>Staff accepted! Ready for subtasks.</span>

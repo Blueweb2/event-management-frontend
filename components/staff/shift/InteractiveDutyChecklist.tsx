@@ -101,9 +101,13 @@ export default function InteractiveDutyChecklist({
       setItems(currentAssignment.checklist);
     } else {
       const defaults = DEFAULT_SUBTASKS[currentAssignment.role || "Default"] || DEFAULT_SUBTASKS.Default;
-      setItems(defaults.map((text) => ({ text, completed: false })));
+      const initialItems = defaults.map((text) => ({ text, completed: false }));
+      setItems(initialItems);
+      if (token && currentAssignment._id) {
+        void updateAssignmentChecklist(currentAssignment._id, initialItems, token);
+      }
     }
-  }, [currentAssignment]);
+  }, [currentAssignment, token]);
 
   const completedCount = items.filter((i) => i.completed).length;
   const progressPct = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;

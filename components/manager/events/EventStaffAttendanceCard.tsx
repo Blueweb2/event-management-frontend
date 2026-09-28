@@ -36,11 +36,49 @@ interface EventStaffAttendanceCardProps {
 }
 
 export default function EventStaffAttendanceCard({
-  attendanceData,
+  attendanceData = [],
   loading = false,
   onRefresh,
 }: EventStaffAttendanceCardProps) {
   const [selectedStaff, setSelectedStaff] = useState<StaffAttendanceItem | null>(null);
+
+  const normalizedData: StaffAttendanceItem[] = (attendanceData || []).map((item: any) => {
+    const statusRaw = item.status || item.currentStatus || "NOT_CLOCKED_IN";
+    let status: StaffAttendanceItem["status"] = "NOT_CLOCKED";
+    if (statusRaw === "ACTIVE") status = "ACTIVE";
+    else if (statusRaw === "PAUSED") status = "PAUSED";
+    else if (statusRaw === "CLOCKED_OUT") status = "CLOCKED_OUT";
+
+    const checkInTime = item.checkInTime || item.checkIn || null;
+    const checkOutTime = item.checkOutTime || item.checkOut || null;
+    const activeDutyMinutes = Number(item.activeDutyMinutes ?? item.activeMinutes ?? 0);
+    const totalPauseMinutes = Number(item.totalPauseMinutes ?? item.totalPausedMinutes ?? 0);
+
+    let pauseReason = item.pauseReason || item.notes || null;
+    if (!pauseReason && Array.isArray(item.sessions)) {
+      const pauseSession = [...item.sessions].reverse().find((s: any) => s.type === "PAUSE" && s.reason);
+      if (pauseSession) pauseReason = pauseSession.reason;
+    }
+
+    const staffObj =
+      typeof item.staff === "object" && item.staff !== null
+        ? item.staff
+        : { _id: String(item.staff || ""), name: "Assigned Staff", email: "" };
+
+    return {
+      attendanceId: item.attendanceId || item._id || null,
+      assignmentId: item.assignmentId || item.dutyId || item._id || String(Math.random()),
+      dutyTitle: item.dutyTitle || item.title || "Duty Assignment",
+      staff: staffObj,
+      status,
+      checkInTime,
+      checkOutTime,
+      activeDutyMinutes,
+      totalPauseMinutes,
+      pauseReason,
+      sessions: Array.isArray(item.sessions) ? item.sessions : [],
+    };
+  });
 
   const getStatusBadge = (status: StaffAttendanceItem["status"]) => {
     switch (status) {
@@ -88,6 +126,7 @@ export default function EventStaffAttendanceCard({
   const formatTime12h = (dateStr: string | null) => {
     if (!dateStr) return "--:--";
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "--:--";
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -95,9 +134,9 @@ export default function EventStaffAttendanceCard({
     });
   };
 
-  const activeCount = attendanceData.filter((item) => item.status === "ACTIVE").length;
-  const pausedCount = attendanceData.filter((item) => item.status === "PAUSED").length;
-  const completedCount = attendanceData.filter((item) => item.status === "CLOCKED_OUT").length;
+  const activeCount = normalizedData.filter((item) => item.status === "ACTIVE").length;
+  const pausedCount = normalizedData.filter((item) => item.status === "PAUSED").length;
+  const completedCount = normalizedData.filter((item) => item.status === "CLOCKED_OUT").length;
 
   return (
     <div className="rounded-2xl border border-[#9a6c37]/20 bg-white p-6 shadow-sm">
@@ -134,7 +173,7 @@ export default function EventStaffAttendanceCard({
         </div>
       </div>
 
-      {attendanceData.length === 0 ? (
+      {normalizedData.length === 0 ? (
         <div className="text-center py-8 text-slate-400 text-sm">
           No staff assignments found for this event.
         </div>
@@ -153,7 +192,7 @@ export default function EventStaffAttendanceCard({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {attendanceData.map((item) => (
+              {normalizedData.map((item) => (
                 <tr key={item.assignmentId} className="hover:bg-slate-50/80 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="font-semibold text-slate-800">{item.staff.name}</div>

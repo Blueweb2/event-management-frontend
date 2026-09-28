@@ -13,6 +13,7 @@ export type ServiceItem = {
   category: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   quantity: number;
   unitPrice: number;
   pricingType?: PricingType;

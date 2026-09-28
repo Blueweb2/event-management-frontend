@@ -11,6 +11,7 @@ export type ServiceOption = {
   _id?: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   price: number;
   pricingType: PricingType;
   unitLabel?: string;
@@ -22,6 +23,7 @@ export type Service = {
   name: string;
   category: string;
   description?: string;
+  imageUrl?: string;
   pricingType: PricingType;
   basePrice: number;
   unitLabel?: string;
@@ -36,6 +38,7 @@ export type CreateServiceData = {
   name: string;
   category: string;
   description?: string;
+  imageUrl?: string;
   pricingType: PricingType;
   basePrice: number;
   unitLabel?: string;
