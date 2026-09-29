@@ -84,15 +84,15 @@ export default function ManagerNotificationDrawer({
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
+      <div className="fixed inset-y-0 right-0 flex w-full max-w-full sm:pl-10">
         <aside
           role="dialog"
           aria-modal="true"
           aria-labelledby="manager-notifications-title"
-          className="w-screen max-w-md bg-[#FAF8F5] border-l border-[#E8E1D8] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300"
+          className="flex h-full w-full flex-col bg-[#FAF8F5] shadow-2xl animate-in slide-in-from-right duration-300 sm:max-w-md sm:border-l sm:border-[#E8E1D8]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#E8E1D8] bg-white px-5 py-4">
+          <div className="flex items-center justify-between gap-3 border-b border-[#E8E1D8] bg-white px-4 py-3.5 sm:px-5 sm:py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F4EBDD] text-[#9A6C37]">
                 <Bell size={20} />

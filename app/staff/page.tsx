@@ -102,7 +102,7 @@ export default function StaffHomePage() {
 
           {/* 2 & 3: Interactive Duty Checklist & Shift Notifications Feed */}
           <div className="grid gap-6 xl:grid-cols-2">
-            <div id="duty-checklist">
+            <div id="duty-checklist" className="w-full min-w-0 overflow-x-auto">
               <InteractiveDutyChecklist assignments={assignments} onUpdate={loadDashboard} />
             </div>
             <ShiftNotificationsFeed assignments={assignments} />
