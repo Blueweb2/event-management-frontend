@@ -197,6 +197,47 @@ export default function StaffHoursPayrollView({
     document.body.removeChild(link);
   };
 
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  const pendingFilteredCount = useMemo(
+    () => filteredDuties.filter((d) => d.paymentStatus !== "PAID").length,
+    [filteredDuties]
+  );
+
+  const handleBulkPayPending = async () => {
+    if (!token) return;
+    const pendingToPay = filteredDuties.filter((d) => d.paymentStatus !== "PAID");
+    if (pendingToPay.length === 0) return;
+
+    if (!confirm(`Are you sure you want to mark ${pendingToPay.length} pending shifts as PAID?`)) {
+      return;
+    }
+
+    try {
+      setBulkProcessing(true);
+      await Promise.all(
+        pendingToPay.map((duty) =>
+          updateAssignmentPayment(
+            duty.id,
+            {
+              paymentStatus: "PAID",
+              paymentReference: `PAY-${Date.now().toString().slice(-6)}-${duty.id.slice(-4)}`,
+              paidAt: new Date().toISOString(),
+            },
+            token
+          )
+        )
+      );
+      setToastMessage(`Successfully marked ${pendingToPay.length} shifts as PAID!`);
+      setTimeout(() => setToastMessage(""), 4000);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error("Failed to bulk update payment status", err);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Toast */}
@@ -207,22 +248,40 @@ export default function StaffHoursPayrollView({
         </div>
       )}
 
-      {/* Header Metric Cards */}
+      {/* Header Interactive Metric Cards */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm">
+        {/* Total Shifts */}
+        <button
+          type="button"
+          onClick={() => setPaymentFilter("ALL")}
+          className={`text-left rounded-2xl border p-4 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
+            paymentFilter === "ALL"
+              ? "border-[#29241f] bg-white ring-2 ring-[#29241f]/10"
+              : "border-[#e8e1d8] bg-white hover:border-gray-400"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500">Total Hours</span>
+            <span className="text-xs font-bold text-gray-500">Total Hours</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
               <Clock size={16} />
             </span>
           </div>
           <p className="mt-2 text-2xl font-black text-[#29241f]">{metrics.totalHours} <span className="text-sm font-semibold text-gray-500">hrs</span></p>
-          <p className="mt-1 text-[11px] text-gray-400">Across {metrics.totalShifts} duty shifts</p>
-        </div>
+          <p className="mt-1 text-[11px] text-gray-400 font-medium">Across {metrics.totalShifts} duty shifts · <span className="text-blue-600 underline">Show All</span></p>
+        </button>
 
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm">
+        {/* Total Payroll */}
+        <button
+          type="button"
+          onClick={() => setPaymentFilter("ALL")}
+          className={`text-left rounded-2xl border p-4 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
+            paymentFilter === "ALL"
+              ? "border-[#29241f] bg-white ring-2 ring-[#29241f]/10"
+              : "border-[#e8e1d8] bg-white hover:border-gray-400"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500">Total Payroll</span>
+            <span className="text-xs font-bold text-gray-500">Total Payroll</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
               <IndianRupee size={16} />
             </span>
@@ -230,12 +289,21 @@ export default function StaffHoursPayrollView({
           <p className="mt-2 text-2xl font-black text-[#29241f]">
             {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.totalPayroll)}
           </p>
-          <p className="mt-1 text-[11px] text-gray-400">Gross compensation due</p>
-        </div>
+          <p className="mt-1 text-[11px] text-gray-400 font-medium">Gross compensation due</p>
+        </button>
 
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm">
+        {/* Paid Amount */}
+        <button
+          type="button"
+          onClick={() => setPaymentFilter("PAID")}
+          className={`text-left rounded-2xl border p-4 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
+            paymentFilter === "PAID"
+              ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500/30"
+              : "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-800">Paid Amount</span>
+            <span className="text-xs font-bold text-emerald-800">Paid Amount</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
               <Check size={16} />
             </span>
@@ -243,12 +311,21 @@ export default function StaffHoursPayrollView({
           <p className="mt-2 text-2xl font-black text-emerald-900">
             {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.paidAmount)}
           </p>
-          <p className="mt-1 text-[11px] text-emerald-700">Completed disbursements</p>
-        </div>
+          <p className="mt-1 text-[11px] text-emerald-700 font-medium">Disbursed · <span className="underline">Filter Paid</span></p>
+        </button>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+        {/* Pending Payout */}
+        <button
+          type="button"
+          onClick={() => setPaymentFilter("PENDING")}
+          className={`text-left rounded-2xl border p-4 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${
+            paymentFilter === "PENDING"
+              ? "border-amber-600 bg-amber-50 ring-2 ring-amber-500/30"
+              : "border-amber-200 bg-amber-50/50 hover:bg-amber-50"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-amber-800">Pending Payout</span>
+            <span className="text-xs font-bold text-amber-800">Pending Payout</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
               <CreditCard size={16} />
             </span>
@@ -256,13 +333,13 @@ export default function StaffHoursPayrollView({
           <p className="mt-2 text-2xl font-black text-amber-900">
             {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(metrics.pendingAmount)}
           </p>
-          <p className="mt-1 text-[11px] text-amber-700">Awaiting disbursement</p>
-        </div>
+          <p className="mt-1 text-[11px] text-amber-700 font-medium">Awaiting payout · <span className="underline">Filter Pending</span></p>
+        </button>
       </section>
 
-      {/* Filter Toolbar */}
+      {/* Filter Toolbar & Batch Actions */}
       <section className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-sm space-y-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Search */}
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -276,6 +353,43 @@ export default function StaffHoursPayrollView({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Quick Status Pill Toggles */}
+            <div className="flex items-center rounded-xl bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => setPaymentFilter("ALL")}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                  paymentFilter === "ALL"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentFilter("PENDING")}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                  paymentFilter === "PENDING"
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-amber-800 hover:text-amber-950"
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentFilter("PAID")}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                  paymentFilter === "PAID"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-emerald-800 hover:text-emerald-950"
+                }`}
+              >
+                Paid
+              </button>
+            </div>
+
             {/* Staff Filter */}
             <select
               value={selectedStaffFilter}
@@ -290,16 +404,22 @@ export default function StaffHoursPayrollView({
               ))}
             </select>
 
-            {/* Payment Status Filter */}
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value as any)}
-              className="h-11 rounded-xl border border-gray-200 bg-[#fdfbf8] px-3 text-xs font-medium text-gray-700 outline-none focus:border-[#b8894b]"
-            >
-              <option value="ALL">All Payments</option>
-              <option value="PENDING">Pending Payment</option>
-              <option value="PAID">Disbursed / Paid</option>
-            </select>
+            {/* Bulk Pay Action */}
+            {pendingFilteredCount > 0 && (
+              <button
+                type="button"
+                disabled={bulkProcessing}
+                onClick={handleBulkPayPending}
+                className="flex h-11 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition disabled:opacity-50"
+              >
+                {bulkProcessing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                <span>Pay All Pending ({pendingFilteredCount})</span>
+              </button>
+            )}
 
             {/* CSV Export */}
             <button
@@ -308,7 +428,7 @@ export default function StaffHoursPayrollView({
               className="flex h-11 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 shadow-sm"
             >
               <Download size={14} className="text-[#a7773f]" />
-              <span>Export Roster CSV</span>
+              <span>Export CSV</span>
             </button>
           </div>
         </div>

@@ -58,15 +58,15 @@ export default function StaffHomePage() {
   const activeAssignment = assignments[0];
 
   return (
-    <main className="space-y-6 py-5 sm:space-y-8 sm:py-6">
+    <main className="space-y-4 sm:space-y-6 lg:space-y-8 py-3.5 sm:py-6">
       <StaffHeader />
 
       <section>
-        <p className="text-sm font-semibold text-[#9a6c37]">Staff Portal</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#29241f] sm:text-3xl">
+        <p className="text-xs sm:text-sm font-semibold text-[#9a6c37]">Staff Portal</p>
+        <h1 className="mt-0.5 text-xl font-black tracking-tight text-[#29241f] sm:text-2xl lg:text-3xl">
           Good morning, {user?.name || "Staff Member"} 👋
         </h1>
-        <p className="mt-2 text-sm leading-6 text-[#756d64]">
+        <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#756d64]">
           Here&apos;s your active shift, checklist, and schedule updates for today.
         </p>
       </section>

@@ -38,7 +38,7 @@ export default function StaffLayout({
 
   return (
     <div className="min-h-screen bg-[#fbf6ef] text-[#29241f]">
-      <div className="mx-auto min-h-screen w-full max-w-7xl px-4 pb-24 sm:px-6 lg:px-8 lg:pb-8">
+      <div className="mx-auto min-h-screen w-full max-w-7xl px-3.5 sm:px-6 lg:px-8 pb-28 sm:pb-24 lg:pb-8">
         {children}
       </div>
 

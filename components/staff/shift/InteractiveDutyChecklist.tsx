@@ -150,25 +150,40 @@ export default function InteractiveDutyChecklist({
     );
   }
 
+  const isEventCompleted = useMemo(() => {
+    if (!currentAssignment) return false;
+    const eventObj = typeof currentAssignment.event === "object" ? currentAssignment.event : null;
+    const eventStatus = (eventObj?.status || "").toLowerCase();
+    return (
+      eventStatus === "completed" ||
+      eventStatus === "settled" ||
+      currentAssignment.status === "COMPLETED"
+    );
+  }, [currentAssignment]);
+
   const isCurrentActiveNext = currentAssignment._id === activeOrNextAssignment?._id;
 
   return (
-    <div className="w-full min-w-0 rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
+    <div className="w-full min-w-0 rounded-2xl sm:rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-sm">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f2ede6] pb-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#f2ede6] pb-3.5">
         <div className="flex items-center gap-2 text-[#9a6c37]">
-          <ListTodo size={18} />
-          <h2 className="text-base font-bold text-[#29241f]">Duty Sub-Task Checklist</h2>
+          <ListTodo size={18} className="shrink-0" />
+          <h2 className="text-sm sm:text-base font-bold text-[#29241f]">Duty Sub-Task Checklist</h2>
         </div>
 
-        <div className="flex items-center gap-2">
-          {currentAssignment.status === "IN_PROGRESS" ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {isEventCompleted ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold text-gray-600 border border-gray-200">
+              🔒 Completed
+            </span>
+          ) : currentAssignment.status === "IN_PROGRESS" ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 animate-pulse">
-              <Radio size={12} /> Live Shift Active
+              <Radio size={12} /> Live Shift
             </span>
           ) : isCurrentActiveNext ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-[#9a6c37]">
-              ⚡ Current Event
+              ⚡ Next Event
             </span>
           ) : null}
 
@@ -188,13 +203,13 @@ export default function InteractiveDutyChecklist({
             <select
               value={currentAssignment._id}
               onChange={(e) => setSelectedId(e.target.value)}
-              className="w-full appearance-none rounded-xl border border-[#e0d6ca] bg-[#faf8f5] px-3.5 py-2 pr-8 text-xs font-bold text-[#29241f] outline-none transition focus:border-[#9a6c37]"
+              className="w-full appearance-none rounded-xl border border-[#e0d6ca] bg-[#faf8f5] px-3.5 py-2.5 pr-8 text-xs font-bold text-[#29241f] outline-none transition focus:border-[#9a6c37]"
             >
               {validAssignments.map((a) => (
                 <option key={a._id} value={a._id}>
                   {a.dutyTitle} — {getEventName(a)} (
                   {new Date(a.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
-                  {a._id === activeOrNextAssignment?._id ? " ★ Next Event" : ""})
+                  {a._id === activeOrNextAssignment?._id ? " ★ Next" : ""})
                 </option>
               ))}
             </select>
@@ -204,19 +219,20 @@ export default function InteractiveDutyChecklist({
       )}
 
       {/* Event Details Sub-header */}
-      <div className="mt-3.5 rounded-xl border border-[#f0eadf] bg-[#faf8f5] p-3 text-xs text-[#554e46]">
-        <p className="font-extrabold text-[#29241f] truncate">{currentAssignment.dutyTitle}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-[#756d64]">
-          <span className="flex items-center gap-1">
-            <Sparkles size={12} className="text-[#9a6c37]" /> {getEventName(currentAssignment)}
+      <div className="mt-3.5 rounded-2xl border border-[#f0eadf] bg-[#faf8f5] p-3 text-xs text-[#554e46]">
+        <p className="font-extrabold text-[#29241f] break-words">{currentAssignment.dutyTitle}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2.5 sm:gap-3 text-[11px] text-[#756d64]">
+          <span className="flex items-center gap-1 min-w-0">
+            <Sparkles size={12} className="text-[#9a6c37] shrink-0" />
+            <span className="truncate">{getEventName(currentAssignment)}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <CalendarDays size={12} className="text-[#9a6c37]" />
-            {new Date(currentAssignment.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
+          <span className="flex items-center gap-1 shrink-0">
+            <CalendarDays size={12} className="text-[#9a6c37] shrink-0" />
+            <span>{new Date(currentAssignment.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <Clock3 size={12} className="text-[#9a6c37]" />
-            {formatTime24to12(currentAssignment.startTime)} - {formatTime24to12(currentAssignment.endTime)}
+          <span className="flex items-center gap-1 shrink-0">
+            <Clock3 size={12} className="text-[#9a6c37] shrink-0" />
+            <span>{formatTime24to12(currentAssignment.startTime)} - {formatTime24to12(currentAssignment.endTime)}</span>
           </span>
         </div>
       </div>
@@ -236,25 +252,28 @@ export default function InteractiveDutyChecklist({
       </div>
 
       {/* List */}
-      <div className="mt-4 space-y-2.5 max-h-72 overflow-y-auto pr-1">
+      <div className="mt-4 space-y-2 max-h-72 overflow-y-auto pr-1">
         {items.map((item, idx) => (
           <button
             key={item._id || idx}
             type="button"
+            disabled={isEventCompleted || loading}
             onClick={() => toggleItem(idx)}
-            className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-left text-xs transition active:scale-[0.99] ${
+            className={`flex w-full items-center justify-between gap-2.5 rounded-xl border p-3 text-left text-xs transition cursor-pointer ${
+              isEventCompleted ? "cursor-not-allowed opacity-80" : "active:scale-[0.99]"
+            } ${
               item.completed
                 ? "border-emerald-200 bg-emerald-50/50 text-emerald-900"
                 : "border-gray-100 bg-[#fdfcfb] text-gray-800 hover:border-amber-200"
             }`}
           >
-            <div className="flex items-center gap-3 min-w-0 pr-2">
+            <div className="flex items-start gap-2.5 min-w-0 pr-1">
               {item.completed ? (
-                <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+                <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-emerald-600" />
               ) : (
-                <Square size={18} className="shrink-0 text-gray-400" />
+                <Square size={17} className="mt-0.5 shrink-0 text-gray-400" />
               )}
-              <span className={`truncate font-medium ${item.completed ? "line-through text-gray-500" : ""}`}>
+              <span className={`break-words font-medium leading-snug ${item.completed ? "line-through text-gray-500" : ""}`}>
                 {item.text}
               </span>
             </div>
@@ -267,24 +286,30 @@ export default function InteractiveDutyChecklist({
         ))}
       </div>
 
-      {/* Add Custom Subtask Form */}
-      <form onSubmit={handleAddItem} className="mt-4 flex gap-2">
-        <input
-          type="text"
-          value={newItemText}
-          onChange={(e) => setNewItemText(e.target.value)}
-          placeholder="Add custom sub-task..."
-          className="h-10 flex-1 rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37] focus:ring-1 focus:ring-[#9a6c37]"
-        />
-        <button
-          type="submit"
-          disabled={!newItemText.trim() || loading}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#9a6c37] px-3.5 text-xs font-semibold text-white transition hover:bg-[#835b2e] disabled:opacity-50"
-        >
-          <Plus size={15} />
-          <span>Add</span>
-        </button>
-      </form>
+      {/* Add Custom Subtask Form / Completed Locked Notice */}
+      {isEventCompleted ? (
+        <div className="mt-4 flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50/80 p-2.5 text-xs font-semibold text-gray-500">
+          <span>🔒 Event is completed. Tasks are locked.</span>
+        </div>
+      ) : (
+        <form onSubmit={handleAddItem} className="mt-4 flex gap-2">
+          <input
+            type="text"
+            value={newItemText}
+            onChange={(e) => setNewItemText(e.target.value)}
+            placeholder="Add custom sub-task..."
+            className="h-10 flex-1 rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37] focus:ring-1 focus:ring-[#9a6c37]"
+          />
+          <button
+            type="submit"
+            disabled={!newItemText.trim() || loading}
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#9a6c37] px-4 text-xs font-semibold text-white transition hover:bg-[#835b2e] active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span className="hidden xs:inline">Add</span>
+          </button>
+        </form>
+      )}
     </div>
   );
 }

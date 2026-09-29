@@ -82,17 +82,17 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
     generatedNotifications.length > 0
       ? generatedNotifications
       : [
-          {
-            id: "default-1",
-            title: "Welcome to Staff Portal",
-            message: "All shift updates, checklist reminders, and assignment alerts will appear in your feed here.",
-            timestamp: "Just now",
-            type: "REMINDER",
-            read: true,
-            targetId: "active-shift",
-            actionText: "View Active Shift →",
-          },
-        ]
+        {
+          id: "default-1",
+          title: "Welcome to Staff Portal",
+          message: "All shift updates, checklist reminders, and assignment alerts will appear in your feed here.",
+          timestamp: "Just now",
+          type: "REMINDER",
+          read: true,
+          targetId: "active-shift",
+          actionText: "View Active Shift →",
+        },
+      ]
   );
 
   const [filter, setFilter] = useState<"ALL" | "UNREAD">("ALL");
@@ -173,22 +173,20 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
             <div
               key={item.id}
               onClick={() => handleNotificationClick(item)}
-              className={`group flex items-start gap-3 rounded-xl border p-3.5 transition cursor-pointer hover:border-[#9a6c37] ${
-                item.read
+              className={`group flex items-start gap-3 rounded-xl border p-3.5 transition cursor-pointer hover:border-[#9a6c37] ${item.read
                   ? "border-gray-100 bg-[#fdfcfb] text-gray-600 opacity-85"
                   : "border-amber-200/80 bg-amber-50/40 text-gray-900 shadow-2xs"
-              }`}
+                }`}
             >
               <div
-                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition group-hover:scale-105 ${
-                  item.type === "ASSIGNMENT"
+                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition group-hover:scale-105 ${item.type === "ASSIGNMENT"
                     ? "bg-amber-100 text-[#9a6c37]"
                     : item.type === "CHECKLIST"
-                    ? "bg-emerald-100 text-emerald-800"
-                    : item.type === "REMINDER"
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-purple-100 text-purple-700"
-                }`}
+                      ? "bg-emerald-100 text-emerald-800"
+                      : item.type === "REMINDER"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-purple-100 text-purple-700"
+                  }`}
               >
                 {item.type === "ASSIGNMENT" ? (
                   <Calendar size={15} />

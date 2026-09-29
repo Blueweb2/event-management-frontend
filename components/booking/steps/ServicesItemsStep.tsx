@@ -3,1004 +3,463 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
-  Camera,
-  Check,
-  ChevronDown,
-  Clapperboard,
-  Lightbulb,
   Loader2,
-  Mic2,
-  Plus,
-  Trash2,
-  Utensils,
-  Users,
-  Volume2,
-  Warehouse,
-  Wrench,
+  Search,
+  Sparkles,
+  SlidersHorizontal,
+  X,
+  Layers,
+  HeartHandshake,
 } from "lucide-react";
 
-import type {
-  BookingFormData,
-  ServiceItem,
-} from "../types";
+import type { BookingFormData, ServiceItem } from "../types";
+import { getServices, getServiceImageUrl } from "@/lib/services.api";
+import { getFallbackServiceImage } from "@/lib/service-library";
+import type { PricingType, Service } from "@/types/service";
 
-import {
-  getServices,
-} from "@/lib/services.api";
-
-import type {
-  PricingType,
-  Service,
-} from "@/types/service";
+import ServiceCategoryTabs, {
+  type ServiceCategoryMeta,
+  getCategoryIcon,
+} from "../services/ServiceCategoryTabs";
+import ServiceOptionCard from "../services/ServiceOptionCard";
+import ServiceImagePreview, {
+  type PreviewableServiceOption,
+} from "../services/ServiceImagePreview";
+import SelectedServicesSummary from "../services/SelectedServicesSummary";
+import { formatCurrency } from "../services/PricingDisplay";
 
 type ServicesItemsStepProps = {
   formData: BookingFormData;
-  updateServices: (
-    services: BookingFormData["services"],
-  ) => void;
-};
-
-type Category = {
-  id: string;
-  name: string;
-  icon: React.ElementType;
-};
-
-const categoryIcons: Record<
-  string,
-  React.ElementType
-> = {
-  venue: Warehouse,
-  catering: Utensils,
-  decoration: Clapperboard,
-  lighting: Lightbulb,
-  sound: Volume2,
-  photography: Camera,
-  videography: Camera,
-  entertainment: Mic2,
-  staff: Users,
-  other: Wrench,
-};
-
-const fallbackIcon = Wrench;
-
-const pricingLabels: Record<
-  PricingType,
-  string
-> = {
-  FIXED: "Fixed Price",
-  PER_GUEST: "Per Guest",
-  PER_UNIT: "Per Unit",
-  PER_HOUR: "Per Hour",
-  PER_DAY: "Per Day",
-  PER_STAFF: "Per Staff",
-  PER_REEL: "Per Reel",
-};
-
-const formatCategoryName = (
-  category: string,
-) => {
-  return category
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase(),
-    );
-};
-
-const formatCurrency = (
-  amount: number,
-) => {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const getDefaultQuantity = (
-  pricingType: PricingType,
-  guests: number,
-) => {
-  switch (pricingType) {
-    case "PER_GUEST":
-      return guests || 1;
-
-    case "FIXED":
-      return 1;
-
-    default:
-      return 1;
-  }
-};
-
-const getQuantityLabel = (
-  pricingType: PricingType,
-  unitLabel?: string,
-) => {
-  if (unitLabel) {
-    return formatCategoryName(unitLabel);
-  }
-
-  switch (pricingType) {
-    case "PER_GUEST":
-      return "Guests";
-
-    case "PER_HOUR":
-      return "Hours";
-
-    case "PER_DAY":
-      return "Days";
-
-    case "PER_STAFF":
-      return "Staff";
-
-    case "PER_REEL":
-      return "Reels";
-
-    case "PER_UNIT":
-      return "Quantity";
-
-    case "FIXED":
-      return "Quantity";
-
-    default:
-      return "Quantity";
-  }
-};
-
-const getQuantityFromItem = (
-  item: ServiceItem,
-) => {
-  return Math.max(
-    Number(item.quantity) || 1,
-    1,
-  );
+  updateServices: (services: BookingFormData["services"]) => void;
 };
 
 export default function ServicesItemsStep({
   formData,
   updateServices,
 }: ServicesItemsStepProps) {
-  const [services, setServices] =
-    useState<Service[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("all");
+  // Lightbox modal state
+  const [previewItem, setPreviewItem] = useState<PreviewableServiceOption | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const guestCount = Math.max(1, Number(formData.guests) || 1);
 
-  const [error, setError] =
-    useState("");
-
-  const [addingServiceId, setAddingServiceId] =
-    useState<string | null>(null);
-
+  // Load backend active services
   useEffect(() => {
     const loadServices = async () => {
       try {
         setLoading(true);
         setError("");
-
-        // Only active services are returned.
         const data = await getServices();
-
-        setServices(data);
-
-        if (data.length > 0) {
-          setSelectedCategory(
-            data[0].category,
-          );
-        }
+        setServices(data || []);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load services.",
+          err instanceof Error ? err.message : "Failed to load services."
         );
       } finally {
         setLoading(false);
       }
     };
 
-    loadServices();
+    void loadServices();
   }, []);
 
-  /*
-   * Build categories dynamically from
-   * Admin-configured services.
-   */
-  const categories = useMemo<
-    Category[]
-  >(() => {
-    const uniqueCategories = Array.from(
-      new Set(
-        services.map(
-          (service) =>
-            service.category.toLowerCase(),
-        ),
-      ),
-    );
+  // Flatten all services & options into visual display items
+  const allDisplayItems = useMemo<PreviewableServiceOption[]>(() => {
+    const items: PreviewableServiceOption[] = [];
 
-    return uniqueCategories.map(
-      (category) => ({
-        id: category,
-        name: formatCategoryName(
-          category,
-        ),
-        icon:
-          categoryIcons[category] ||
-          fallbackIcon,
-      }),
-    );
-  }, [services]);
+    services.forEach((service) => {
+      const activeOptions = (service.options || []).filter((opt) => opt.active);
 
-  /*
-   * Services belonging to the
-   * currently selected category.
-   */
-  const visibleServices = useMemo(() => {
-    if (selectedCategory === "all") {
-      return services;
-    }
+      if (activeOptions.length > 0) {
+        // Option variations present -> flatten each option as a distinct card
+        activeOptions.forEach((opt) => {
+          const uniqueKey = `${service._id}__${opt._id}`;
+          const isSelected = formData.services.some(
+            (s) => s.serviceId === service._id && s.optionId === opt._id
+          );
+          const currentItem = formData.services.find(
+            (s) => s.serviceId === service._id && s.optionId === opt._id
+          );
 
-    return services.filter(
-      (service) =>
-        service.category.toLowerCase() ===
-        selectedCategory.toLowerCase(),
-    );
-  }, [
-    services,
-    selectedCategory,
-  ]);
+          const rawImg = opt.imageUrl || service.imageUrl;
+          const resolvedImg = getServiceImageUrl(rawImg) || getFallbackServiceImage(service.category);
 
-  /*
-   * Add a service to the booking.
-   */
-  const addService = (
-    service: Service,
-  ) => {
-    const alreadySelected =
-      formData.services.some(
-        (item) =>
-          item.serviceId ===
-            service._id ||
-          item.id === service._id,
-      );
+          const pricingType: PricingType = opt.pricingType || service.pricingType || "FIXED";
+          const defaultQty = pricingType === "PER_GUEST" ? guestCount : 1;
 
-    if (alreadySelected) {
-      return;
-    }
+          items.push({
+            uniqueKey,
+            serviceId: service._id,
+            optionId: opt._id,
+            category: service.category || "other",
+            parentServiceName: service.name,
+            title: opt.name,
+            description: opt.description || service.description || "",
+            imageUrl: resolvedImg,
+            price: Number(opt.price) || 0,
+            pricingType,
+            unitLabel: opt.unitLabel || service.unitLabel || "",
+            isSelected,
+            selectedQuantity: currentItem ? Number(currentItem.quantity) : defaultQty,
+            guestCount,
+          });
+        });
+      } else {
+        // Base service with no sub-options
+        const uniqueKey = service._id;
+        const isSelected = formData.services.some(
+          (s) => s.serviceId === service._id && !s.optionId
+        );
+        const currentItem = formData.services.find(
+          (s) => s.serviceId === service._id && !s.optionId
+        );
 
-    const guests =
-      Number(formData.guests) || 1;
+        const resolvedImg = getServiceImageUrl(service.imageUrl) || getFallbackServiceImage(service.category);
+        const pricingType: PricingType = service.pricingType || "FIXED";
+        const defaultQty = pricingType === "PER_GUEST" ? guestCount : 1;
 
-    const quantity =
-      getDefaultQuantity(
-        service.pricingType,
-        guests,
-      );
+        items.push({
+          uniqueKey,
+          serviceId: service._id,
+          optionId: undefined,
+          category: service.category || "other",
+          parentServiceName: service.name,
+          title: service.name,
+          description: service.description || "",
+          imageUrl: resolvedImg,
+          price: Number(service.basePrice) || 0,
+          pricingType,
+          unitLabel: service.unitLabel || "",
+          isSelected,
+          selectedQuantity: currentItem ? Number(currentItem.quantity) : defaultQty,
+          guestCount,
+        });
+      }
+    });
 
-    const newItem =
-      {
+    return items;
+  }, [services, formData.services, guestCount]);
+
+  // Compute category tabs metadata dynamically
+  const categories = useMemo<ServiceCategoryMeta[]>(() => {
+    const categoryCounts: Record<string, number> = {};
+
+    allDisplayItems.forEach((item) => {
+      const cat = (item.category || "other").toLowerCase();
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    });
+
+    return Object.keys(categoryCounts).map((catId) => ({
+      id: catId,
+      name: catId.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      count: categoryCounts[catId],
+      icon: getCategoryIcon(catId),
+    }));
+  }, [allDisplayItems]);
+
+  // Filtered visual cards according to active category and search keyword
+  const filteredItems = useMemo(() => {
+    return allDisplayItems.filter((item) => {
+      // Category filter
+      if (selectedCategory !== "all") {
+        const itemCat = item.category.toLowerCase();
+        const filterCat = selectedCategory.toLowerCase();
+        if (itemCat !== filterCat && !itemCat.includes(filterCat)) {
+          return false;
+        }
+      }
+
+      // Search keyword filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.trim().toLowerCase();
+        const matchTitle = item.title.toLowerCase().includes(query);
+        const matchParent = item.parentServiceName.toLowerCase().includes(query);
+        const matchCat = item.category.toLowerCase().includes(query);
+        const matchDesc = item.description.toLowerCase().includes(query);
+        return matchTitle || matchParent || matchCat || matchDesc;
+      }
+
+      return true;
+    });
+  }, [allDisplayItems, selectedCategory, searchQuery]);
+
+  // Toggle selection
+  const handleToggleSelect = (item: PreviewableServiceOption) => {
+    if (item.isSelected) {
+      // Remove item
+      const nextServices = formData.services.filter((s) => {
+        if (item.optionId) {
+          return !(s.serviceId === item.serviceId && s.optionId === item.optionId);
+        }
+        return !(s.serviceId === item.serviceId && !s.optionId);
+      });
+      updateServices(nextServices);
+    } else {
+      // Add item
+      const displayName =
+        item.optionId && item.parentServiceName !== item.title
+          ? `${item.parentServiceName} - ${item.title}`
+          : item.title;
+
+      const qty = item.pricingType === "PER_GUEST" ? guestCount : (item.selectedQuantity || 1);
+
+      const newItem: ServiceItem = {
         id: crypto.randomUUID(),
+        serviceId: item.serviceId,
+        optionId: item.optionId,
+        category: item.category,
+        name: displayName,
+        description: item.description,
+        imageUrl: item.imageUrl,
+        quantity: qty,
+        unitPrice: item.price,
+        pricingType: item.pricingType,
+        unitLabel: item.unitLabel,
+      };
 
-        // Backend service ID
-        serviceId: service._id,
-
-        // Display information
-        category: service.category,
-        name: service.name,
-        description:
-          service.description || "",
-
-        // Quantity selected by customer
-        quantity,
-
-        /*
-         * Snapshot/display value only.
-         *
-         * IMPORTANT:
-         * This value is NOT trusted by the backend.
-         */
-        unitPrice: service.basePrice,
-
-        pricingType:
-          service.pricingType,
-
-        unitLabel:
-          service.unitLabel || "",
-      } as ServiceItem;
-
-    updateServices([
-      ...formData.services,
-      newItem,
-    ]);
-  };
-
-  /*
-   * Remove selected service.
-   */
-  const removeService = (
-    itemId: string,
-  ) => {
-    updateServices(
-      formData.services.filter(
-        (item) =>
-          item.id !== itemId,
-      ),
-    );
-  };
-
-  /*
-   * Update quantity only.
-   *
-   * There is deliberately NO
-   * updateUnitPrice function.
-   */
-  const updateQuantity = (
-    itemId: string,
-    value: number,
-  ) => {
-    const quantity = Math.max(
-      Number(value) || 1,
-      1,
-    );
-
-    updateServices(
-      formData.services.map(
-        (item) =>
-          item.id === itemId
-            ? {
-                ...item,
-                quantity,
-              }
-            : item,
-      ),
-    );
-  };
-
-  /*
-   * Select an option for a service.
-   */
-  const selectOption = (
-    itemId: string,
-    service: Service,
-    optionId: string,
-  ) => {
-    const option =
-      service.options.find(
-        (item) =>
-          item._id === optionId,
-      );
-
-    if (!option) {
-      return;
+      updateServices([...formData.services, newItem]);
     }
+  };
+
+  // Update item quantity (from card or preview modal or summary)
+  const handleUpdateQuantity = (uniqueKeyOrItemId: string, quantity: number) => {
+    const qty = Math.max(1, Number(quantity) || 1);
 
     updateServices(
-      formData.services.map(
-        (item) =>
-          item.id === itemId
-            ? {
-                ...item,
-
-                serviceId:
-                  service._id,
-
-                optionId:
-                  option._id,
-
-                name:
-                  service.name,
-
-                description:
-                  option.description ||
-                  service.description ||
-                  "",
-
-                unitPrice:
-                  option.price,
-
-                pricingType:
-                  option.pricingType,
-
-                unitLabel:
-                  option.unitLabel ||
-                  "",
-              }
-            : item,
-      ),
+      formData.services.map((s) => {
+        const itemKey = s.optionId ? `${s.serviceId}__${s.optionId}` : s.serviceId;
+        if (s.id === uniqueKeyOrItemId || itemKey === uniqueKeyOrItemId) {
+          return {
+            ...s,
+            quantity: qty,
+          };
+        }
+        return s;
+      })
     );
   };
 
-  /*
-   * Display-only subtotal.
-   *
-   * Backend remains the source of truth.
-   */
-  const displaySubtotal =
-    formData.services.reduce(
-      (total, item) =>
-        total +
-        getQuantityFromItem(item) *
-          Number(item.unitPrice || 0),
-      0,
-    );
+  // Remove item by id
+  const handleRemoveItem = (itemId: string) => {
+    updateServices(formData.services.filter((s) => s.id !== itemId));
+  };
+
+  // Clear all selections
+  const handleClearAll = () => {
+    updateServices([]);
+  };
+
+  // Open Lightbox
+  const handleOpenPreview = (item: PreviewableServiceOption) => {
+    setPreviewItem(item);
+    setIsPreviewOpen(true);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sage)]">
-          Step 4
-        </p>
+    <div className="space-y-6 sm:space-y-8">
+      {/* Header Banner */}
+      <div className="flex flex-col gap-3 rounded-3xl border border-[#eee7dc] bg-gradient-to-r from-[#faf8f5] via-white to-[#f5efe6] p-6 sm:p-8 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#29241f] text-white shadow-xs">
+            <Sparkles size={14} className="text-[#d8a86c]" />
+          </span>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9A7B4F]">
+            Step 4 • Visual Event Configurator
+          </p>
+        </div>
 
-        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--sage-dark)] sm:text-3xl">
-          Services & Items
-        </h2>
-
-        <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--taupe)] sm:text-base">
-          Select the services your event
-          requires. Pricing is configured by
-          the event manager.
-        </p>
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-[#29241f] sm:text-3xl">
+            Curate Your Event Services & Designs
+          </h2>
+          <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-[#756d64]">
+            Browse photos of stage decorations, dining setups, lighting themes, photography, and entertainment.
+            Click any design card to include it in your personalized event plan.
+          </p>
+        </div>
       </div>
 
-      {/* Error */}
+      {/* Error Alert */}
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle
-            size={18}
-            className="mt-0.5 shrink-0"
-          />
-
+        <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5 text-xs font-semibold text-rose-800">
+          <AlertCircle size={17} className="shrink-0 text-rose-600 mt-0.5" />
           <div>
-            <p className="font-medium">
-              Unable to load services
-            </p>
-
-            <p className="mt-1">
-              {error}
-            </p>
+            <p className="font-bold">Unable to load services</p>
+            <p className="mt-0.5 text-rose-700">{error}</p>
           </div>
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading Skeleton */}
       {loading ? (
-        <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-[var(--border)] bg-white">
-          <div className="flex items-center gap-3 text-sm text-[var(--taupe)]">
-            <Loader2
-              size={20}
-              className="animate-spin"
-            />
-
-            Loading available services...
-          </div>
+        <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-3xl border border-[#eee7dc] bg-white p-12 text-center">
+          <Loader2 size={32} className="animate-spin text-[#9A7B4F]" />
+          <p className="text-sm font-bold text-[#29241f]">
+            Loading visual service collection...
+          </p>
+          <p className="text-xs text-gray-400">
+            Fetching high-resolution setup themes & packages
+          </p>
         </div>
       ) : services.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--border)] bg-white px-6 py-14 text-center">
-          <p className="text-base font-semibold text-[var(--sage-dark)]">
-            No services are currently available
+        <div className="rounded-3xl border border-dashed border-[#d8cfc4] bg-white p-12 text-center">
+          <Layers size={36} className="mx-auto text-gray-300" />
+          <p className="mt-3 text-base font-bold text-[#29241f]">
+            No services currently available
           </p>
-
-          <p className="mt-2 text-sm text-[var(--taupe)]">
-            Please contact the event manager
-            for available services.
+          <p className="mt-1 text-xs text-gray-400">
+            Please check back soon or contact your event manager.
           </p>
         </div>
       ) : (
         <>
-          {/* Categories */}
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-[var(--sage-dark)]">
-                  Service Categories
-                </h3>
-
-                <p className="mt-1 text-xs text-[var(--taupe)]">
-                  Select a category to browse
-                  available services.
-                </p>
-              </div>
-
-              <span className="rounded-full bg-[var(--ivory)] px-3 py-1.5 text-xs font-medium text-[var(--taupe)]">
-                {formData.services.length}{" "}
-                {formData.services.length ===
-                1
-                  ? "item"
-                  : "items"}
-              </span>
-            </div>
-
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {categories.map(
-                (category) => {
-                  const Icon =
-                    category.icon;
-
-                  const isSelected =
-                    selectedCategory ===
-                    category.id;
-
-                  return (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() =>
-                        setSelectedCategory(
-                          category.id,
-                        )
-                      }
-                      className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                        isSelected
-                          ? "bg-[var(--sage)] text-white"
-                          : "bg-[var(--ivory)] text-[var(--sage-dark)] hover:bg-[var(--sage-light)]"
-                      }`}
-                    >
-                      <Icon size={17} />
-
-                      {category.name}
-                    </button>
-                  );
-                },
+          {/* Search & Category Filter Navigation */}
+          <div className="space-y-3.5">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search
+                size={17}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search services, floral stage, buffet dining, lighting packages, drone cameras..."
+                className="h-12 w-full rounded-2xl border border-[#d8cfc4] bg-white pl-11 pr-10 text-xs sm:text-sm text-[#29241f] outline-none transition placeholder:text-gray-400 focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/15 shadow-xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-400 hover:text-gray-700"
+                >
+                  <X size={15} />
+                </button>
               )}
             </div>
+
+            {/* Category Navigation Tabs */}
+            <ServiceCategoryTabs
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              totalServicesCount={allDisplayItems.length}
+            />
           </div>
 
-          {/* Available Services */}
-          <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-4">
-              <h3 className="font-semibold text-[var(--sage-dark)]">
-                Available Services
-              </h3>
-
-              <p className="mt-1 text-xs text-[var(--taupe)]">
-                Select a service to add it to
-                your estimate.
-              </p>
-            </div>
-
-            {visibleServices.length ===
-            0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border)] px-5 py-8 text-center">
-                <p className="text-sm text-[var(--taupe)]">
-                  No services available in
-                  this category.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {visibleServices.map(
-                  (service) => {
-                    const isSelected =
-                      formData.services.some(
-                        (item) =>
-                          item.serviceId ===
-                          service._id,
-                      );
-
-                    return (
-                      <button
-                        key={
-                          service._id
-                        }
-                        type="button"
-                        disabled={
-                          isSelected ||
-                          addingServiceId ===
-                            service._id
-                        }
-                        onClick={() => {
-                          setAddingServiceId(
-                            service._id,
-                          );
-
-                          addService(
-                            service,
-                          );
-
-                          setTimeout(
-                            () =>
-                              setAddingServiceId(
-                                null,
-                              ),
-                            150,
-                          );
-                        }}
-                        className={`rounded-xl border p-4 text-left transition ${
-                          isSelected
-                            ? "border-[var(--sage)]/30 bg-[var(--sage-light)]/40"
-                            : "border-[var(--border)] hover:border-[var(--sage)]/40 hover:bg-[var(--ivory)]/50"
-                        } disabled:cursor-not-allowed`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0">
-                            <p className="font-medium text-[var(--sage-dark)]">
-                              {
-                                service.name
-                              }
-                            </p>
-
-                            {service.description && (
-                              <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--taupe)]">
-                                {
-                                  service.description
-                                }
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="shrink-0">
-                            {isSelected ? (
-                              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sage)] text-white">
-                                <Check
-                                  size={
-                                    16
-                                  }
-                                />
-                              </span>
-                            ) : (
-                              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[var(--sage)]">
-                                {addingServiceId ===
-                                service._id ? (
-                                  <Loader2
-                                    size={
-                                      16
-                                    }
-                                    className="animate-spin"
-                                  />
-                                ) : (
-                                  <Plus
-                                    size={
-                                      16
-                                    }
-                                  />
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex items-end justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-[var(--sage-dark)]">
-                              {formatCurrency(
-                                service.basePrice,
-                              )}
-
-                              {service.pricingType !==
-                                "FIXED" && (
-                                <span className="ml-1 text-xs font-normal text-[var(--taupe)]">
-                                  /{" "}
-                                  {service.unitLabel ||
-                                    "unit"}
-                                </span>
-                              )}
-                            </p>
-
-                            <p className="mt-1 text-[10px] uppercase tracking-wide text-[var(--taupe)]">
-                              {
-                                pricingLabels[
-                                  service
-                                    .pricingType
-                                ]
-                              }
-                            </p>
-                          </div>
-
-                          {service.options?.length >
-                            0 && (
-                            <span className="rounded-full bg-[var(--ivory)] px-2.5 py-1 text-[10px] font-medium text-[var(--taupe)]">
-                              {
-                                service
-                                  .options
-                                  .filter(
-                                    (
-                                      option,
-                                    ) =>
-                                      option.active,
-                                  ).length
-                              }{" "}
-                              options
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  },
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Selected Services */}
-          {formData.services.length >
-            0 && (
-            <div className="rounded-2xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
-              <div className="mb-5">
-                <h3 className="font-semibold text-[var(--sage-dark)]">
-                  Selected Services
-                </h3>
-
-                <p className="mt-1 text-xs text-[var(--taupe)]">
-                  Adjust quantities as needed.
-                  Prices are controlled by the
-                  event manager.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                {formData.services.map(
-                  (item) => {
-                    const service =
-                      services.find(
-                        (service) =>
-                          service._id ===
-                          item.serviceId,
-                      );
-
-                    const activeOptions =
-                      service?.options?.filter(
-                        (option) =>
-                          option.active,
-                      ) || [];
-
-                    const pricingType =
-                      item.pricingType ||
-                      service?.pricingType ||
-                      "FIXED";
-
-                    const quantityLabel =
-                      getQuantityLabel(
-                        pricingType,
-                        item.unitLabel ||
-                          service?.unitLabel,
-                      );
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--ivory)]/30 p-4"
-                      >
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          {/* Service info */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--sage-light)] text-[var(--sage-dark)]">
-                                <Check
-                                  size={
-                                    17
-                                  }
-                                />
-                              </div>
-
-                              <div className="min-w-0">
-                                <h4 className="font-medium text-[var(--sage-dark)]">
-                                  {
-                                    item.name
-                                  }
-                                </h4>
-
-                                {item.description && (
-                                  <p className="mt-1 text-xs leading-5 text-[var(--taupe)]">
-                                    {
-                                      item.description
-                                    }
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Option */}
-                            {service &&
-                              activeOptions.length >
-                                0 && (
-                                <div className="mt-4 max-w-md">
-                                  <label className="mb-2 block text-xs font-medium text-[var(--sage-dark)]">
-                                    Service
-                                    Option
-                                  </label>
-
-                                  <div className="relative">
-                                    <select
-                                      value={
-                                        item.optionId ||
-                                        ""
-                                      }
-                                      onChange={(
-                                        event,
-                                      ) =>
-                                        selectOption(
-                                          item.id,
-                                          service,
-                                          event
-                                            .target
-                                            .value,
-                                        )
-                                      }
-                                      className="w-full appearance-none rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 pr-9 text-sm text-[var(--sage-dark)] outline-none focus:border-[var(--sage)] focus:ring-2 focus:ring-[var(--sage)]/20"
-                                    >
-                                      <option value="">
-                                        Select an option
-                                      </option>
-
-                                      {activeOptions.map(
-                                        (
-                                          option,
-                                        ) => (
-                                          <option
-                                            key={
-                                              option._id
-                                            }
-                                            value={
-                                              option._id
-                                            }
-                                          >
-                                            {
-                                              option.name
-                                            }{" "}
-                                            —{" "}
-                                            {formatCurrency(
-                                              option.price,
-                                            )}
-                                            {option.pricingType !==
-                                              "FIXED" &&
-                                              ` / ${
-                                                option.unitLabel ||
-                                                "unit"
-                                              }`}
-                                          </option>
-                                        ),
-                                      )}
-                                    </select>
-
-                                    <ChevronDown
-                                      size={
-                                        16
-                                      }
-                                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--taupe)]"
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-
-                          {/* Quantity + price */}
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                            {pricingType !==
-                              "FIXED" && (
-                              <div className="w-full sm:w-28">
-                                <label className="mb-2 block text-xs font-medium text-[var(--sage-dark)]">
-                                  {
-                                    quantityLabel
-                                  }
-                                </label>
-
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={getQuantityFromItem(
-                                    item,
-                                  )}
-                                  onChange={(
-                                    event,
-                                  ) =>
-                                    updateQuantity(
-                                      item.id,
-                                      Number(
-                                        event
-                                          .target
-                                          .value,
-                                      ),
-                                    )
-                                  }
-                                  className="w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm text-[var(--sage-dark)] outline-none focus:border-[var(--sage)] focus:ring-2 focus:ring-[var(--sage)]/20"
-                                />
-                              </div>
-                            )}
-
-                            {/* Price - display only */}
-                            <div className="min-w-[130px]">
-                              <p className="mb-2 text-xs font-medium text-[var(--sage-dark)]">
-                                Price
-                              </p>
-
-                              <div className="rounded-xl border border-[var(--border)] bg-white px-3 py-2.5">
-                                <p className="text-sm font-semibold text-[var(--sage-dark)]">
-                                  {formatCurrency(
-                                    Number(
-                                      item.unitPrice ||
-                                        0,
-                                    ),
-                                  )}
-                                </p>
-
-                                <p className="mt-0.5 text-[10px] text-[var(--taupe)]">
-                                  {pricingType ===
-                                  "FIXED"
-                                    ? "Fixed"
-                                    : `per ${
-                                        item.unitLabel ||
-                                        "unit"
-                                      }`}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Remove */}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                removeService(
-                                  item.id,
-                                )
-                              }
-                              className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-500 transition hover:bg-red-50"
-                              aria-label={`Remove ${item.name}`}
-                            >
-                              <Trash2
-                                size={
-                                  17
-                                }
-                              />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Line total */}
-                        <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3">
-                          <span className="text-xs text-[var(--taupe)]">
-                            Line total
-                          </span>
-
-                          <span className="text-sm font-semibold text-[var(--sage-dark)]">
-                            {formatCurrency(
-                              pricingType ===
-                                "FIXED"
-                                ? Number(
-                                    item.unitPrice ||
-                                      0,
-                                  )
-                                : Number(
-                                    item.unitPrice ||
-                                      0,
-                                  ) *
-                                    getQuantityFromItem(
-                                      item,
-                                    ),
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  },
-                )}
-              </div>
-
-              {/* Subtotal */}
-              <div className="mt-5 flex items-center justify-between border-t border-[var(--border)] pt-5">
+          {/* Main 2-Column Responsive Layout */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 items-start">
+            {/* LEFT COLUMN: Visual Service Cards Grid (8 cols on desktop) */}
+            <div className="space-y-4 lg:col-span-7 xl:col-span-8">
+              {/* Category Active Header */}
+              <div className="flex items-center justify-between px-1">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-[var(--taupe)]">
-                    Current Subtotal
-                  </p>
-
-                  <p className="mt-1 text-xs text-[var(--taupe)]">
-                    Final pricing will be
-                    recalculated by the server.
-                  </p>
+                  <h3 className="text-base font-black text-[#29241f] flex items-center gap-2">
+                    <span>
+                      {selectedCategory === "all"
+                        ? "All Available Designs & Services"
+                        : `${selectedCategory.toUpperCase()} COLLECTION`}
+                    </span>
+                    <span className="rounded-full bg-[#9A7B4F]/15 px-2.5 py-0.5 text-[10px] font-extrabold text-[#9A7B4F]">
+                      {filteredItems.length} {filteredItems.length === 1 ? "Option" : "Options"}
+                    </span>
+                  </h3>
                 </div>
 
-                <p className="text-xl font-semibold text-[var(--sage-dark)]">
-                  {formatCurrency(
-                    displaySubtotal,
-                  )}
-                </p>
+                {formData.services.length > 0 && (
+                  <p className="text-xs font-bold text-emerald-700 hidden sm:block">
+                    ✓ {formData.services.length} selected in plan
+                  </p>
+                )}
               </div>
+
+              {/* Visual Cards Grid */}
+              {filteredItems.length === 0 ? (
+                <div className="flex min-h-[300px] flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-[#d8cfc4] bg-white p-8 text-center">
+                  <SlidersHorizontal size={32} className="text-gray-300" />
+                  <p className="text-sm font-bold text-gray-800">
+                    No matching services found
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Try adjusting your search keyword or browse another category.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedCategory("all");
+                    }}
+                    className="mt-2 rounded-xl bg-[#29241f] px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  {filteredItems.map((item) => (
+                    <ServiceOptionCard
+                      key={item.uniqueKey}
+                      item={item}
+                      onToggleSelect={handleToggleSelect}
+                      onOpenPreview={handleOpenPreview}
+                      onUpdateQuantity={handleUpdateQuantity}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* RIGHT COLUMN: Sticky "Your Event Selection" Panel (5 cols on desktop) */}
+            <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
+              <SelectedServicesSummary
+                selectedItems={formData.services}
+                guestCount={guestCount}
+                onRemoveItem={handleRemoveItem}
+                onUpdateQuantity={handleUpdateQuantity}
+                onClearAll={handleClearAll}
+              />
+            </div>
+          </div>
+
+          {/* MOBILE BOTTOM FLOATING SELECTION SUMMARY BAR */}
+          <SelectedServicesSummary
+            selectedItems={formData.services}
+            guestCount={guestCount}
+            onRemoveItem={handleRemoveItem}
+            onUpdateQuantity={handleUpdateQuantity}
+            onClearAll={handleClearAll}
+            isMobileFloating
+          />
+
+          {/* LIGHTBOX MODAL PREVIEW */}
+          <ServiceImagePreview
+            item={previewItem}
+            isOpen={isPreviewOpen}
+            onClose={() => {
+              setIsPreviewOpen(false);
+              setPreviewItem(null);
+            }}
+            onToggleSelect={(item) => {
+              handleToggleSelect(item);
+              // Update local preview selection state
+              setPreviewItem((prev) =>
+                prev ? { ...prev, isSelected: !prev.isSelected } : null
+              );
+            }}
+            onUpdateQuantity={(key, qty) => {
+              handleUpdateQuantity(key, qty);
+              setPreviewItem((prev) =>
+                prev ? { ...prev, selectedQuantity: qty } : null
+              );
+            }}
+          />
         </>
       )}
     </div>

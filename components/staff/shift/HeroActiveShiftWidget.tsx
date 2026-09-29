@@ -298,15 +298,15 @@ export default function HeroActiveShiftWidget({
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#b8894b]/10" />
       <div className="pointer-events-none absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-[#9a6c37]/5" />
 
-      <div className="relative p-5 sm:p-7">
+      <div className="relative p-4 sm:p-6 lg:p-7">
         {/* Header Badge */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 rounded-full bg-[#29241f] px-3.5 py-1 text-xs font-semibold">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 rounded-full bg-[#29241f] px-3 py-1 text-[11px] font-semibold">
             <span className={`h-2 w-2 rounded-full ${isPaused ? "bg-amber-400 animate-ping" : "bg-emerald-400 animate-pulse"}`} />
-            <span className="tracking-wide text-amber-200">TODAY'S ACTIVE SHIFT</span>
+            <span className="tracking-wide text-amber-200 uppercase">Today's Shift</span>
           </div>
 
-          <span className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${
+          <span className={`rounded-full px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-center ${
             isPaused ? "bg-amber-500/20 text-amber-800 border border-amber-500/40" :
             isCheckedIn ? "bg-emerald-500/20 text-emerald-800 border border-emerald-500/40" :
             isCompleted ? "bg-blue-500/20 text-blue-800 border border-blue-500/40" :
@@ -314,22 +314,22 @@ export default function HeroActiveShiftWidget({
             "bg-emerald-500/20 text-emerald-800 border border-emerald-500/40"
           }`}>
             {isPaused
-              ? "⏸️ Shift Paused (Break)"
+              ? "⏸️ Shift Paused"
               : isCheckedIn
               ? "Shift Live"
               : isCompleted
               ? "Completed"
               : checkInWindowInfo.isWaitingForStart
-              ? "Waiting for Event to Start"
-              : "Event Started – Clock In Available"}
+              ? "Waiting for Event"
+              : "Clock In Ready"}
           </span>
         </div>
 
         {/* Main Content */}
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="mt-5 grid gap-4 sm:gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           {/* Shift Information */}
           <div className="min-w-0">
-            <h2 className="break-words text-xl font-extrabold tracking-tight text-[#29241f] sm:text-2xl">
+            <h2 className="break-words text-lg font-black tracking-tight text-[#29241f] sm:text-2xl">
               {todayShift.dutyTitle}
             </h2>
 
@@ -341,27 +341,27 @@ export default function HeroActiveShiftWidget({
               </span>
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-600 sm:mt-4 sm:gap-4">
               <div className="flex items-center gap-1.5">
-                <Clock size={15} className="text-[#9a6c37]" />
+                <Clock size={14} className="text-[#9a6c37] shrink-0" />
                 <span>{formatTime24to12(todayShift.startTime)} - {formatTime24to12(todayShift.endTime)}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <MapPin size={15} className="text-[#9a6c37]" />
-                <span>{event?.location || "Venue location pending"}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <MapPin size={14} className="text-[#9a6c37] shrink-0" />
+                <span className="truncate">{event?.location || "Venue location pending"}</span>
               </div>
             </div>
           </div>
 
           {/* Live Active Work Time / Paused Timer Widget */}
-          <div className="flex flex-col items-start justify-center rounded-2xl bg-white p-4 border border-[#e8e1d8] shadow-xs lg:items-end">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
-              {isPaused ? "DUTY PAUSED" : "ACTIVE DUTY"}
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-white p-3.5 sm:p-4 border border-[#e8e1d8] shadow-xs sm:items-end w-full lg:w-auto">
+            <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-gray-500 text-center sm:text-right">
+              {isPaused ? "DUTY PAUSED" : "ACTIVE WORK TIME"}
             </p>
-            <div className={`mt-1 font-mono text-3xl font-black tracking-wider ${isPaused ? "text-amber-600" : "text-emerald-600"}`}>
+            <div className={`mt-1 font-mono text-2xl sm:text-3xl font-black tracking-wider ${isPaused ? "text-amber-600" : "text-emerald-600"}`}>
               {formatTimer(isPaused ? pausedSeconds : elapsedSeconds)}
             </div>
-            <div className="mt-1 flex flex-col gap-0.5 text-[10px] text-gray-500 lg:text-right">
+            <div className="mt-1 flex flex-col items-center sm:items-end gap-0.5 text-[10px] text-gray-500 text-center sm:text-right">
               {isPaused ? (
                 <span className="text-emerald-700 font-medium">Active so far: {formatTimer(elapsedSeconds)}</span>
               ) : (
@@ -370,7 +370,7 @@ export default function HeroActiveShiftWidget({
                 )
               )}
               {totalPauseMins > 0 && (
-                <span className="text-amber-700">({totalPauseMins} mins total break logged)</span>
+                <span className="text-amber-700">({totalPauseMins} mins total break)</span>
               )}
             </div>
           </div>
@@ -380,21 +380,21 @@ export default function HeroActiveShiftWidget({
         {!isCheckedIn && !isCompleted && !checkInWindowInfo.canCheckIn && (
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900 border border-amber-200">
             <Lock size={15} className="shrink-0 text-amber-600" />
-            <span>{checkInWindowInfo.reason}</span>
+            <span className="leading-snug">{checkInWindowInfo.reason}</span>
           </div>
         )}
 
         {/* Error Banner */}
         {actionError && (
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-800 border border-red-200">
-            <AlertCircle size={15} className="shrink-0" />
+            <AlertCircle size={15} className="shrink-0 text-red-600" />
             <span>{actionError}</span>
           </div>
         )}
 
         {/* Shift Notes */}
         {!isCompleted && (
-          <div className="mt-4">
+          <div className="mt-3.5 sm:mt-4">
             <input
               type="text"
               value={shiftNotes}
@@ -406,15 +406,15 @@ export default function HeroActiveShiftWidget({
         )}
 
         {/* Action Buttons */}
-        <div className="mt-4 border-t border-[#e4dcd2] pt-4 flex flex-wrap items-center gap-3">
+        <div className="mt-4 border-t border-[#e4dcd2] pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
           {!isCheckedIn && !isCompleted && (
             <button
               type="button"
               onClick={handleCheckIn}
               disabled={actionLoading || !checkInWindowInfo.canCheckIn}
-              className={`inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl px-6 text-sm font-bold text-white shadow-md transition ${
+              className={`inline-flex min-h-12 w-full flex-1 items-center justify-center gap-2.5 rounded-xl px-5 text-sm font-bold text-white shadow-md transition ${
                 checkInWindowInfo.canCheckIn
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-[0.98]"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-[0.98] cursor-pointer"
                   : "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed opacity-75"
               }`}
             >
@@ -423,13 +423,13 @@ export default function HeroActiveShiftWidget({
               ) : (
                 <Lock size={18} />
               )}
-              <span>
+              <span className="truncate">
                 {actionLoading
                   ? "Checking In..."
                   : checkInWindowInfo.canCheckIn
                   ? "Check In Now"
                   : checkInWindowInfo.isWaitingForStart
-                  ? "Waiting for manager to start the event"
+                  ? "Waiting for manager to start"
                   : checkInWindowInfo.reason}
               </span>
             </button>
@@ -443,9 +443,9 @@ export default function HeroActiveShiftWidget({
                   type="button"
                   onClick={handleResumeShift}
                   disabled={actionLoading}
-                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-emerald-600 px-5 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+                  className="inline-flex min-h-12 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-emerald-600 px-4 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                 >
-                  <Play size={18} className="fill-white" />
+                  <Play size={17} className="fill-white shrink-0" />
                   <span>{actionLoading ? "Resuming..." : "Resume Shift"}</span>
                 </button>
               ) : (
@@ -453,9 +453,9 @@ export default function HeroActiveShiftWidget({
                   type="button"
                   onClick={() => setIsPauseModalOpen(true)}
                   disabled={actionLoading}
-                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-5 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+                  className="inline-flex min-h-12 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 px-4 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                 >
-                  <Pause size={18} className="fill-white" />
+                  <Pause size={17} className="fill-white shrink-0" />
                   <span>{actionLoading ? "Pausing..." : "Pause Shift (Break)"}</span>
                 </button>
               )}
@@ -465,16 +465,16 @@ export default function HeroActiveShiftWidget({
                 type="button"
                 onClick={handleCheckOut}
                 disabled={actionLoading}
-                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-5 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+                className="inline-flex min-h-12 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-4 text-sm font-bold text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
               >
-                <Square size={18} className="fill-white" />
+                <Square size={17} className="fill-white shrink-0" />
                 <span>{actionLoading ? "Checking Out..." : "Check Out Shift"}</span>
               </button>
             </>
           )}
 
           {isCompleted && (
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 py-3 text-xs font-bold text-emerald-800 border border-emerald-200">
+            <div className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 py-3 text-xs font-bold text-emerald-800 border border-emerald-200">
               <CheckCircle2 size={16} />
               <span>Shift Completed ({todayAttendance?.totalHours || 0} active hrs logged)</span>
             </div>
@@ -487,7 +487,7 @@ export default function HeroActiveShiftWidget({
           onClose={() => setIsPauseModalOpen(false)}
           onConfirm={handleConfirmPauseShift}
         />
-      </div>9ac7827
+      </div>
     </div>
   );
 }

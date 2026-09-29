@@ -17,6 +17,7 @@ import {
   Utensils,
   BriefcaseBusiness,
   Wallet,
+  IndianRupee,
   BarChart3,
   Settings,
   LogOut,
@@ -105,6 +106,11 @@ const menuItems = [
   // Finance and Reports
   // ==========================================
 
+  {
+    label: "Staff Payroll & Hours",
+    href: "/manager/payroll",
+    icon: IndianRupee,
+  },
   {
     label: "Expenses",
     href: "/manager/expenses",

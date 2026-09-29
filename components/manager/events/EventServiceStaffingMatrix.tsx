@@ -883,6 +883,12 @@ export default function EventServiceStaffingMatrix({
       <ManageChecklistModal
         isOpen={Boolean(managingChecklistDuty)}
         duty={managingChecklistDuty}
+        isCompleted={
+          data?.event?.status === "COMPLETED" ||
+          data?.event?.status === "Completed" ||
+          data?.event?.status === "Settled" ||
+          data?.event?.status === "Invoiced"
+        }
         onClose={() => setManagingChecklistDuty(null)}
         onSaveChecklist={async (dutyId, checklist) => {
           await updateAssignmentChecklist(dutyId, checklist, token);

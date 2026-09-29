@@ -165,6 +165,15 @@ export default function StaffDutiesPage() {
     const targetDuty = localDuties.find((d) => d._id === dutyId);
     if (!targetDuty || !targetDuty.checklist) return;
 
+    const ev = typeof targetDuty.event === "object" ? targetDuty.event : null;
+    const isCompletedEvent = Boolean(
+      ev?.status && ["COMPLETED", "Completed", "Invoiced", "Settled"].includes(ev.status)
+    );
+    if (isCompletedEvent) {
+      setActionError("Cannot update checklist: Event has been completed.");
+      return;
+    }
+
     const updatedChecklist = targetDuty.checklist.map((item, idx) =>
       idx === taskIndex ? { ...item, completed: !item.completed } : item
     );
@@ -186,7 +195,7 @@ export default function StaffDutiesPage() {
           d._id === dutyId ? { ...d, checklist: targetDuty.checklist } : d
         )
       );
-      console.warn("Failed to update checklist item", err);
+      setActionError(err instanceof Error ? err.message : "Failed to update checklist item");
     } finally {
       setUpdatingChecklistId(null);
     }
@@ -593,34 +602,49 @@ export default function StaffDutiesPage() {
 
                       {/* Checklist Items */}
                       <div className="mt-3.5 space-y-2">
-                        {checklist.map((item, idx) => (
-                          <button
-                            type="button"
-                            key={item._id || idx}
-                            onClick={() => handleToggleSubTask(assignment._id, idx)}
-                            className={`flex w-full items-start gap-3 rounded-xl border p-2.5 text-left text-xs transition ${
-                              item.completed
-                                ? "border-emerald-200 bg-emerald-50/50 text-gray-500"
-                                : "border-gray-200 bg-white text-[#29241f] hover:border-[#b8894b]"
-                            }`}
-                          >
-                            <span className="mt-0.5 shrink-0 text-emerald-600">
-                              {item.completed ? (
-                                <CheckSquare size={16} />
-                              ) : (
-                                <Square size={16} className="text-gray-400" />
-                              )}
-                            </span>
-
-                            <span
-                              className={`flex-1 font-medium ${
-                                item.completed ? "line-through text-gray-400" : ""
+                        {checklist.map((item, idx) => {
+                          const isEventCompleted = Boolean(
+                            event?.status &&
+                              ["COMPLETED", "Completed", "Invoiced", "Settled"].includes(event.status)
+                          );
+                          return (
+                            <button
+                              type="button"
+                              key={item._id || idx}
+                              disabled={isEventCompleted}
+                              onClick={() => handleToggleSubTask(assignment._id, idx)}
+                              className={`flex w-full items-start gap-3 rounded-xl border p-2.5 text-left text-xs transition ${
+                                item.completed
+                                  ? "border-emerald-200 bg-emerald-50/50 text-gray-500"
+                                  : isEventCompleted
+                                  ? "border-gray-200 bg-gray-50/70 text-gray-400 cursor-not-allowed"
+                                  : "border-gray-200 bg-white text-[#29241f] hover:border-[#b8894b]"
                               }`}
                             >
-                              {item.text}
-                            </span>
-                          </button>
-                        ))}
+                              <span className="mt-0.5 shrink-0 text-emerald-600">
+                                {item.completed ? (
+                                  <CheckSquare size={16} />
+                                ) : (
+                                  <Square size={16} className={isEventCompleted ? "text-gray-300" : "text-gray-400"} />
+                                )}
+                              </span>
+
+                              <span
+                                className={`flex-1 font-medium ${
+                                  item.completed ? "line-through text-gray-400" : ""
+                                }`}
+                              >
+                                {item.text}
+                              </span>
+
+                              {isEventCompleted && (
+                                <span className="text-[10px] font-bold text-gray-400">
+                                  Locked
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -502,8 +502,8 @@ export default function BookingForm() {
       </Button>
 
       {/* Main Content */}
-      <section className="px-4 py-2 sm:px-6 sm:py-12 lg:px-8">
-        <div className="mx-auto max-w-4xl">
+      <section className="px-4 py-2 sm:px-6 sm:py-10 lg:px-8">
+        <div className={`mx-auto transition-all duration-300 ${currentStep === 4 ? "max-w-6xl" : "max-w-4xl"}`}>
 
           {/* STEP 1 - EVENT DETAILS */}
           {currentStep === 1 && (

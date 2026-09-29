@@ -15,6 +15,7 @@ import {
   MapPin,
   Clock3,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import type { Duty } from "./constants";
 import { formatTime24to12 } from "@/lib/duty-mapper";
@@ -27,6 +28,7 @@ interface ManageChecklistModalProps {
     dutyId: string,
     checklist: Array<{ _id?: string; text: string; completed: boolean }>
   ) => Promise<void>;
+  isCompleted?: boolean;
 }
 
 const TEMPLATE_SUGGESTIONS: Record<string, string[]> = {
@@ -72,7 +74,9 @@ export default function ManageChecklistModal({
   duty,
   onClose,
   onSaveChecklist,
+  isCompleted = false,
 }: ManageChecklistModalProps) {
+  const isLocked = isCompleted || duty?.status === "COMPLETED";
   const [items, setItems] = useState<
     Array<{ _id?: string; text: string; completed: boolean }>
   >([]);
@@ -110,6 +114,7 @@ export default function ManageChecklistModal({
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   const handleAddTask = (textToAdd?: string) => {
+    if (isLocked) return;
     const text = (textToAdd !== undefined ? textToAdd : newTaskText).trim();
     if (!text) return;
     setItems((prev) => [...prev, { text, completed: false }]);
@@ -117,6 +122,7 @@ export default function ManageChecklistModal({
   };
 
   const handleToggleItem = (index: number) => {
+    if (isLocked) return;
     setItems((prev) =>
       prev.map((item, i) =>
         i === index ? { ...item, completed: !item.completed } : item
@@ -125,10 +131,15 @@ export default function ManageChecklistModal({
   };
 
   const handleDeleteItem = (index: number) => {
+    if (isLocked) return;
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
+    if (isLocked) {
+      onClose();
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -156,7 +167,11 @@ export default function ManageChecklistModal({
                 <ListChecks size={13} className="text-[#d8a86c]" /> Event Day Subtasks
               </span>
 
-              {duty.status === "ACCEPTED" && (
+              {isLocked ? (
+                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 border border-amber-300">
+                  <Lock size={12} /> Event Completed (Locked)
+                </span>
+              ) : duty.status === "ACCEPTED" && (
                 <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800 border border-emerald-200">
                   <UserCheck size={12} /> Staff Confirmed
                 </span>
@@ -252,78 +267,93 @@ export default function ManageChecklistModal({
             </div>
           </div>
 
-          {/* New Subtask Input Form */}
-          <div className="space-y-2">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-[#756d64]">
-              Assign New Subtask to Staff Member
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="e.g. Inspect buffet heaters 30 mins before dinner service..."
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddTask();
-                  }
-                }}
-                className="flex-1 rounded-xl border border-[#d8cfc4] bg-white px-3.5 py-2.5 text-xs text-[#29241f] outline-none transition placeholder:text-gray-400 focus:border-[#a7773f] focus:ring-2 focus:ring-[#a7773f]/20"
-              />
-
-              <button
-                type="button"
-                onClick={() => handleAddTask()}
-                disabled={!newTaskText.trim()}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-black disabled:opacity-40"
-              >
-                <Plus size={15} />
-                <span>Add Task</span>
-              </button>
+          {/* Locked Notice OR New Subtask Input Form + Templates */}
+          {isLocked ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex items-start gap-3">
+              <Lock size={18} className="text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-900">Event is Completed</p>
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  This event is marked as completed or settled. Subtasks and checklist items are locked in read-only mode and cannot be modified or toggled.
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* New Subtask Input Form */}
+              <div className="space-y-2">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-[#756d64]">
+                  Assign New Subtask to Staff Member
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. Inspect buffet heaters 30 mins before dinner service..."
+                    value={newTaskText}
+                    onChange={(e) => setNewTaskText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddTask();
+                      }
+                    }}
+                    className="flex-1 rounded-xl border border-[#d8cfc4] bg-white px-3.5 py-2.5 text-xs text-[#29241f] outline-none transition placeholder:text-gray-400 focus:border-[#a7773f] focus:ring-2 focus:ring-[#a7773f]/20"
+                  />
 
-          {/* One-Click Template Suggestions */}
-          <div className="rounded-2xl border border-dashed border-[#d8cfc4] bg-[#faf8f5] p-3.5">
-            <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#756d64] mb-2.5">
-              <Sparkles size={14} className="text-[#a7773f]" />
-              <span>Quick-Add Recommended Duty Subtasks</span>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAddTask()}
+                    disabled={!newTaskText.trim()}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-black disabled:opacity-40"
+                  >
+                    <Plus size={15} />
+                    <span>Add Task</span>
+                  </button>
+                </div>
+              </div>
 
-            {/* Template Selector Pills */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {Object.keys(TEMPLATE_SUGGESTIONS).map((category) => (
-                <button
-                  type="button"
-                  key={category}
-                  onClick={() => setActiveTemplateTab(category)}
-                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition ${
-                    activeTemplateTab === category
-                      ? "bg-[#29241f] text-white shadow-xs"
-                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+              {/* One-Click Template Suggestions */}
+              <div className="rounded-2xl border border-dashed border-[#d8cfc4] bg-[#faf8f5] p-3.5">
+                <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#756d64] mb-2.5">
+                  <Sparkles size={14} className="text-[#a7773f]" />
+                  <span>Quick-Add Recommended Duty Subtasks</span>
+                </div>
 
-            {/* Template Items */}
-            <div className="flex flex-wrap gap-1.5">
-              {TEMPLATE_SUGGESTIONS[activeTemplateTab]?.map((suggestion, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => handleAddTask(suggestion)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#e0d6ca] bg-white px-2.5 py-1 text-[11px] font-medium text-[#403a34] transition hover:border-[#a7773f] hover:bg-[#f7efe4]"
-                >
-                  <Plus size={11} className="text-[#a7773f]" />
-                  <span>{suggestion}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+                {/* Template Selector Pills */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {Object.keys(TEMPLATE_SUGGESTIONS).map((category) => (
+                    <button
+                      type="button"
+                      key={category}
+                      onClick={() => setActiveTemplateTab(category)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition ${
+                        activeTemplateTab === category
+                          ? "bg-[#29241f] text-white shadow-xs"
+                          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Template Items */}
+                <div className="flex flex-wrap gap-1.5">
+                  {TEMPLATE_SUGGESTIONS[activeTemplateTab]?.map((suggestion, idx) => (
+                    <button
+                      type="button"
+                      key={idx}
+                      onClick={() => handleAddTask(suggestion)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#e0d6ca] bg-white px-2.5 py-1 text-[11px] font-medium text-[#403a34] transition hover:border-[#a7773f] hover:bg-[#f7efe4]"
+                    >
+                      <Plus size={11} className="text-[#a7773f]" />
+                      <span>{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Active Checklist Items List */}
           <div className="space-y-2">
@@ -331,7 +361,7 @@ export default function ManageChecklistModal({
               <p className="text-xs font-extrabold uppercase tracking-wider text-[#756d64]">
                 Event Day Subtasks ({items.length})
               </p>
-              {items.length > 0 && (
+              {items.length > 0 && !isLocked && (
                 <span className="text-[10px] text-gray-500">
                   Staff will view and check off these tasks on the event day.
                 </span>
@@ -340,7 +370,7 @@ export default function ManageChecklistModal({
 
             {items.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-gray-200 py-8 text-center text-xs text-gray-400">
-                No subtasks assigned yet. Use the input above or select quick templates.
+                No subtasks assigned yet.
               </div>
             ) : (
               <div className="space-y-2">
@@ -350,19 +380,24 @@ export default function ManageChecklistModal({
                     className={`group flex items-center justify-between gap-3 rounded-xl border p-3 text-xs transition ${
                       item.completed
                         ? "border-emerald-200 bg-emerald-50/40 text-gray-500"
+                        : isLocked
+                        ? "border-gray-200 bg-gray-50/60 text-[#29241f]"
                         : "border-gray-200 bg-white text-[#29241f] hover:border-[#a7773f]"
                     }`}
                   >
                     <button
                       type="button"
                       onClick={() => handleToggleItem(index)}
-                      className="flex flex-1 items-start gap-2.5 text-left"
+                      disabled={isLocked}
+                      className={`flex flex-1 items-start gap-2.5 text-left ${
+                        isLocked ? "cursor-default" : "cursor-pointer"
+                      }`}
                     >
                       <span className="mt-0.5 shrink-0 text-emerald-600">
                         {item.completed ? (
                           <CheckCircle2 size={16} />
                         ) : (
-                          <Circle size={16} className="text-gray-400 group-hover:text-[#a7773f]" />
+                          <Circle size={16} className={isLocked ? "text-gray-300" : "text-gray-400 group-hover:text-[#a7773f]"} />
                         )}
                       </span>
                       <div>
@@ -383,14 +418,16 @@ export default function ManageChecklistModal({
                       </div>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem(index)}
-                      title="Remove Subtask"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {!isLocked && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteItem(index)}
+                        title="Remove Subtask"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -406,22 +443,24 @@ export default function ManageChecklistModal({
             disabled={saving}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-100"
           >
-            Cancel
+            {isLocked ? "Close" : "Cancel"}
           </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#29241f] px-6 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <ListChecks size={14} />
-            )}
-            Save Sub-Tasks & Notify Staff
-          </button>
+          {!isLocked && (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#29241f] px-6 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <ListChecks size={14} />
+              )}
+              Save Sub-Tasks & Notify Staff
+            </button>
+          )}
         </div>
       </div>
     </div>

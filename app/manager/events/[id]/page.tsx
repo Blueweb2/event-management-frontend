@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useStaff } from "@/hooks/useStaff";
 
 import type { CreateAssignmentPayload } from "@/types/assignment";
+import { getSocket } from "@/lib/socket";
 
 // ==========================================
 // Page
@@ -177,6 +178,53 @@ export default function ManagerEventDetailsPage() {
       limit: 100,
     });
   }, [eventId, fetchAssignments, fetchStaff, token]);
+
+  // ==========================================
+  // Socket.IO Room & Connection Management
+  // ==========================================
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !eventId) return;
+
+    const joinRoom = () => {
+      socket.emit("join:event", eventId);
+    };
+
+    const onConnect = () => {
+      console.log(`🔌 Manager Socket connected: ${socket.id}`);
+      joinRoom();
+    };
+
+    const onEventJoined = (data: { eventId: string; room: string }) => {
+      console.log(`👥 Joined event room: ${data.room}`);
+    };
+
+    const onDisconnect = () => {
+      console.log("🔌 Manager Socket disconnected");
+    };
+
+    const onConnectError = (err: Error) => {
+      console.error("❌ Manager Socket connection error:", err);
+    };
+
+    // If socket is already connected when component mounts, join room immediately
+    if (socket.connected) {
+      console.log(`🔌 Manager Socket connected: ${socket.id}`);
+      joinRoom();
+    }
+
+    socket.on("connect", onConnect);
+    socket.on("event:joined", onEventJoined);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("event:joined", onEventJoined);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
+    };
+  }, [eventId]);
 
   const handleAssignmentChange = (
     field: keyof typeof assignmentForm,
@@ -634,6 +682,12 @@ export default function ManagerEventDetailsPage() {
           <EventTaskProgressCard
             taskProgress={taskProgressData}
             loading={monitoringLoading}
+            isCompleted={
+              event?.status === "COMPLETED" ||
+              event?.status === "Completed" ||
+              event?.status === "Settled" ||
+              event?.status === "Invoiced"
+            }
             onRefresh={fetchMonitoringData}
           />
         </section>

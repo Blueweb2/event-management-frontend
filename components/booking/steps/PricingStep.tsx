@@ -5,9 +5,11 @@ import {
   Percent,
   ReceiptText,
   Tag,
+  Sparkles,
 } from "lucide-react";
 
 import type { BookingFormData } from "../types";
+import { getServiceImageUrl } from "@/lib/services.api";
 
 type PricingStepProps = {
   formData: BookingFormData;
@@ -133,27 +135,52 @@ export default function PricingStep({
           {formData.services.map((item) => {
             const itemTotal =
               item.quantity * item.unitPrice;
+            const itemImg = getServiceImageUrl(item.imageUrl);
 
             return (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-4 px-5 py-4"
+                className="flex items-center justify-between gap-4 px-5 py-3.5"
               >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {item.name}
-                  </p>
-
-                  <p className="mt-1 text-xs text-[var(--taupe)]">
-                    {item.quantity} ×{" "}
-                    {formatCurrency(item.unitPrice)}
-                  </p>
-
-                  {item.category && (
-                    <span className="mt-2 inline-flex rounded-full bg-[var(--ivory)] px-2.5 py-1 text-[10px] font-medium text-[var(--taupe)]">
-                      {item.category}
-                    </span>
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {itemImg ? (
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[var(--border)] bg-[#f6f2eb]">
+                      <img
+                        src={itemImg}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          const fb = e.currentTarget.parentElement?.querySelector(".fallback-pricing-thumb");
+                          if (fb) fb.classList.remove("hidden");
+                        }}
+                      />
+                      <div className="fallback-pricing-thumb hidden flex h-full w-full items-center justify-center bg-[var(--sage-light)] text-[var(--sage-dark)]">
+                        <Sparkles size={16} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--sage-light)] text-[var(--sage-dark)]">
+                      <Sparkles size={16} />
+                    </div>
                   )}
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {item.name}
+                    </p>
+
+                    <p className="mt-0.5 text-xs text-[var(--taupe)]">
+                      {item.quantity} ×{" "}
+                      {formatCurrency(item.unitPrice)}
+                    </p>
+
+                    {item.category && (
+                      <span className="mt-1 inline-flex rounded-md bg-[var(--ivory)] px-2 py-0.5 text-[9px] font-bold text-[var(--taupe)]">
+                        {item.category}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="shrink-0 text-sm font-semibold text-[var(--sage-dark)]">

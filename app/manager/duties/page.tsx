@@ -8,8 +8,13 @@ import {
   CheckSquare,
   Building2,
   DollarSign,
+  IndianRupee,
+  Wallet,
+  Sparkles,
   Plus,
   Loader2,
+  AlertCircle,
+  X,
 } from "lucide-react";
 
 import AddDutyModal, { type DutyFormValues } from "@/components/manager/duties/AddDutyModal";
@@ -78,10 +83,11 @@ function OperationsHubContent() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [taskPriorityFilter, setTaskPriorityFilter] = useState<string>("ALL");
   const [taskSearch, setTaskSearch] = useState("");
+  const [taskActionError, setTaskActionError] = useState<string | null>(null);
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab") as TabType;
-    if (tabFromUrl && ["list", "calendar", "tasks"].includes(tabFromUrl)) {
+    if (tabFromUrl && ["list", "calendar", "tasks", "departments", "payroll"].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
     }
   }, [searchParams]);
@@ -257,6 +263,7 @@ function OperationsHubContent() {
 
   const handleToggleTaskStatus = async (task: Task) => {
     if (!token) return;
+    setTaskActionError(null);
     const statusFlow: Record<string, "PENDING" | "IN_PROGRESS" | "COMPLETED"> = {
       PENDING: "IN_PROGRESS",
       IN_PROGRESS: "COMPLETED",
@@ -267,7 +274,9 @@ function OperationsHubContent() {
       const updated = await updateTask(task._id, { status: nextStatus }, token);
       setTasks((prev) => prev.map((t) => (t._id === task._id ? updated : t)));
     } catch (err) {
-      console.warn("Failed to update task status", err);
+      setTaskActionError(
+        err instanceof Error ? err.message : "Failed to update task status"
+      );
     }
   };
 
@@ -292,88 +301,109 @@ function OperationsHubContent() {
   const loading = assignmentsLoading || staffLoading;
   const error = assignmentsError || eventsError;
 
+  const pendingPayrollCount = useMemo(
+    () => duties.filter((d) => d.paymentStatus !== "PAID").length,
+    [duties]
+  );
+
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header & View Tabs */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-gray-200 pb-5">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between border-b border-gray-200 pb-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#9A7B4F]">
-            Operations Hub
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#9A7B4F]/15 text-[#9A7B4F]">
+              <Sparkles size={13} />
+            </span>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#9A7B4F]">
+              Operations Hub
+            </p>
+          </div>
           <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#1F1F1F]">
             Duties, Schedule & Tasks
           </h1>
           <p className="mt-1 text-xs text-gray-500">
-            Manage staff assignments, duty schedules, and operational checklists in one place.
+            Manage staff assignments, schedules, task execution, and working hours payroll.
           </p>
         </div>
 
-        {/* View Switcher Tabs - Mobile scrollable */}
-        <div className="flex w-full overflow-x-auto no-scrollbar scrollbar-none rounded-2xl bg-gray-100 p-1.5 lg:w-auto">
+        {/* View Switcher Tabs - Responsive scrollable & elevated */}
+        <div className="flex w-full overflow-x-auto rounded-2xl border border-[#e8e1d8] bg-white p-1.5 shadow-sm xl:w-auto">
           <div className="flex items-center gap-1 min-w-max">
             <button
               type="button"
               onClick={() => switchTab("list")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
                 activeTab === "list"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#29241f] text-white shadow-sm"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
               }`}
             >
               <ClipboardList size={15} className="shrink-0" />
-              <span>Duty List</span>
+              <span>1. Duty Roster</span>
             </button>
 
             <button
               type="button"
               onClick={() => switchTab("calendar")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
                 activeTab === "calendar"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#29241f] text-white shadow-sm"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
               }`}
             >
               <CalendarDays size={15} className="shrink-0" />
-              <span>Schedule Calendar</span>
+              <span>2. Schedule Calendar</span>
             </button>
 
             <button
               type="button"
               onClick={() => switchTab("tasks")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
                 activeTab === "tasks"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#29241f] text-white shadow-sm"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
               }`}
             >
               <CheckSquare size={15} className="shrink-0" />
-              <span>Task Checklist</span>
+              <span>3. Task Checklist</span>
             </button>
 
             <button
               type="button"
               onClick={() => switchTab("departments")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
                 activeTab === "departments"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#29241f] text-white shadow-sm"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
               }`}
             >
               <Building2 size={15} className="shrink-0" />
-              <span>Department Capacity</span>
+              <span>4. Department Capacity</span>
             </button>
 
             <button
               type="button"
               onClick={() => switchTab("payroll")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3.5 sm:px-4 py-2 text-xs font-bold transition-all ${
                 activeTab === "payroll"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-[#9A7B4F] text-white shadow-sm ring-2 ring-[#9A7B4F]/30"
+                  : "bg-amber-50 text-[#9A7B4F] border border-amber-200/80 hover:bg-amber-100"
               }`}
             >
-              <DollarSign size={15} className="shrink-0 text-[#a7773f]" />
-              <span>Staff Hours & Payroll</span>
+              <IndianRupee size={15} className="shrink-0 text-amber-700" />
+              <span>5. Staff Hours & Payroll</span>
+              {pendingPayrollCount > 0 && (
+                <span
+                  className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                    activeTab === "payroll"
+                      ? "bg-white text-[#9A7B4F]"
+                      : "bg-amber-200 text-amber-950"
+                  }`}
+                >
+                  {pendingPayrollCount} PENDING
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -462,6 +492,19 @@ function OperationsHubContent() {
               Open Full Task Manager
             </button>
           </div>
+
+          {/* Task Action Error Alert */}
+          {taskActionError && (
+            <div role="alert" className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle size={18} className="shrink-0 text-rose-600" />
+                <span>{taskActionError}</span>
+              </div>
+              <button type="button" onClick={() => setTaskActionError(null)} className="text-rose-500 hover:text-rose-800 transition">
+                <X size={15} />
+              </button>
+            </div>
+          )}
 
           {/* Priority Filters & Search */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between rounded-2xl border border-gray-200 bg-white p-3.5">

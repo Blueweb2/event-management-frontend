@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, Plus, Trash2, X } from "lucide-react";
+import { useToast } from "@/components/common/Toast";
 
 import PricingRuleForm from "./PricingRuleForm";
+import ImageUploadField from "./ImageUploadField";
 
 import {
   createService,
   updateService,
+  uploadServiceImage,
+  getServiceImageUrl,
 } from "@/lib/services.api";
 
 import type {
@@ -84,6 +88,7 @@ export default function ServiceForm({
   onSuccess,
   onCancel,
 }: ServiceFormProps) {
+  const { toast } = useToast();
   const isEditing = Boolean(service);
 
   const [formData, setFormData] =
@@ -281,17 +286,29 @@ export default function ServiceForm({
             service._id,
             payload,
           );
+        toast.success(
+          `Service "${savedService.name}" updated successfully!`,
+          "Service Updated"
+        );
       } else {
         savedService =
           await createService(payload);
+        toast.success(
+          `Service "${savedService.name}" created successfully!`,
+          "Service Created"
+        );
       }
 
       onSuccess(savedService);
     } catch (err) {
-      setError(
+      const errorMsg =
         err instanceof Error
           ? err.message
-          : "Something went wrong.",
+          : "Something went wrong.";
+      setError(errorMsg);
+      toast.error(
+        errorMsg,
+        isEditing ? "Update Failed" : "Creation Failed"
       );
     } finally {
       setLoading(false);
@@ -437,28 +454,16 @@ export default function ServiceForm({
               />
             </div>
 
-            {/* Image URL */}
+            {/* Service Image Upload */}
             <div className="md:col-span-2">
-              <label
-                htmlFor="serviceImageUrl"
-                className="mb-2 block text-sm font-medium text-[#5F6062]"
-              >
-                Image URL
-              </label>
-
-              <input
-                id="serviceImageUrl"
-                type="text"
+              <ImageUploadField
+                label="Service Image"
                 value={formData.imageUrl}
+                onChange={(url) => updateField("imageUrl", url)}
+                uploadFn={uploadServiceImage}
+                getImageUrlFn={getServiceImageUrl}
                 disabled={loading}
-                onChange={(event) =>
-                  updateField(
-                    "imageUrl",
-                    event.target.value,
-                  )
-                }
-                placeholder="https://example.com/images/stage-decor.jpg"
-                className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFC] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:bg-[#FEFEFE] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                hint="Upload high quality photo for this service (PNG, JPG, WEBP, GIF up to 5 MB)"
               />
             </div>
 
@@ -644,25 +649,16 @@ export default function ServiceForm({
                       />
                     </div>
 
-                    {/* Option Image URL */}
+                    {/* Option Image Upload */}
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-[#5F6062]">
-                        Image URL (Optional)
-                      </label>
-
-                      <input
-                        type="text"
+                      <ImageUploadField
+                        label="Option Image (Optional)"
                         value={option.imageUrl}
+                        onChange={(url) => updateOption(index, "imageUrl", url)}
+                        uploadFn={uploadServiceImage}
+                        getImageUrlFn={getServiceImageUrl}
                         disabled={loading}
-                        onChange={(event) =>
-                          updateOption(
-                            index,
-                            "imageUrl",
-                            event.target.value,
-                          )
-                        }
-                        placeholder="https://example.com/images/royal-stage.jpg"
-                        className="h-11 w-full rounded-xl border border-[#E5E7EB] bg-[#FEFEFE] px-4 text-sm text-[#5F6062] outline-none transition-all duration-200 placeholder:text-[#9A9BA0] hover:border-[#DCDDE2] focus:border-[#BFC1C5] focus:ring-2 focus:ring-[#5F6062]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        hint="Upload image for this variation (up to 5 MB)"
                       />
                     </div>
 

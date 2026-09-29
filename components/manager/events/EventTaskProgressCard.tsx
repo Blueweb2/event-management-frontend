@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, Clock, AlertTriangle, PlayCircle, CheckCircle2 } from "lucide-react";
+import { CheckSquare, Clock, AlertTriangle, PlayCircle, CheckCircle2, Lock } from "lucide-react";
 
 interface EventTaskItem {
   dutyId: string;
@@ -34,12 +34,14 @@ interface EventTaskProgressCardProps {
   };
   loading?: boolean;
   onRefresh?: () => void;
+  isCompleted?: boolean;
 }
 
 export default function EventTaskProgressCard({
   taskProgress,
   loading = false,
   onRefresh,
+  isCompleted = false,
 }: EventTaskProgressCardProps) {
   const rawTasks = taskProgress?.tasks || [];
   const rawSummary = taskProgress?.summary || {};
@@ -134,10 +136,17 @@ export default function EventTaskProgressCard({
     <div className="rounded-2xl border border-[#9a6c37]/20 bg-white p-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
         <div>
-          <h3 className="text-lg font-bold text-[#29241f] flex items-center gap-2">
-            <CheckSquare className="w-5 h-5 text-[#9a6c37]" />
-            Event Task Execution Progress
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-[#29241f] flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-[#9a6c37]" />
+              Event Task Execution Progress
+            </h3>
+            {isCompleted && (
+              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 border border-amber-300">
+                <Lock size={12} /> Event Completed (Locked)
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-1">
             Real-time execution status of sub-tasks assigned to staff duties
           </p>

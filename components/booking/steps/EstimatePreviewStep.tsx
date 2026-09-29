@@ -21,6 +21,7 @@ import {
   createEstimate,
   type Estimate,
 } from "@/lib/estimates.api";
+import { getServiceImageUrl } from "@/lib/services.api";
 import EstimateExportActions from "@/components/estimates/EstimateExportActions";
 import {
   type ClientDocumentData,
@@ -1006,23 +1007,37 @@ export default function EstimatePreviewStep({
                       item.unitPrice || 0,
                     );
 
+                  const itemImg = getServiceImageUrl(item.imageUrl);
+
                   return (
                     <div
                       key={item.id}
-                      className="grid grid-cols-[1fr_80px_130px_130px] items-center px-4 py-4"
+                      className="grid grid-cols-[1fr_80px_130px_130px] items-center px-4 py-3.5"
                     >
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {item.name}
-                        </p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {itemImg ? (
+                          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[#f6f2eb]">
+                            <img
+                              src={itemImg}
+                              alt={item.name}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </div>
+                        ) : null}
 
-                        <p className="mt-0.5 text-xs text-[var(--taupe)]">
-                          {item.category}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {item.name}
+                          </p>
 
-                          {item.unitLabel
-                            ? ` • ${item.unitLabel}`
-                            : ""}
-                        </p>
+                          <p className="mt-0.5 text-xs text-[var(--taupe)]">
+                            {item.category}
+                            {item.unitLabel ? ` • ${item.unitLabel}` : ""}
+                          </p>
+                        </div>
                       </div>
 
                       <span className="text-center text-sm text-gray-700">
@@ -1062,6 +1077,7 @@ export default function EstimatePreviewStep({
                   Number(
                     item.unitPrice || 0,
                   );
+                const itemImg = getServiceImageUrl(item.imageUrl);
 
                 return (
                   <div
@@ -1069,17 +1085,32 @@ export default function EstimatePreviewStep({
                     className="rounded-xl border border-[var(--border)] bg-[var(--ivory)] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">
-                          {item.name}
-                        </p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {itemImg ? (
+                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[#f6f2eb]">
+                            <img
+                              src={itemImg}
+                              alt={item.name}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </div>
+                        ) : null}
 
-                        <p className="mt-1 text-xs text-[var(--taupe)]">
-                          {item.category}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {item.name}
+                          </p>
+
+                          <p className="mt-1 text-xs text-[var(--taupe)]">
+                            {item.category}
+                          </p>
+                        </div>
                       </div>
 
-                      <p className="text-sm font-bold text-[var(--sage-dark)]">
+                      <p className="text-sm font-bold text-[var(--sage-dark)] shrink-0">
                         {formatCurrency(
                           itemTotal,
                         )}

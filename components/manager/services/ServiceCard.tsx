@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import type { Service } from "@/types/service";
+import { getServiceImageUrl } from "@/lib/services.api";
 
 type ServiceCardProps = {
   service: Service;
@@ -39,13 +40,15 @@ export default function ServiceCard({
       "en-IN",
     );
 
+  const imageUrl = getServiceImageUrl(service.imageUrl);
+
   return (
     <div className="group overflow-hidden rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5">
       {/* Service Image Preview */}
-      {service.imageUrl && (
+      {imageUrl && (
         <div className="-mx-5 -mt-5 mb-4 h-36 overflow-hidden bg-[#F3F4F8]">
           <img
-            src={service.imageUrl}
+            src={imageUrl}
             alt={service.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e) => {

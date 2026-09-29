@@ -12,6 +12,7 @@ import {
 import ServiceCard from "./ServiceCard";
 import ServiceForm from "./ServiceForm";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/common/Toast";
 
 import {
   deleteService,
@@ -41,6 +42,7 @@ const categories = [
 export default function ServiceList({
   onServicesChange,
 }: ServiceListProps) {
+  const { toast } = useToast();
   const [services, setServices] = useState<
     Service[]
   >([]);
@@ -204,13 +206,18 @@ export default function ServiceList({
 
         return updated;
       });
+      toast.success(
+        `Service "${deactivatingService.name}" deactivated successfully.`,
+        "Service Deactivated"
+      );
       setDeactivatingService(null);
     } catch (err) {
-      setError(
+      const errorMsg =
         err instanceof Error
           ? err.message
-          : "Failed to deactivate service.",
-      );
+          : "Failed to deactivate service.";
+      setError(errorMsg);
+      toast.error(errorMsg, "Deactivation Failed");
     } finally {
       setDeactivatingId(null);
     }
