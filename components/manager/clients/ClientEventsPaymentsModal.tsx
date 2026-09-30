@@ -123,6 +123,20 @@ export default function ClientEventsPaymentsModal({
       return;
     }
 
+    const isUpcoming =
+      selectedEvent &&
+      ["Upcoming", "CONFIRMED"].includes(selectedEvent.status || "");
+    const isFinalSettlement =
+      paymentType === "FINAL_BALANCE" ||
+      (amountNum >= selectedEventBalance && selectedEventBalance > 0);
+
+    if (isUpcoming && isFinalSettlement && paymentType !== "ADVANCE") {
+      setFormError(
+        "Only in-progress or completed events can be marked as fully paid / settled. You can record deposit as an Advance Payment for upcoming events."
+      );
+      return;
+    }
+
     try {
       setSubmittingPayment(true);
       setFormError("");

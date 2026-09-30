@@ -4,6 +4,8 @@ import EventCard from "./EventCard";
 
 interface EventListProps {
   events: Event[];
+  onEdit?: (event: Event) => void;
+  onDelete?: (event: Event) => void;
 }
 
 // ==========================================
@@ -12,6 +14,8 @@ interface EventListProps {
 
 export default function EventList({
   events,
+  onEdit,
+  onDelete,
 }: EventListProps) {
   return (
     <div className="space-y-3">
@@ -19,6 +23,8 @@ export default function EventList({
         <EventCard
           key={event._id}
           event={event}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       ))}
     </div>

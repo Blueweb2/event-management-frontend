@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 
 import type { Event } from "@/lib/event.api";
 
+import { Edit, Trash2 } from "lucide-react";
 import EventStatusBadge from "./EventStatusBadge";
 
 interface EventCardProps {
   event: Event;
+  onEdit?: (event: Event) => void;
+  onDelete?: (event: Event) => void;
 }
 
 // ==========================================
@@ -16,6 +19,8 @@ interface EventCardProps {
 
 export default function EventCard({
   event,
+  onEdit,
+  onDelete,
 }: EventCardProps) {
   const router = useRouter();
 
@@ -25,32 +30,64 @@ export default function EventCard({
       : "Client";
 
   return (
-    <button
-      type="button"
-      onClick={() =>
-        router.push(`/manager/events/${event._id}`)
-      }
-      className="w-full text-left"
+    <div
+      onClick={() => router.push(`/manager/events/${event._id}`)}
+      className="group w-full cursor-pointer text-left"
     >
-      <article className="rounded-2xl bg-white p-5 shadow-sm transition active:scale-[0.99]">
+      <article className="relative rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md hover:border-gray-300 border border-transparent active:scale-[0.995]">
         {/* ======================================
             Top Row
         ====================================== */}
 
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-[#8C7A55]">
               {event.eventType}
             </p>
 
-            <h3 className="mt-1 truncate text-base font-bold text-[#252525]">
+            <h3 className="mt-1 truncate text-base font-bold text-[#252525] group-hover:text-[#9A7B4F] transition-colors">
               {event.eventName}
             </h3>
           </div>
 
-          <EventStatusBadge
-            status={event.status}
-          />
+          <div className="flex items-center gap-2">
+            <EventStatusBadge
+              status={event.status}
+            />
+
+            {/* Action Buttons */}
+            {(onEdit || onDelete) && (
+              <div className="flex items-center gap-1 pl-1">
+                {onEdit && (
+                  <button
+                    type="button"
+                    title="Edit Event"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(event);
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-[#F4EBDD] hover:text-[#9A7B4F] transition"
+                  >
+                    <Edit size={14} />
+                  </button>
+                )}
+
+                {onDelete && (
+                  <button
+                    type="button"
+                    title="Delete Event"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(event);
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ======================================
@@ -93,7 +130,7 @@ export default function EventCard({
           </p>
         </div>
       </article>
-    </button>
+    </div>
   );
 }
 

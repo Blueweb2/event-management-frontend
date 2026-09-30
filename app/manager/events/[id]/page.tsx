@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, UserPlus, Sparkles, Phone, Mail } from "lucide-react";
+import { Loader2, UserPlus, Sparkles, Phone, Mail, Edit, Trash2 } from "lucide-react";
 
 import {
   getEventById,
+  deleteEvent,
   type Event,
 } from "@/lib/event.api";
 
@@ -16,6 +17,8 @@ import EventProfitabilityCard from "@/components/manager/events/EventProfitabili
 import EventStaffAttendanceCard from "@/components/manager/events/EventStaffAttendanceCard";
 import EventTaskProgressCard from "@/components/manager/events/EventTaskProgressCard";
 import EventActivityTimelineCard from "@/components/manager/events/EventActivityTimelineCard";
+import EditEventModal from "@/components/manager/events/EditEventModal";
+import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import { getEventStaffAttendance } from "@/lib/attendance.api";
 import { getEventTaskProgress } from "@/lib/assignment.api";
 import { getEventActivityTimeline } from "@/lib/event.api";
@@ -55,6 +58,8 @@ export default function ManagerEventDetailsPage() {
 
   const [error, setError] = useState("");
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   const [assignmentForm, setAssignmentForm] = useState({
     staff: "",
@@ -543,17 +548,37 @@ export default function ManagerEventDetailsPage() {
             </div>
           </div>
 
-          {/* Export Studio Trigger */}
-          {eventDocumentData && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => setExportModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95 shrink-0"
+              onClick={() => setEditModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition active:scale-95"
             >
-              <Sparkles size={14} className="text-[#D4AF37]" />
-              <span>Export Invoice & Quotation</span>
+              <Edit size={14} className="text-[#9A7B4F]" />
+              <span>Edit Event</span>
             </button>
-          )}
+
+            <button
+              type="button"
+              onClick={() => setDeleteModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-600 shadow-sm hover:bg-red-100 transition active:scale-95"
+            >
+              <Trash2 size={14} />
+              <span>Delete</span>
+            </button>
+
+            {/* Export Studio Trigger */}
+            {eventDocumentData && (
+              <button
+                type="button"
+                onClick={() => setExportModalOpen(true)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95 shrink-0"
+              >
+                <Sparkles size={14} className="text-[#D4AF37]" />
+                <span>Export Invoice & Quotation</span>
+              </button>
+            )}
+          </div>
         </header>
 
         {/* ======================================
@@ -870,9 +895,10 @@ export default function ManagerEventDetailsPage() {
 
           <button
             type="button"
-            className="min-h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-[#252525] transition active:scale-[0.98]"
+            onClick={() => setEditModalOpen(true)}
+            className="min-h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-[#252525] transition hover:bg-gray-50 active:scale-[0.98]"
           >
-            Update Status
+            Edit Event Details & Status
           </button>
         </section>
 
@@ -883,6 +909,28 @@ export default function ManagerEventDetailsPage() {
             documentData={eventDocumentData}
           />
         )}
+
+        {/* Edit Event Modal */}
+        <EditEventModal
+          isOpen={editModalOpen}
+          event={event}
+          onClose={() => setEditModalOpen(false)}
+          onSuccess={(updated) => {
+            setEvent(updated);
+            fetchEvent();
+          }}
+        />
+
+        {/* Delete Event Modal */}
+        <DeleteEventModal
+          isOpen={deleteModalOpen}
+          event={event}
+          onClose={() => setDeleteModalOpen(false)}
+          onConfirm={async (id) => {
+            await deleteEvent(id, token || undefined);
+            router.push("/manager/events");
+          }}
+        />
       </div>
     </main>
   );

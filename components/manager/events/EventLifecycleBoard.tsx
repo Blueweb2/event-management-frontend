@@ -16,6 +16,8 @@ import {
   FileText,
   AlertCircle,
   IndianRupee,
+  Edit,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -29,8 +31,11 @@ import {
   getEvents,
   updateEventStatus,
   startEvent,
+  deleteEvent,
   type Event,
 } from "@/lib/event.api";
+import EditEventModal from "./EditEventModal";
+import DeleteEventModal from "./DeleteEventModal";
 
 // ==========================================
 // Types
@@ -123,6 +128,8 @@ export default function EventLifecycleBoard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
 
   // ==========================================
   // Fetch Board Data
@@ -454,12 +461,41 @@ export default function EventLifecycleBoard() {
                             {card.type === "ESTIMATE" ? "Estimate" : "Event"}
                           </span>
 
-                          {card.amount > 0 && (
-                            <span className="flex items-center font-mono text-xs font-bold text-gray-900">
-                              <IndianRupee size={11} />
-                              {card.amount.toLocaleString("en-IN")}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {card.amount > 0 && (
+                              <span className="flex items-center font-mono text-xs font-bold text-gray-900">
+                                <IndianRupee size={11} />
+                                {card.amount.toLocaleString("en-IN")}
+                              </span>
+                            )}
+
+                            {card.type === "EVENT" && card.rawEvent && (
+                              <div className="flex items-center gap-0.5 pl-1">
+                                <button
+                                  type="button"
+                                  title="Edit Event"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingEvent(card.rawEvent || null);
+                                  }}
+                                  className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:bg-amber-50 hover:text-amber-700 transition"
+                                >
+                                  <Edit size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Delete Event"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingEvent(card.rawEvent || null);
+                                  }}
+                                  className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:bg-red-50 hover:text-red-600 transition"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Title */}
@@ -727,6 +763,29 @@ export default function EventLifecycleBoard() {
           );
         })}
       </div>
+
+      {/* Edit Event Modal */}
+      <EditEventModal
+        isOpen={Boolean(editingEvent)}
+        event={editingEvent}
+        onClose={() => setEditingEvent(null)}
+        onSuccess={() => {
+          showToast("Event details updated successfully!");
+          loadData();
+        }}
+      />
+
+      {/* Delete Event Modal */}
+      <DeleteEventModal
+        isOpen={Boolean(deletingEvent)}
+        event={deletingEvent}
+        onClose={() => setDeletingEvent(null)}
+        onConfirm={async (id) => {
+          await deleteEvent(id);
+          showToast("Event deleted successfully");
+          loadData();
+        }}
+      />
     </div>
   );
 }

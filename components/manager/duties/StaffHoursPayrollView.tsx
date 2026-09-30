@@ -22,6 +22,7 @@ import {
   Plus,
   Tag,
   UserCheck,
+  Lock,
 } from "lucide-react";
 import type { Duty } from "./constants";
 import { updateAssignmentPayment } from "@/lib/assignment.api";
@@ -113,6 +114,11 @@ export default function StaffHoursPayrollView({
   const handleTogglePayment = async (duty: Duty) => {
     if (!token) return;
     const nextStatus = duty.paymentStatus === "PAID" ? "PENDING" : "PAID";
+    if (nextStatus === "PAID" && duty.status !== "COMPLETED") {
+      setToastMessage("Shift is not completed yet. Only completed shifts can be marked as paid.");
+      setTimeout(() => setToastMessage(""), 3500);
+      return;
+    }
     try {
       setUpdatingId(duty.id);
       await updateAssignmentPayment(
@@ -127,8 +133,12 @@ export default function StaffHoursPayrollView({
       setToastMessage(`Payment marked as ${nextStatus} for ${duty.staffName}`);
       setTimeout(() => setToastMessage(""), 3500);
       if (onRefresh) onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update payment status", err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || "Failed to update payment status";
+      setToastMessage(errMsg);
+      setTimeout(() => setToastMessage(""), 4000);
     } finally {
       setUpdatingId(null);
     }
@@ -199,17 +209,23 @@ export default function StaffHoursPayrollView({
 
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
-  const pendingFilteredCount = useMemo(
-    () => filteredDuties.filter((d) => d.paymentStatus !== "PAID").length,
+  const completedPendingCount = useMemo(
+    () => filteredDuties.filter((d) => d.paymentStatus !== "PAID" && d.status === "COMPLETED").length,
     [filteredDuties]
   );
 
   const handleBulkPayPending = async () => {
     if (!token) return;
-    const pendingToPay = filteredDuties.filter((d) => d.paymentStatus !== "PAID");
-    if (pendingToPay.length === 0) return;
+    const pendingToPay = filteredDuties.filter(
+      (d) => d.paymentStatus !== "PAID" && d.status === "COMPLETED"
+    );
+    if (pendingToPay.length === 0) {
+      setToastMessage("No completed shifts pending payout found.");
+      setTimeout(() => setToastMessage(""), 3500);
+      return;
+    }
 
-    if (!confirm(`Are you sure you want to mark ${pendingToPay.length} pending shifts as PAID?`)) {
+    if (!confirm(`Are you sure you want to mark ${pendingToPay.length} completed shift(s) as PAID?`)) {
       return;
     }
 
@@ -228,11 +244,15 @@ export default function StaffHoursPayrollView({
           )
         )
       );
-      setToastMessage(`Successfully marked ${pendingToPay.length} shifts as PAID!`);
+      setToastMessage(`Successfully marked ${pendingToPay.length} completed shift(s) as PAID!`);
       setTimeout(() => setToastMessage(""), 4000);
       if (onRefresh) onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to bulk update payment status", err);
+      const errMsg =
+        err?.response?.data?.message || err?.message || "Failed to bulk update payment status";
+      setToastMessage(errMsg);
+      setTimeout(() => setToastMessage(""), 4000);
     } finally {
       setBulkProcessing(false);
     }
@@ -404,8 +424,8 @@ export default function StaffHoursPayrollView({
               ))}
             </select>
 
-            {/* Bulk Pay Action */}
-            {pendingFilteredCount > 0 && (
+            {/* Bulk Pay Action for Completed Shifts */}
+            {completedPendingCount > 0 && (
               <button
                 type="button"
                 disabled={bulkProcessing}
@@ -417,7 +437,7 @@ export default function StaffHoursPayrollView({
                 ) : (
                   <Check size={14} />
                 )}
-                <span>Pay All Pending ({pendingFilteredCount})</span>
+                <span>Pay Completed ({completedPendingCount})</span>
               </button>
             )}
 
@@ -561,22 +581,38 @@ export default function StaffHoursPayrollView({
                           </p>
                         </td>
 
-                        {/* Confirmation Status */}
+                        {/* Confirmation / Shift Status */}
                         <td className="px-4 py-3.5 text-center whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                              duty.status === "ACCEPTED"
+                              duty.status === "COMPLETED"
                                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                : duty.status === "ASSIGNED"
+                                : duty.status === "IN_PROGRESS"
+                                ? "bg-blue-50 text-blue-800 border border-blue-200"
+                                : duty.status === "ACCEPTED"
                                 ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                : duty.status === "ASSIGNED"
+                                ? "bg-amber-50/70 text-amber-900 border border-amber-200"
                                 : duty.status === "REJECTED"
                                 ? "bg-rose-50 text-rose-800 border border-rose-200"
-                                : "bg-gray-100 text-gray-700"
+                                : duty.status === "CANCELLED"
+                                ? "bg-gray-100 text-gray-500 border border-gray-200"
+                                : "bg-gray-100 text-gray-700 border border-gray-200"
                             }`}
                           >
-                            {duty.status === "ACCEPTED" ? (
+                            {duty.status === "COMPLETED" ? (
                               <>
-                                <UserCheck size={12} className="text-emerald-600" />
+                                <CheckCircle2 size={12} className="text-emerald-600" />
+                                <span>Completed</span>
+                              </>
+                            ) : duty.status === "IN_PROGRESS" ? (
+                              <>
+                                <Clock size={12} className="text-blue-600 animate-pulse" />
+                                <span>In Progress</span>
+                              </>
+                            ) : duty.status === "ACCEPTED" ? (
+                              <>
+                                <UserCheck size={12} className="text-amber-600" />
                                 <span>Confirmed</span>
                               </>
                             ) : duty.status === "ASSIGNED" ? (
@@ -589,6 +625,8 @@ export default function StaffHoursPayrollView({
                                 <AlertCircle size={12} className="text-rose-600" />
                                 <span>Declined</span>
                               </>
+                            ) : duty.status === "CANCELLED" ? (
+                              <span>Cancelled</span>
                             ) : (
                               duty.status
                             )}
@@ -597,30 +635,47 @@ export default function StaffHoursPayrollView({
 
                         {/* Payment Action */}
                         <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                          <button
-                            type="button"
-                            disabled={updatingId === duty.id}
-                            onClick={() => handleTogglePayment(duty)}
-                            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 ${
-                              isPaid
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                                : "bg-[#29241f] text-white hover:bg-black shadow-sm"
-                            }`}
-                          >
-                            {updatingId === duty.id ? (
-                              <Loader2 size={12} className="animate-spin" />
-                            ) : isPaid ? (
-                              <>
-                                <Check size={12} />
-                                <span>Paid</span>
-                              </>
-                            ) : (
-                              <>
-                                <IndianRupee size={12} />
-                                <span>Mark as Paid</span>
-                              </>
-                            )}
-                          </button>
+                          {isPaid ? (
+                            <button
+                              type="button"
+                              disabled={updatingId === duty.id}
+                              onClick={() => handleTogglePayment(duty)}
+                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                            >
+                              {updatingId === duty.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <>
+                                  <Check size={12} />
+                                  <span>Paid</span>
+                                </>
+                              )}
+                            </button>
+                          ) : duty.status === "COMPLETED" ? (
+                            <button
+                              type="button"
+                              disabled={updatingId === duty.id}
+                              onClick={() => handleTogglePayment(duty)}
+                              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition active:scale-95 bg-[#29241f] text-white hover:bg-black shadow-sm"
+                            >
+                              {updatingId === duty.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <>
+                                  <IndianRupee size={12} />
+                                  <span>Mark as Paid</span>
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-xl bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-gray-500 border border-gray-200 cursor-not-allowed select-none"
+                              title="Shift is pending or incomplete. Only completed works can be marked as paid."
+                            >
+                              <Lock size={12} className="text-gray-400" />
+                              <span>Pending Work</span>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );

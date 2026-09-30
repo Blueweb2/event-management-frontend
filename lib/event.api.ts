@@ -305,6 +305,7 @@ export function updateEvent(
     location: string;
     description: string;
     notes: string;
+    status: EventStatus;
   }>,
   token?: string
 ): Promise<UpdateEventResponse> {
@@ -356,7 +357,22 @@ export function cancelEvent(
   eventId: string,
   token?: string
 ): Promise<UpdateEventResponse> {
-  return del<UpdateEventResponse>(
+  return patch<UpdateEventResponse>(
+    `/events/${eventId}/cancel`,
+    {},
+    token
+  );
+}
+
+// ==========================================
+// Delete Event
+// ==========================================
+
+export function deleteEvent(
+  eventId: string,
+  token?: string
+): Promise<{ success: boolean; message: string }> {
+  return del<{ success: boolean; message: string }>(
     `/events/${eventId}`,
     token
   );

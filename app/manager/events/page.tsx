@@ -5,6 +5,7 @@ import { Kanban, ListFilter } from "lucide-react";
 
 import {
   getEvents,
+  deleteEvent,
   type Event,
   type EventStatus,
 } from "@/lib/event.api";
@@ -18,16 +19,23 @@ import EmptyEvents from "@/components/manager/events/EmptyEvents";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import EventLifecycleBoard from "@/components/manager/events/EventLifecycleBoard";
+import EditEventModal from "@/components/manager/events/EditEventModal";
+import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
+import { useAuth } from "@/hooks/useAuth";
 
-type ViewMode = "pipeline" | "list";
+type ViewMode = "list" | "pipeline";
 
 export default function ManagerEventsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("pipeline");
+  const { token } = useAuth();
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<EventStatus | "All">("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -80,6 +88,18 @@ export default function ManagerEventsPage() {
   const ongoingEvents = events.filter((event) => event.status === "Ongoing").length;
   const completedEvents = events.filter((event) => event.status === "Completed").length;
 
+  const handleEditSuccess = (updatedEvent: Event) => {
+    setEvents((prev) =>
+      prev.map((e) => (e._id === updatedEvent._id ? updatedEvent : e))
+    );
+    fetchEvents();
+  };
+
+  const handleDeleteConfirm = async (eventId: string) => {
+    await deleteEvent(eventId, token || undefined);
+    setEvents((prev) => prev.filter((e) => e._id !== eventId));
+  };
+
   return (
     <main className="min-h-screen bg-[#F8F7F3]">
       <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-5 sm:px-6">
@@ -91,19 +111,6 @@ export default function ManagerEventsPage() {
           <div className="inline-flex rounded-xl bg-gray-200/70 p-1">
             <button
               type="button"
-              onClick={() => setViewMode("pipeline")}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
-                viewMode === "pipeline"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Kanban size={15} />
-              Lifecycle Pipeline
-            </button>
-
-            <button
-              type="button"
               onClick={() => setViewMode("list")}
               className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "list"
@@ -113,6 +120,19 @@ export default function ManagerEventsPage() {
             >
               <ListFilter size={15} />
               List View
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode("pipeline")}
+              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                viewMode === "pipeline"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Kanban size={15} />
+              Lifecycle Pipeline
             </button>
           </div>
         </div>
@@ -163,12 +183,32 @@ export default function ManagerEventsPage() {
               ) : events.length === 0 ? (
                 <EmptyEvents />
               ) : (
-                <EventList events={events} />
+                <EventList
+                  events={events}
+                  onEdit={(evt) => setEditingEvent(evt)}
+                  onDelete={(evt) => setDeletingEvent(evt)}
+                />
               )}
             </section>
           </>
         )}
       </div>
+
+      {/* Edit Event Modal */}
+      <EditEventModal
+        isOpen={Boolean(editingEvent)}
+        event={editingEvent}
+        onClose={() => setEditingEvent(null)}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Event Modal */}
+      <DeleteEventModal
+        isOpen={Boolean(deletingEvent)}
+        event={deletingEvent}
+        onClose={() => setDeletingEvent(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </main>
   );
 }
