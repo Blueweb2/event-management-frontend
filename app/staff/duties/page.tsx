@@ -661,14 +661,6 @@ export default function StaffDutiesPage() {
                       windowNotice = `Available on ${new Date(assignment.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`;
                     } else if (!isEventStarted) {
                       windowNotice = "Waiting for manager to start the event";
-                    } else if (isSameDate && assignment.startTime) {
-                      const [h, m] = assignment.startTime.split(":").map(Number);
-                      const wStart = new Date(assignment.dutyDate);
-                      wStart.setHours(h, (m || 0) - 15, 0, 0);
-                      if (new Date() < wStart) {
-                        canCheckIn = false;
-                        windowNotice = `Opens at ${wStart.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-                      }
                     }
 
                     const isPaused = Boolean(dutyRecord?.isPaused);
@@ -702,7 +694,7 @@ export default function StaffDutiesPage() {
                                 ? "Event Started – Clock-in is available."
                                 : !isEventStarted && isSameDate
                                 ? "⏳ Waiting for manager to start the event."
-                                : `🔒 Check-in opens 15 mins prior to shift (${windowNotice})`}
+                                : `🔒 ${windowNotice || "Check-in not available"}`}
                             </p>
                           )}
                         </div>
@@ -727,7 +719,7 @@ export default function StaffDutiesPage() {
                               ) : (
                                 <Lock size={14} />
                               )}
-                              <span>{canCheckIn ? "Clock In" : !isEventStarted && isSameDate ? "Waiting for Event to Start" : `Clock In (${windowNotice || "15m Prior"})`}</span>
+                              <span>{canCheckIn ? "Clock In" : !isEventStarted && isSameDate ? "Waiting for Event to Start" : `Clock In (${windowNotice})`}</span>
                             </button>
                           )}
 

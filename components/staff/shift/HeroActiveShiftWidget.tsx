@@ -91,31 +91,6 @@ export default function HeroActiveShiftWidget({
       };
     }
 
-    if (todayShift.startTime) {
-      const [hStr, mStr] = todayShift.startTime.split(":");
-      const hours = Number(hStr);
-      const minutes = Number(mStr || 0);
-
-      if (Number.isInteger(hours) && Number.isInteger(minutes)) {
-        const windowStart = new Date(shiftDate);
-        windowStart.setHours(hours, minutes - 15, 0, 0);
-
-        const windowStartStr = windowStart.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        if (nowDate < windowStart) {
-          return {
-            canCheckIn: false,
-            windowStartStr,
-            reason: `Check-in opens 15 mins before event (at ${windowStartStr})`,
-            isWaitingForStart: false,
-          };
-        }
-      }
-    }
-
     return { canCheckIn: true, windowStartStr: "", reason: "", isWaitingForStart: false };
   };
 

@@ -123,7 +123,10 @@ export function sanitizePhone(phone?: string): string {
   return clean;
 }
 
-export function generateWhatsAppMessage(doc: ClientDocumentData): string {
+export function generateWhatsAppMessage(
+  doc: ClientDocumentData,
+  showItemizedPrices: boolean = false
+): string {
   const isInvoice = doc.documentType === "INVOICE";
   const docHeader = isInvoice
     ? `✨ *TAX INVOICE: ${doc.documentNumber}*`
@@ -143,12 +146,16 @@ export function generateWhatsAppMessage(doc: ClientDocumentData): string {
   message += `👥 *Guests:* ${doc.event.guests} Attendees\n`;
   message += `📍 *Venue:* ${doc.event.location}\n\n`;
 
-  // Services
+  // Services Scope
   if (doc.services && doc.services.length > 0) {
-    message += `📋 *SERVICES & PRODUCTION:*\n`;
+    message += `📋 *INCLUDED SERVICES & PRODUCTION:*\n`;
     doc.services.forEach((item) => {
       const qtyStr = item.quantity > 1 ? ` (${item.quantity} ${item.unitLabel || "units"})` : "";
-      message += `• ${item.name}${qtyStr} — *${formatINR(item.total, doc.currency)}*\n`;
+      if (showItemizedPrices) {
+        message += `• ${item.name}${qtyStr} — *${formatINR(item.total, doc.currency)}*\n`;
+      } else {
+        message += `• ${item.name}${qtyStr}\n`;
+      }
     });
     message += `\n`;
   }
@@ -156,35 +163,38 @@ export function generateWhatsAppMessage(doc: ClientDocumentData): string {
   // Catering
   if (doc.catering && doc.catering.included) {
     message += `🍽️ *CATERING & FOOD MENU:*\n`;
-    const rateText = doc.catering.ratePerGuest
-      ? `${doc.catering.guestCount} guests × ${formatINR(doc.catering.ratePerGuest, doc.currency)}`
-      : `${doc.catering.guestCount} guests`;
-    message += `• Custom Catering Package (${rateText}) — *${formatINR(doc.catering.totalFoodAmount, doc.currency)}*\n`;
+    if (showItemizedPrices) {
+      const rateText = doc.catering.ratePerGuest
+        ? `${doc.catering.guestCount} guests × ${formatINR(doc.catering.ratePerGuest, doc.currency)}`
+        : `${doc.catering.guestCount} guests`;
+      message += `• Custom Catering Package (${rateText}) — *${formatINR(doc.catering.totalFoodAmount, doc.currency)}*\n`;
+    } else {
+      message += `• Custom Catering Experience (${doc.catering.guestCount} Attendees · ${doc.catering.servingType || "Buffet"})\n`;
+    }
 
     if (doc.catering.items && doc.catering.items.length > 0) {
-      const itemNames = doc.catering.items.map((i) => i.name).slice(0, 6).join(", ");
-      const extra = doc.catering.items.length > 6 ? ` +${doc.catering.items.length - 6} more` : "";
-      message += `  _Items:_ ${itemNames}${extra}\n`;
+      const itemNames = doc.catering.items.map((i) => i.name).slice(0, 8).join(", ");
+      const extra = doc.catering.items.length > 8 ? ` +${doc.catering.items.length - 8} more` : "";
+      message += `  _Menu Inclusions:_ ${itemNames}${extra}\n`;
     }
     message += `\n`;
   }
 
   message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `💰 *Subtotal:* ${formatINR(doc.subtotal, doc.currency)}\n`;
-
-  if (doc.discount > 0) {
-    message += `🎁 *Discount:* -${formatINR(doc.discount, doc.currency)}\n`;
+  if (showItemizedPrices) {
+    message += `💰 *Subtotal:* ${formatINR(doc.subtotal, doc.currency)}\n`;
+    if (doc.discount > 0) {
+      message += `🎁 *Discount:* -${formatINR(doc.discount, doc.currency)}\n`;
+    }
+    if (doc.gstAmount > 0) {
+      message += `🏛️ *GST (${doc.gstRate || 18}%):* +${formatINR(doc.gstAmount, doc.currency)}\n`;
+    }
+    if (doc.additionalCharges > 0) {
+      message += `➕ *Additional Charges:* +${formatINR(doc.additionalCharges, doc.currency)}\n`;
+    }
   }
 
-  if (doc.gstAmount > 0) {
-    message += `🏛️ *GST (${doc.gstRate || 18}%):* +${formatINR(doc.gstAmount, doc.currency)}\n`;
-  }
-
-  if (doc.additionalCharges > 0) {
-    message += `➕ *Additional Charges:* +${formatINR(doc.additionalCharges, doc.currency)}\n`;
-  }
-
-  message += `⭐ *TOTAL AMOUNT: ${formatINR(doc.total, doc.currency)}*\n`;
+  message += `⭐ *FINAL ESTIMATE AMOUNT: ${formatINR(doc.total, doc.currency)}*\n`;
   message += `📌 *Status:* ${doc.status.toUpperCase()}\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 

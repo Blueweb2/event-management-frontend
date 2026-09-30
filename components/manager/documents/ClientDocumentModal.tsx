@@ -41,9 +41,10 @@ export default function ClientDocumentModal({
   documentData,
 }: ClientDocumentModalProps) {
   const [docType, setDocType] = useState<"ESTIMATE" | "INVOICE">(
-    documentData.documentType || "INVOICE"
+    documentData.documentType || "ESTIMATE"
   );
   const [activeTab, setActiveTab] = useState<"preview" | "whatsapp">("preview");
+  const [showItemizedPrices, setShowItemizedPrices] = useState(false);
   const [copied, setCopied] = useState(false);
   const [customNote, setCustomNote] = useState("");
 
@@ -66,7 +67,7 @@ export default function ClientDocumentModal({
     notes: customNote || documentData.notes,
   };
 
-  const whatsappMessage = generateWhatsAppMessage(currentDoc);
+  const whatsappMessage = generateWhatsAppMessage(currentDoc, showItemizedPrices);
 
   const handleCopyWhatsApp = async () => {
     try {
@@ -174,26 +175,54 @@ export default function ClientDocumentModal({
           </div>
 
           {/* Mode Switcher & Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Pricing Details Toggle */}
+            <div className="inline-flex rounded-xl bg-[#F0ECE4] p-1 text-xs font-semibold text-[#756D64]">
+              <button
+                type="button"
+                onClick={() => setShowItemizedPrices(false)}
+                className={`rounded-lg px-2.5 py-1.5 transition cursor-pointer ${
+                  !showItemizedPrices
+                    ? "bg-white text-[#29241F] shadow-xs font-bold"
+                    : "hover:text-[#29241F]"
+                }`}
+                title="Only show total estimate amount to client without individual item rates"
+              >
+                Client View (Total Only)
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowItemizedPrices(true)}
+                className={`rounded-lg px-2.5 py-1.5 transition cursor-pointer ${
+                  showItemizedPrices
+                    ? "bg-white text-[#29241F] shadow-xs font-bold"
+                    : "hover:text-[#29241F]"
+                }`}
+                title="Show itemized line prices"
+              >
+                Itemized Breakdown
+              </button>
+            </div>
+
             {/* Document Mode Toggle */}
             <div className="inline-flex rounded-xl bg-[#F0ECE4] p-1 text-xs font-semibold text-[#756D64]">
               <button
                 type="button"
                 onClick={() => setDocType("ESTIMATE")}
-                className={`rounded-lg px-3 py-1.5 transition ${
+                className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
                   docType === "ESTIMATE"
-                    ? "bg-white text-[#29241F] shadow-sm"
+                    ? "bg-white text-[#29241F] shadow-sm font-bold"
                     : "hover:text-[#29241F]"
                 }`}
               >
-                Quotation / Estimate
+                Estimate
               </button>
               <button
                 type="button"
                 onClick={() => setDocType("INVOICE")}
-                className={`rounded-lg px-3 py-1.5 transition ${
+                className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
                   docType === "INVOICE"
-                    ? "bg-white text-[#29241F] shadow-sm"
+                    ? "bg-white text-[#29241F] shadow-sm font-bold"
                     : "hover:text-[#29241F]"
                 }`}
               >
@@ -205,7 +234,7 @@ export default function ClientDocumentModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#756D64] hover:bg-[#F0ECE4] transition"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#756D64] hover:bg-[#F0ECE4] transition cursor-pointer"
               aria-label="Close modal"
             >
               <X size={18} />
@@ -221,7 +250,7 @@ export default function ClientDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
                 activeTab === "preview"
                   ? "bg-white text-[#29241F] shadow-sm"
                   : "text-[#756D64] hover:text-[#29241F]"
@@ -233,7 +262,7 @@ export default function ClientDocumentModal({
             <button
               type="button"
               onClick={() => setActiveTab("whatsapp")}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition cursor-pointer ${
                 activeTab === "whatsapp"
                   ? "bg-emerald-600 text-white shadow-sm"
                   : "text-emerald-700 hover:bg-emerald-50"
@@ -249,7 +278,7 @@ export default function ClientDocumentModal({
               <button
                 type="button"
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241F] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241F] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95 cursor-pointer"
               >
                 <Printer size={14} />
                 <span>Save as PDF / Print</span>
@@ -384,20 +413,32 @@ export default function ClientDocumentModal({
                 </div>
               </div>
 
-              {/* Itemized Services Table */}
+              {/* Services Table */}
               <div className="py-6 border-b border-[#E8E1D8]">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37] mb-3">
-                  Production & Event Services
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
+                    Production & Event Services Deliverables
+                  </h3>
+                  {!showItemizedPrices && (
+                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      ✓ Included in Package Proposal
+                    </span>
+                  )}
+                </div>
+
                 {currentDoc.services && currentDoc.services.length > 0 ? (
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-[#E8E1D8] text-[11px] font-bold uppercase tracking-wider text-[#756D64]">
-                        <th className="pb-2.5">Service Description</th>
-                        <th className="pb-2.5 text-center">Category</th>
-                        <th className="pb-2.5 text-center">Qty / Units</th>
-                        <th className="pb-2.5 text-right">Rate</th>
-                        <th className="pb-2.5 text-right">Total</th>
+                        <th className="pb-2.5">Service Deliverable</th>
+                        <th className="pb-2.5 text-center">Department</th>
+                        <th className="pb-2.5 text-right">Scope / Quantity</th>
+                        {showItemizedPrices && (
+                          <>
+                            <th className="pb-2.5 text-right">Rate</th>
+                            <th className="pb-2.5 text-right">Total</th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E8E1D8]/60 text-xs">
@@ -409,15 +450,19 @@ export default function ClientDocumentModal({
                           <td className="py-3 text-center capitalize text-[#756D64]">
                             {item.category || "Service"}
                           </td>
-                          <td className="py-3 text-center font-medium text-[#29241F]">
-                            {item.quantity} {item.unitLabel || ""}
+                          <td className="py-3 text-right font-medium text-[#29241F]">
+                            {item.quantity} {item.unitLabel || "unit(s)"}
                           </td>
-                          <td className="py-3 text-right text-[#756D64]">
-                            {formatINR(item.unitPrice, currentDoc.currency)}
-                          </td>
-                          <td className="py-3 text-right font-bold text-[#29241F]">
-                            {formatINR(item.total, currentDoc.currency)}
-                          </td>
+                          {showItemizedPrices && (
+                            <>
+                              <td className="py-3 text-right text-[#756D64]">
+                                {formatINR(item.unitPrice, currentDoc.currency)}
+                              </td>
+                              <td className="py-3 text-right font-bold text-[#29241F]">
+                                {formatINR(item.total, currentDoc.currency)}
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -434,17 +479,23 @@ export default function ClientDocumentModal({
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
                       Catering & Culinary Experience
                     </h3>
-                    <span className="text-xs font-bold text-[#29241F]">
-                      {formatINR(currentDoc.catering.totalFoodAmount, currentDoc.currency)}
-                    </span>
+                    {showItemizedPrices ? (
+                      <span className="text-xs font-bold text-[#29241F]">
+                        {formatINR(currentDoc.catering.totalFoodAmount, currentDoc.currency)}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        ✓ Included in Package Proposal
+                      </span>
+                    )}
                   </div>
 
                   <div className="rounded-xl bg-[#FAF8F5] p-4 border border-[#E8E1D8] text-xs space-y-2">
                     <div className="flex justify-between font-semibold text-[#29241F]">
                       <span>
-                        Package ({currentDoc.catering.guestCount} Guests · {currentDoc.catering.servingType || "Buffet"})
+                        Package Scope ({currentDoc.catering.guestCount} Guests · {currentDoc.catering.servingType || "Buffet"})
                       </span>
-                      {currentDoc.catering.ratePerGuest ? (
+                      {showItemizedPrices && currentDoc.catering.ratePerGuest ? (
                         <span>{formatINR(currentDoc.catering.ratePerGuest, currentDoc.currency)} / guest</span>
                       ) : null}
                     </div>
@@ -470,7 +521,7 @@ export default function ClientDocumentModal({
                 </div>
               )}
 
-              {/* Financial Calculation Summary */}
+              {/* Financial Calculation Summary (Shows Final Estimate Amount) */}
               <div className="py-6 flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#E8E1D8]">
                 {/* Payment Instructions / Notes */}
                 <div className="max-w-sm text-xs text-[#756D64] space-y-2">
@@ -496,51 +547,61 @@ export default function ClientDocumentModal({
                   </p>
                 </div>
 
-                {/* Totals Breakdown */}
-                <div className="w-full sm:w-64 space-y-2 text-xs">
-                  <div className="flex justify-between text-[#756D64]">
-                    <span>Subtotal</span>
-                    <span className="font-medium text-[#29241F]">
-                      {formatINR(currentDoc.subtotal, currentDoc.currency)}
-                    </span>
-                  </div>
+                {/* Final Estimate Amount Totals */}
+                <div className="w-full sm:w-72 space-y-2 text-xs">
+                  {showItemizedPrices && (
+                    <>
+                      <div className="flex justify-between text-[#756D64]">
+                        <span>Subtotal</span>
+                        <span className="font-medium text-[#29241F]">
+                          {formatINR(currentDoc.subtotal, currentDoc.currency)}
+                        </span>
+                      </div>
 
-                  {currentDoc.discount > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-medium">
-                      <span>Discount</span>
-                      <span>-{formatINR(currentDoc.discount, currentDoc.currency)}</span>
-                    </div>
+                      {currentDoc.discount > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-medium">
+                          <span>Discount</span>
+                          <span>-{formatINR(currentDoc.discount, currentDoc.currency)}</span>
+                        </div>
+                      )}
+
+                      {currentDoc.gstAmount > 0 && (
+                        <div className="flex justify-between text-[#756D64]">
+                          <span>GST ({currentDoc.gstRate || 18}%)</span>
+                          <span className="font-medium text-[#29241F]">
+                            +{formatINR(currentDoc.gstAmount, currentDoc.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      {currentDoc.additionalCharges > 0 && (
+                        <div className="flex justify-between text-[#756D64]">
+                          <span>Additional Charges</span>
+                          <span className="font-medium text-[#29241F]">
+                            +{formatINR(currentDoc.additionalCharges, currentDoc.currency)}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {currentDoc.gstAmount > 0 && (
-                    <div className="flex justify-between text-[#756D64]">
-                      <span>GST ({currentDoc.gstRate || 18}%)</span>
-                      <span className="font-medium text-[#29241F]">
-                        +{formatINR(currentDoc.gstAmount, currentDoc.currency)}
+                  {/* Primary Final Estimate / Total Box */}
+                  <div className="rounded-2xl border-2 border-[#29241F] bg-[#FAF8F5] p-3.5">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#29241F]">
+                        {isInvoice ? "Grand Total Payable" : "Final Estimate Amount"}
+                      </span>
+                      <span className="text-xl font-black text-[#29241F]">
+                        {formatINR(currentDoc.total, currentDoc.currency)}
                       </span>
                     </div>
-                  )}
-
-                  {currentDoc.additionalCharges > 0 && (
-                    <div className="flex justify-between text-[#756D64]">
-                      <span>Additional Charges</span>
-                      <span className="font-medium text-[#29241F]">
-                        +{formatINR(currentDoc.additionalCharges, currentDoc.currency)}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="pt-2 border-t-2 border-[#29241F] flex justify-between items-baseline">
-                    <span className="text-sm font-black uppercase tracking-wider text-[#29241F]">
-                      Grand Total
-                    </span>
-                    <span className="text-lg font-black text-[#29241F]">
-                      {formatINR(currentDoc.total, currentDoc.currency)}
-                    </span>
+                    <p className="mt-1 text-[10px] text-gray-500">
+                      All-inclusive proposal for {currentDoc.event.guests} guests
+                    </p>
                   </div>
 
-                  <div className="pt-2 flex justify-between items-center text-[11px]">
-                    <span className="text-[#756D64]">Payment Status:</span>
+                  <div className="pt-1 flex justify-between items-center text-[11px]">
+                    <span className="text-[#756D64]">Proposal Status:</span>
                     <span className="font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider text-[10px]">
                       {currentDoc.status || (isInvoice ? "PAID" : "PROPOSED")}
                     </span>
