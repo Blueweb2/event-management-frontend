@@ -19,11 +19,24 @@ interface ClientDirectoryProps {
   onFiltersChange: (filters: GetClientsParams) => void;
   onEdit: (client: Client) => void;
   onViewPayments?: (client: Client) => void;
+  onRecordAdvance?: (client: Client) => void;
   onAdd: () => void;
   onRefresh: () => void;
 }
 
-export default function ClientDirectory({ clients, pagination, loading, error, filters, onFiltersChange, onEdit, onViewPayments, onAdd, onRefresh }: ClientDirectoryProps) {
+export default function ClientDirectory({
+  clients,
+  pagination,
+  loading,
+  error,
+  filters,
+  onFiltersChange,
+  onEdit,
+  onViewPayments,
+  onRecordAdvance,
+  onAdd,
+  onRefresh,
+}: ClientDirectoryProps) {
   const [search, setSearch] = useState(filters.search || "");
   const [status, setStatus] = useState<ClientStatus | "">(filters.status || "");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -119,24 +132,37 @@ export default function ClientDirectory({ clients, pagination, loading, error, f
                 )}
               </div>
 
-              <div className="mt-4 border-t border-gray-100 pt-3 flex items-center justify-between">
+              <div className="mt-4 border-t border-gray-100 pt-3 flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
                   disabled={updatingId === client._id}
                   onClick={() => void handleToggleStatus(client)}
-                  className="text-xs font-semibold text-gray-500 hover:text-[#6B5B95] disabled:opacity-50"
+                  className="text-xs font-semibold text-gray-400 hover:text-[#6B5B95] disabled:opacity-50"
                 >
                   {updatingId === client._id ? "Updating..." : client.status === "Active" ? "Deactivate" : "Reactivate"}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => onViewPayments && onViewPayments(client)}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#b8894b]/30 bg-[#faf6f0] px-3 py-1.5 text-xs font-bold text-[#9a6c37] transition hover:bg-[#b8894b] hover:text-white"
-                >
-                  <CreditCard size={14} />
-                  <span>Events & Payments</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onRecordAdvance ? onRecordAdvance(client) : onViewPayments && onViewPayments(client)}
+                    className="flex items-center gap-1 rounded-xl bg-emerald-700 px-2.5 py-1.5 text-xs font-bold text-white shadow-xs transition hover:bg-emerald-800 active:scale-95"
+                    title="Record advance payment directly"
+                  >
+                    <Plus size={13} />
+                    <span>Record Advance</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onViewPayments && onViewPayments(client)}
+                    className="flex items-center gap-1 rounded-xl border border-[#b8894b]/30 bg-[#faf6f0] px-2.5 py-1.5 text-xs font-bold text-[#9a6c37] transition hover:bg-[#b8894b] hover:text-white active:scale-95"
+                    title="View financial ledger and history"
+                  >
+                    <CreditCard size={13} />
+                    <span>Ledger</span>
+                  </button>
+                </div>
               </div>
             </article>
           ))}

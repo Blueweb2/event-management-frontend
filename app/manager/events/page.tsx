@@ -76,8 +76,27 @@ export default function ManagerEventsPage() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  const isCompletedEvent = (st?: string) => {
+    const s = (st || "").toLowerCase();
+    return s === "completed" || s === "settled" || s === "invoiced" || s === "cancelled";
+  };
+
+  const isTodayDate = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString();
+  };
+
+  const ongoingEvents = events.filter((event) => {
+    const s = (event.status || "").toLowerCase();
+    if (isCompletedEvent(event.status)) return false;
+    return (s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate);
+  }).length;
+
   const upcomingEvents = events.filter((event) => {
-    if (event.status !== "Upcoming") return false;
+    const s = (event.status || "").toLowerCase();
+    if (isCompletedEvent(event.status)) return false;
+    if ((s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate)) return false;
     if (!event.eventDate) return false;
     const d = new Date(event.eventDate);
     if (isNaN(d.getTime())) return false;
@@ -85,8 +104,11 @@ export default function ManagerEventsPage() {
     eventEnd.setHours(23, 59, 59, 999);
     return eventEnd.getTime() >= todayStart.getTime();
   }).length;
-  const ongoingEvents = events.filter((event) => event.status === "Ongoing").length;
-  const completedEvents = events.filter((event) => event.status === "Completed").length;
+
+  const completedEvents = events.filter((event) => {
+    const s = (event.status || "").toLowerCase();
+    return s === "completed" || s === "settled" || s === "invoiced";
+  }).length;
 
   const handleEditSuccess = (updatedEvent: Event) => {
     setEvents((prev) =>
@@ -101,8 +123,8 @@ export default function ManagerEventsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F8F7F3]">
-      <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-5 sm:px-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="w-full">
         {/* Header & View Switcher */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 pb-5">
           <EventsHeader />
@@ -209,6 +231,6 @@ export default function ManagerEventsPage() {
         onClose={() => setDeletingEvent(null)}
         onConfirm={handleDeleteConfirm}
       />
-    </main>
+    </div>
   );
 }

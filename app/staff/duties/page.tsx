@@ -26,9 +26,10 @@ import {
   Truck,
   ConciergeBell,
   Settings,
+  ChevronDown,
+  ChevronUp,
+  Activity,
 } from "lucide-react";
-
-
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAssignments } from "@/hooks/useAssignments";
@@ -105,6 +106,17 @@ export default function StaffDutiesPage() {
   const [updatingChecklistId, setUpdatingChecklistId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string>("");
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [expandedDutyIds, setExpandedDutyIds] = useState<Set<string>>(new Set());
+
+  const toggleDutyExpand = (id: string) => {
+    setExpandedDutyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     setLocalDuties(assignments);
@@ -321,6 +333,437 @@ export default function StaffDutiesPage() {
     return <ErrorMessage message={assignmentsError} />;
   }
 
+  const renderDutyCard = (assignment: Assignment, isLiveHighlight = false) => {
+    const event = typeof assignment.event === "object" ? assignment.event : null;
+    const dutyRecord = attendance.find(
+      (att) =>
+        (typeof att.duty === "object" ? att.duty._id : att.duty) ===
+        assignment._id
+    );
+
+    const isCheckedIn = Boolean(dutyRecord?.checkIn && !dutyRecord?.checkOut);
+    const isCompleted = Boolean(dutyRecord?.checkIn && dutyRecord?.checkOut);
+    const isPendingAcceptance = assignment.status === "ASSIGNED";
+    const isAccepted = assignment.status === "ACCEPTED";
+    const isRejected = assignment.status === "REJECTED";
+
+    const checklist = assignment.checklist || [];
+    const completedChecklistCount = checklist.filter((i) => i.completed).length;
+    const checklistProgress =
+      checklist.length > 0
+        ? Math.round((completedChecklistCount / checklist.length) * 100)
+        : 0;
+
+    const deptCategory = assignment.department || assignment.role || "Operations";
+    const DeptIcon = getDepartmentEmoji(deptCategory);
+
+    return (
+      <article
+        key={assignment._id}
+        className={`overflow-hidden rounded-3xl border bg-white shadow-sm transition hover:shadow-md ${
+          isLiveHighlight
+            ? "border-emerald-300 ring-2 ring-emerald-500/20"
+            : "border-[#e8e1d8]"
+        }`}
+      >
+        {/* Live Highlight Banner */}
+        {isLiveHighlight && (
+          <div className="flex items-center justify-between border-b border-emerald-200 bg-emerald-50/90 px-5 py-2.5 sm:px-6">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-900">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600"></span>
+              </span>
+              <span>Live Shift Active (Event In-Progress)</span>
+            </div>
+            <span className="text-[11px] font-bold text-emerald-700">Real-Time Sync</span>
+          </div>
+        )}
+
+        {/* Pending Acceptance Callout Banner */}
+        {isPendingAcceptance && (
+          <div className="flex flex-col gap-3 border-b border-amber-200 bg-amber-50/90 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950">
+              <BellRing size={17} className="text-amber-600 animate-bounce shrink-0" />
+              <div>
+                <span>New Shift Assigned:</span>
+                <span className="ml-1 font-normal text-amber-800">
+                  Please confirm your availability or decline early.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setDecliningDuty(assignment)}
+                className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-white px-3.5 text-xs font-bold text-red-600 shadow-2xs transition hover:bg-red-50 hover:border-red-300"
+              >
+                Decline Shift
+              </button>
+
+              <button
+                type="button"
+                disabled={acceptingId === assignment._id}
+                onClick={() => handleAcceptShift(assignment._id)}
+                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-extrabold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {acceptingId === assignment._id ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <UserCheck size={14} />
+                )}
+                Accept & Confirm
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Rejected Banner */}
+        {isRejected && (
+          <div className="border-b border-red-200 bg-red-50/80 px-5 py-3 sm:px-6">
+            <div className="flex items-start gap-2 text-xs font-semibold text-red-900">
+              <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">You declined this shift.</span>
+                {assignment.rejectionReason && (
+                  <p className="mt-0.5 text-red-700 font-normal">
+                    Reason: &ldquo;{assignment.rejectionReason}&rdquo;
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="p-5 sm:p-6">
+          {/* Card Header */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#faf6f0] px-2.5 py-0.5 text-[11px] font-extrabold text-[#9a6c37] border border-[#ede5d8]">
+                  <DeptIcon size={13} className="shrink-0 text-[#9a6c37]" />
+                  <span>{deptCategory}</span>
+                </span>
+
+                {isAccepted && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+                    ✓ Shift Confirmed
+                  </span>
+                )}
+
+                {isRejected && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
+                    ✕ Shift Declined
+                  </span>
+                )}
+
+                {isCheckedIn && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-2 py-0.5 text-[11px] font-bold text-white animate-pulse">
+                    ● Active Shift
+                  </span>
+                )}
+              </div>
+
+              <h2 className="mt-2 text-lg font-black text-[#29241f] sm:text-xl">
+                {assignment.dutyTitle}
+              </h2>
+              <p className="text-xs font-medium text-[#8d847b]">
+                {event ? event.eventName : "Event"} · {event?.eventType || "Event"}
+              </p>
+            </div>
+
+            <DutyStatusPill
+              status={
+                isCompleted
+                  ? "Completed"
+                  : isCheckedIn
+                  ? "In Progress"
+                  : isAccepted
+                  ? "Accepted"
+                  : isRejected
+                  ? "Declined"
+                  : isPendingAcceptance
+                  ? "Pending Acceptance"
+                  : assignment.status
+              }
+            />
+          </div>
+
+          {/* Shift Info Grid */}
+          <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            <Info
+              icon={<CalendarDays size={16} />}
+              label="Duty Date"
+              value={
+                assignment.dutyDate
+                  ? new Date(assignment.dutyDate).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "TBA"
+              }
+            />
+
+            <Info
+              icon={<Clock3 size={16} />}
+              label="Shift Hours"
+              value={`${formatTime24to12(assignment.startTime)} - ${formatTime24to12(assignment.endTime)} (${assignment.totalHours || 0} hrs)`}
+            />
+
+            <Info
+              icon={<MapPin size={16} />}
+              label="Location"
+              value={event?.location || "Venue TBA"}
+            />
+
+            <div className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] border border-[#eee7dc] p-3">
+              <span className="text-[#a7773f] shrink-0 font-bold text-sm">💰</span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9b938a]">
+                  Compensation
+                </p>
+                <p className="mt-0.5 truncate text-xs font-black text-emerald-800">
+                  {assignment.hourlyRate ? `₹${assignment.hourlyRate}/hr` : "Standard Rate"}
+                  {assignment.totalAmount ? ` · ₹${assignment.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : ""}
+                </p>
+                <div className="mt-0.5">
+                  {assignment.paymentStatus === "PAID" ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
+                      ✓ Paid
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-800">
+                      Pending Payout
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Duty Description / Special Instructions */}
+          {(assignment.description || assignment.notes) && (
+            <div className="mt-4 rounded-2xl bg-[#faf8f5] border border-[#f0ebe3] p-4 text-xs">
+              <p className="font-extrabold uppercase tracking-wider text-[#9b938a] text-[10px]">
+                Duty Instructions & Notes
+              </p>
+              <p className="mt-1 leading-5 text-[#403a34]">
+                {assignment.description || assignment.notes}
+              </p>
+            </div>
+          )}
+
+          {/* Checklist Section */}
+          {checklist.length > 0 && (
+            <div className="mt-5 rounded-2xl border border-[#eee7dc] bg-[#faf8f5] p-4 sm:p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#eee7dc] pb-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks size={18} className="text-[#9a6c37]" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
+                    Shift Sub-Task Checklist
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold text-[#9a6c37]">
+                    {completedChecklistCount} of {checklist.length} Completed ({checklistProgress}%)
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                <div
+                  className="h-full rounded-full bg-[#b8894b] transition-all duration-300"
+                  style={{ width: `${checklistProgress}%` }}
+                />
+              </div>
+
+              {/* Checklist Items */}
+              <div className="mt-3.5 space-y-2">
+                {checklist.map((item, idx) => {
+                  const isEventCompleted = Boolean(
+                    event?.status &&
+                      ["COMPLETED", "Completed", "Invoiced", "Settled"].includes(event.status)
+                  );
+                  return (
+                    <button
+                      type="button"
+                      key={item._id || idx}
+                      disabled={isEventCompleted}
+                      onClick={() => handleToggleSubTask(assignment._id, idx)}
+                      className={`flex w-full items-start gap-3 rounded-xl border p-2.5 text-left text-xs transition ${
+                        item.completed
+                          ? "border-emerald-200 bg-emerald-50/50 text-gray-500"
+                          : isEventCompleted
+                          ? "border-gray-200 bg-gray-50/70 text-gray-400 cursor-not-allowed"
+                          : "border-gray-200 bg-white text-[#29241f] hover:border-[#b8894b]"
+                      }`}
+                    >
+                      <span className="mt-0.5 shrink-0 text-emerald-600">
+                        {item.completed ? (
+                          <CheckSquare size={16} />
+                        ) : (
+                          <Square size={16} className={isEventCompleted ? "text-gray-300" : "text-gray-400"} />
+                        )}
+                      </span>
+
+                      <span
+                        className={`flex-1 font-medium ${
+                          item.completed ? "line-through text-gray-400" : ""
+                        }`}
+                      >
+                        {item.text}
+                      </span>
+
+                      {isEventCompleted && (
+                        <span className="text-[10px] font-bold text-gray-400">
+                          Locked
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Attendance Check-in / Pause / Resume / Check-out Controls */}
+          {(() => {
+            const shiftDateStr = assignment.dutyDate;
+            const isSameDate = Boolean(shiftDateStr && new Date().toISOString().slice(0, 10) === shiftDateStr.slice(0, 10));
+            const isEventStarted = event ? (event.status === "IN_PROGRESS" || event.status === "Ongoing") : false;
+
+            let canCheckIn = (isSameDate || isEventStarted) && !isCheckedIn && !isCompleted && !isRejected;
+            let windowNotice = "";
+
+            if (isEventStarted) {
+              windowNotice = "Event Live! Clock In Available";
+            } else if (!isSameDate && shiftDateStr) {
+              windowNotice = `Available on ${new Date(shiftDateStr).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`;
+            } else if (!isEventStarted) {
+              windowNotice = "Waiting for manager to start the event";
+            }
+
+            const isPaused = Boolean(dutyRecord?.isPaused);
+
+            return (
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
+                <div>
+                  {isCompleted ? (
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+                      <CheckCircle2 size={16} />
+                      <span>Shift Completed ({dutyRecord?.totalHours || assignment.totalHours || 0} active hrs)</span>
+                    </div>
+                  ) : isCheckedIn && dutyRecord?.checkIn ? (
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-gray-600 font-semibold">
+                        Checked in at {new Date(dutyRecord.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      {isPaused ? (
+                        <p className="text-[11px] font-bold text-amber-700">
+                          ⏸️ Shift Paused (Break in progress)
+                        </p>
+                      ) : dutyRecord?.totalPauseMinutes ? (
+                        <p className="text-[10px] text-gray-400">
+                          ({dutyRecord.totalPauseMinutes} mins break recorded)
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      {canCheckIn
+                        ? "Event Started – Clock-in is available."
+                        : !isEventStarted && isSameDate
+                        ? "⏳ Waiting for manager to start the event."
+                        : `🔒 ${windowNotice || "Check-in not available"}`}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {!isCheckedIn && !isCompleted && (
+                    <button
+                      type="button"
+                      disabled={processingId === assignment._id || !canCheckIn}
+                      onClick={() => handleCheckIn(assignment._id)}
+                      className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-5 text-xs font-extrabold text-white shadow-sm transition ${
+                        canCheckIn
+                          ? "bg-[#29241f] hover:bg-black"
+                          : "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed"
+                      }`}
+                      title={!canCheckIn ? windowNotice : ""}
+                    >
+                      {processingId === assignment._id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : canCheckIn ? (
+                        <Play size={14} />
+                      ) : (
+                        <Lock size={14} />
+                      )}
+                      <span>{canCheckIn ? "Clock In" : !isEventStarted && isSameDate ? "Waiting for Event to Start" : `Clock In (${windowNotice})`}</span>
+                    </button>
+                  )}
+
+                  {isCheckedIn && (
+                    <>
+                      {isPaused ? (
+                        <button
+                          type="button"
+                          disabled={processingId === assignment._id}
+                          onClick={() => handleResumeShift(assignment._id)}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
+                        >
+                          {processingId === assignment._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Play size={14} />
+                          )}
+                          Resume Shift
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={processingId === assignment._id}
+                          onClick={() => setPausingDutyId(assignment._id)}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-800 disabled:opacity-50"
+                        >
+                          {processingId === assignment._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Pause size={14} />
+                          )}
+                          Pause Shift
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={processingId === assignment._id}
+                        onClick={() => handleCheckOut(assignment._id)}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-800 disabled:opacity-50"
+                      >
+                        {processingId === assignment._id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <CheckCircle2 size={14} />
+                        )}
+                        Clock Out
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </article>
+    );
+  };
+
   return (
     <main className="space-y-6 py-5 sm:py-6">
       {/* Toast Notification */}
@@ -357,429 +800,178 @@ export default function StaffDutiesPage() {
         </div>
       )}
 
-      {localDuties.length === 0 ? (
-        <div className="mt-8">
-          <RichEmptyState
-            title="No Shifts Assigned Yet"
-            description="You currently have no upcoming duty assignments. Enjoy your time off or check back once the manager publishes new shift rosters!"
-          />
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {localDuties.map((assignment) => {
-            const event =
-              typeof assignment.event === "object" ? assignment.event : null;
-            const dutyRecord = attendance.find(
-              (att) =>
-                (typeof att.duty === "object" ? att.duty._id : att.duty) ===
-                assignment._id
-            );
+      {(() => {
+        const isCompletedStatus = (status?: string) => {
+          const s = (status || "").toLowerCase();
+          return s === "completed" || s === "settled" || s === "invoiced" || s === "cancelled";
+        };
 
-            const isCheckedIn = Boolean(dutyRecord?.checkIn && !dutyRecord?.checkOut);
-            const isCompleted = Boolean(dutyRecord?.checkIn && dutyRecord?.checkOut);
-            const isPendingAcceptance = assignment.status === "ASSIGNED";
-            const isAccepted = assignment.status === "ACCEPTED";
-            const isRejected = assignment.status === "REJECTED";
+        const isTodayDate = (dateStr?: string) => {
+          if (!dateStr) return false;
+          const d = new Date(dateStr);
+          return !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString();
+        };
 
-            const checklist = assignment.checklist || [];
-            const completedChecklistCount = checklist.filter((i) => i.completed).length;
-            const checklistProgress =
-              checklist.length > 0
-                ? Math.round((completedChecklistCount / checklist.length) * 100)
-                : 0;
+        const inProgressDuties = localDuties.filter((d) => {
+          if (isCompletedStatus(d.status)) return false;
+          const dutyRecord = attendance.find(
+            (att) => (typeof att.duty === "object" ? att.duty._id : att.duty) === d._id
+          );
+          const isCheckedIn = Boolean(dutyRecord?.checkIn && !dutyRecord?.checkOut);
+          const event = typeof d.event === "object" ? d.event : null;
+          if (event && isCompletedStatus(event.status)) return false;
+          const evStatus = (event?.status || "").toLowerCase();
+          const isLiveEvent = (evStatus === "in_progress" || evStatus === "ongoing") && isTodayDate(d.dutyDate || event?.eventDate);
+          return isCheckedIn || isLiveEvent;
+        });
 
-            const deptCategory = assignment.department || assignment.role || "Operations";
-            const DeptIcon = getDepartmentEmoji(deptCategory);
+        const completedDuties = localDuties.filter((d) => {
+          const dutyRecord = attendance.find(
+            (att) => (typeof att.duty === "object" ? att.duty._id : att.duty) === d._id
+          );
+          const isCompleted = Boolean(dutyRecord?.checkIn && dutyRecord?.checkOut);
+          const event = typeof d.event === "object" ? d.event : null;
+          return (isCompleted || isCompletedStatus(d.status) || isCompletedStatus(event?.status)) && !inProgressDuties.some((ip) => ip._id === d._id);
+        });
 
-            return (
-              <article
-                key={assignment._id}
-                className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm transition hover:shadow-md"
-              >
-                {/* Pending Acceptance Callout Banner */}
-                {isPendingAcceptance && (
-                  <div className="flex flex-col gap-3 border-b border-amber-200 bg-amber-50/90 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="flex items-center gap-2.5 text-xs font-bold text-amber-950">
-                      <BellRing size={17} className="text-amber-600 animate-bounce shrink-0" />
-                      <div>
-                        <span>New Shift Assigned:</span>
-                        <span className="ml-1 font-normal text-amber-800">
-                          Please confirm your availability or decline early.
-                        </span>
-                      </div>
-                    </div>
+        const upcomingDuties = localDuties.filter((d) => {
+          return !inProgressDuties.some((ip) => ip._id === d._id) && !completedDuties.some((cd) => cd._id === d._id);
+        });
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setDecliningDuty(assignment)}
-                        className="inline-flex min-h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-white px-3.5 text-xs font-bold text-red-600 shadow-2xs transition hover:bg-red-50 hover:border-red-300"
-                      >
-                        Decline Shift
-                      </button>
+        if (localDuties.length === 0) {
+          return (
+            <div className="mt-8">
+              <RichEmptyState
+                title="No Shifts Assigned Yet"
+                description="You currently have no upcoming duty assignments. Enjoy your time off or check back once the manager publishes new shift rosters!"
+              />
+            </div>
+          );
+        }
 
-                      <button
-                        type="button"
-                        disabled={acceptingId === assignment._id}
-                        onClick={() => handleAcceptShift(assignment._id)}
-                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 text-xs font-extrabold text-white shadow-xs transition hover:bg-emerald-700 disabled:opacity-50"
-                      >
-                        {acceptingId === assignment._id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <UserCheck size={14} />
-                        )}
-                        Accept & Confirm
-                      </button>
-                    </div>
+        return (
+          <div className="space-y-10">
+            {/* 1. IN-PROGRESS SHIFTS (MOST TOP) */}
+            {inProgressDuties.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                  </span>
+                  <h2 className="text-base font-extrabold tracking-tight text-[#29241f]">
+                    Live & In-Progress Shifts
+                  </h2>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                    {inProgressDuties.length} Active
+                  </span>
+                </div>
+                <div className="space-y-6">
+                  {inProgressDuties.map((duty) => renderDutyCard(duty, true))}
+                </div>
+              </section>
+            )}
+
+            {/* 2. UPCOMING & ASSIGNED SHIFTS (MIDDLE) */}
+            {upcomingDuties.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={18} className="text-[#9a6c37]" />
+                  <h2 className="text-base font-extrabold tracking-tight text-[#29241f]">
+                    Upcoming & Assigned Shifts
+                  </h2>
+                  <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-700 border border-stone-200">
+                    {upcomingDuties.length}
+                  </span>
+                </div>
+                <div className="space-y-6">
+                  {upcomingDuties.map((duty) => renderDutyCard(duty, false))}
+                </div>
+              </section>
+            )}
+
+            {/* 3. COMPLETED SHIFTS (BOTTOM AS SMALL CARDS WITH CLICK-TO-ELABORATE) */}
+            {completedDuties.length > 0 && (
+              <section className="space-y-4 pt-4 border-t border-[#ede5d8]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={18} className="text-stone-500" />
+                    <h2 className="text-base font-extrabold tracking-tight text-[#29241f]">
+                      Completed Shifts
+                    </h2>
+                    <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-stone-600 border border-stone-200">
+                      {completedDuties.length} Past
+                    </span>
                   </div>
-                )}
+                  <span className="text-xs text-stone-500 hidden sm:inline">
+                    Click small card to elaborate full details
+                  </span>
+                </div>
 
-                {/* Rejected Banner */}
-                {isRejected && (
-                  <div className="border-b border-red-200 bg-red-50/80 px-5 py-3 sm:px-6">
-                    <div className="flex items-start gap-2 text-xs font-semibold text-red-900">
-                      <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold">You declined this shift.</span>
-                        {assignment.rejectionReason && (
-                          <p className="mt-0.5 text-red-700 font-normal">
-                            Reason: &ldquo;{assignment.rejectionReason}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="p-5 sm:p-6">
-                  {/* Card Header */}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#faf6f0] px-2.5 py-0.5 text-[11px] font-extrabold text-[#9a6c37] border border-[#ede5d8]">
-                          <DeptIcon size={13} className="shrink-0 text-[#9a6c37]" />
-                          <span>{deptCategory}</span>
-                        </span>
-
-                        {isAccepted && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
-                            ✓ Shift Confirmed
-                          </span>
-                        )}
-
-                        {isRejected && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
-                            ✕ Shift Declined
-                          </span>
-                        )}
-
-                        {isCheckedIn && (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-500 px-2 py-0.5 text-[11px] font-bold text-white animate-pulse">
-                            ● Active Shift
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="mt-2 text-lg font-black text-[#29241f] sm:text-xl">
-                        {assignment.dutyTitle}
-                      </h2>
-                      <p className="text-xs font-medium text-[#8d847b]">
-                        {event ? event.eventName : "Event"} · {event?.eventType || "Event"}
-                      </p>
-                    </div>
-
-                    <DutyStatusPill
-                      status={
-                        isCompleted
-                          ? "Completed"
-                          : isCheckedIn
-                          ? "In Progress"
-                          : isAccepted
-                          ? "Accepted"
-                          : isRejected
-                          ? "Declined"
-                          : isPendingAcceptance
-                          ? "Pending Acceptance"
-                          : assignment.status
-                      }
-                    />
-                  </div>
-
-                  {/* Shift Info Grid */}
-                  <div className="mt-5 grid gap-3 sm:grid-cols-4">
-                    <Info
-                      icon={<CalendarDays size={16} />}
-                      label="Duty Date"
-                      value={
-                        assignment.dutyDate
-                          ? new Date(assignment.dutyDate).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })
-                          : "TBA"
-                      }
-                    />
-
-                    <Info
-                      icon={<Clock3 size={16} />}
-                      label="Shift Hours"
-                      value={`${formatTime24to12(assignment.startTime)} - ${formatTime24to12(assignment.endTime)} (${assignment.totalHours || 0} hrs)`}
-                    />
-
-                    <Info
-                      icon={<MapPin size={16} />}
-                      label="Location"
-                      value={event?.location || "Venue location TBA"}
-                    />
-
-                    <div className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] border border-[#eee7dc] p-3">
-                      <span className="text-[#a7773f] shrink-0 font-bold text-sm">💰</span>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9b938a]">
-                          Compensation
-                        </p>
-                        <p className="mt-0.5 truncate text-xs font-black text-emerald-800">
-                          {assignment.hourlyRate ? `₹${assignment.hourlyRate}/hr` : "Standard Rate"}
-                          {assignment.totalAmount ? ` · ₹${assignment.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : ""}
-                        </p>
-                        <div className="mt-0.5">
-                          {assignment.paymentStatus === "PAID" ? (
-                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.2 text-[9px] font-black text-emerald-800">
-                              ✓ Paid
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.2 text-[9px] font-bold text-amber-800">
-                              Pending Payout
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Duty Description / Special Instructions */}
-                  {(assignment.description || assignment.notes) && (
-                    <div className="mt-4 rounded-2xl bg-[#faf8f5] border border-[#f0ebe3] p-4 text-xs">
-                      <p className="font-extrabold uppercase tracking-wider text-[#9b938a] text-[10px]">
-                        Duty Instructions & Notes
-                      </p>
-                      <p className="mt-1 leading-5 text-[#403a34]">
-                        {assignment.description || assignment.notes}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* ========================================================
-                      Interactive Sub-Tasks Checklist Section
-                  ======================================================== */}
-                  {checklist.length > 0 && (
-                    <div className="mt-5 rounded-2xl border border-[#eee7dc] bg-[#faf8f5] p-4 sm:p-5">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[#eee7dc] pb-3">
-                        <div className="flex items-center gap-2">
-                          <ListChecks size={18} className="text-[#9a6c37]" />
-                          <h3 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
-                            Shift Sub-Task Checklist
-                          </h3>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-extrabold text-[#9a6c37]">
-                            {completedChecklistCount} of {checklist.length} Completed ({checklistProgress}%)
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-                        <div
-                          className="h-full rounded-full bg-[#b8894b] transition-all duration-300"
-                          style={{ width: `${checklistProgress}%` }}
-                        />
-                      </div>
-
-                      {/* Checklist Items */}
-                      <div className="mt-3.5 space-y-2">
-                        {checklist.map((item, idx) => {
-                          const isEventCompleted = Boolean(
-                            event?.status &&
-                              ["COMPLETED", "Completed", "Invoiced", "Settled"].includes(event.status)
-                          );
-                          return (
-                            <button
-                              type="button"
-                              key={item._id || idx}
-                              disabled={isEventCompleted}
-                              onClick={() => handleToggleSubTask(assignment._id, idx)}
-                              className={`flex w-full items-start gap-3 rounded-xl border p-2.5 text-left text-xs transition ${
-                                item.completed
-                                  ? "border-emerald-200 bg-emerald-50/50 text-gray-500"
-                                  : isEventCompleted
-                                  ? "border-gray-200 bg-gray-50/70 text-gray-400 cursor-not-allowed"
-                                  : "border-gray-200 bg-white text-[#29241f] hover:border-[#b8894b]"
-                              }`}
-                            >
-                              <span className="mt-0.5 shrink-0 text-emerald-600">
-                                {item.completed ? (
-                                  <CheckSquare size={16} />
-                                ) : (
-                                  <Square size={16} className={isEventCompleted ? "text-gray-300" : "text-gray-400"} />
-                                )}
-                              </span>
-
-                              <span
-                                className={`flex-1 font-medium ${
-                                  item.completed ? "line-through text-gray-400" : ""
-                                }`}
-                              >
-                                {item.text}
-                              </span>
-
-                              {isEventCompleted && (
-                                <span className="text-[10px] font-bold text-gray-400">
-                                  Locked
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Attendance Check-in / Pause / Resume / Check-out Controls */}
-                  {(() => {
-                    const isSameDate = new Date().toISOString().slice(0, 10) === assignment.dutyDate?.slice(0, 10);
-                    const isEventStarted = event ? (event.status === "IN_PROGRESS" || event.status === "Ongoing") : false;
-
-                    let canCheckIn = isSameDate && isEventStarted;
-                    let windowNotice = "";
-
-                    if (!isSameDate && assignment.dutyDate) {
-                      windowNotice = `Available on ${new Date(assignment.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}`;
-                    } else if (!isEventStarted) {
-                      windowNotice = "Waiting for manager to start the event";
-                    }
-
-                    const isPaused = Boolean(dutyRecord?.isPaused);
+                <div className="space-y-3">
+                  {completedDuties.map((duty) => {
+                    const isExpanded = expandedDutyIds.has(duty._id);
+                    const event = typeof duty.event === "object" ? duty.event : null;
+                    const dutyRecord = attendance.find(
+                      (att) => (typeof att.duty === "object" ? att.duty._id : att.duty) === duty._id
+                    );
+                    const checklist = duty.checklist || [];
+                    const completedTasks = checklist.filter((i) => i.completed).length;
 
                     return (
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-4">
-                        <div>
-                          {isCompleted ? (
-                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
-                              <CheckCircle2 size={16} />
-                              <span>Shift Completed ({dutyRecord?.totalHours || assignment.totalHours || 0} active hrs)</span>
+                      <div key={duty._id} className="transition">
+                        {/* Compact Small Card */}
+                        <div
+                          onClick={() => toggleDutyExpand(duty._id)}
+                          role="button"
+                          tabIndex={0}
+                          className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl border border-stone-200 bg-[#faf8f5]/80 hover:bg-white hover:border-[#9a6c37]/50 hover:shadow-xs transition cursor-pointer"
+                        >
+                          <div className="flex items-start sm:items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                              <CheckCircle2 size={18} />
                             </div>
-                          ) : isCheckedIn && dutyRecord?.checkIn ? (
-                            <div className="space-y-0.5">
-                              <p className="text-xs text-gray-600 font-semibold">
-                                Checked in at {new Date(dutyRecord.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-black text-[#29241f] group-hover:text-[#9a6c37] transition">
+                                  {duty.dutyTitle}
+                                </h3>
+                                <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-600">
+                                  Completed
+                                </span>
+                              </div>
+                              <p className="text-xs text-stone-500">
+                                {event?.eventName || "Event"} · {duty.dutyDate ? new Date(duty.dutyDate).toLocaleDateString() : "Past"} · {formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}
                               </p>
-                              {isPaused ? (
-                                <p className="text-[11px] font-bold text-amber-700">
-                                  ⏸️ Shift Paused (Break in progress)
-                                </p>
-                              ) : dutyRecord?.totalPauseMinutes ? (
-                                <p className="text-[10px] text-gray-400">
-                                  ({dutyRecord.totalPauseMinutes} mins break recorded)
-                                </p>
-                              ) : null}
                             </div>
-                          ) : (
-                            <p className="text-xs text-gray-500">
-                              {canCheckIn
-                                ? "Event Started – Clock-in is available."
-                                : !isEventStarted && isSameDate
-                                ? "⏳ Waiting for manager to start the event."
-                                : `🔒 ${windowNotice || "Check-in not available"}`}
-                            </p>
-                          )}
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-200/60">
+                            <span className="text-xs font-semibold text-stone-500">
+                              {completedTasks}/{checklist.length} Tasks
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs font-extrabold text-[#9a6c37] group-hover:underline">
+                              <span>{isExpanded ? "Collapse" : "Elaborate"}</span>
+                              {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {!isCheckedIn && !isCompleted && (
-                            <button
-                              type="button"
-                              disabled={processingId === assignment._id || !canCheckIn}
-                              onClick={() => handleCheckIn(assignment._id)}
-                              className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-5 text-xs font-extrabold text-white shadow-sm transition ${
-                                canCheckIn
-                                  ? "bg-[#29241f] hover:bg-black"
-                                  : "bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed"
-                              }`}
-                              title={!canCheckIn ? windowNotice : ""}
-                            >
-                              {processingId === assignment._id ? (
-                                <Loader2 size={14} className="animate-spin" />
-                              ) : canCheckIn ? (
-                                <Play size={14} />
-                              ) : (
-                                <Lock size={14} />
-                              )}
-                              <span>{canCheckIn ? "Clock In" : !isEventStarted && isSameDate ? "Waiting for Event to Start" : `Clock In (${windowNotice})`}</span>
-                            </button>
-                          )}
-
-                          {isCheckedIn && (
-                            <>
-                              {isPaused ? (
-                                <button
-                                  type="button"
-                                  disabled={processingId === assignment._id}
-                                  onClick={() => handleResumeShift(assignment._id)}
-                                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-600 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-50"
-                                >
-                                  {processingId === assignment._id ? (
-                                    <Loader2 size={14} className="animate-spin" />
-                                  ) : (
-                                    <Play size={14} />
-                                  )}
-                                  Resume Shift
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled={processingId === assignment._id}
-                                  onClick={() => setPausingDutyId(assignment._id)}
-                                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-amber-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-amber-800 disabled:opacity-50"
-                                >
-                                  {processingId === assignment._id ? (
-                                    <Loader2 size={14} className="animate-spin" />
-                                  ) : (
-                                    <Pause size={14} />
-                                  )}
-                                  Pause Shift
-                                </button>
-                              )}
-
-                              <button
-                                type="button"
-                                disabled={processingId === assignment._id}
-                                onClick={() => handleCheckOut(assignment._id)}
-                                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-800 disabled:opacity-50"
-                              >
-                                {processingId === assignment._id ? (
-                                  <Loader2 size={14} className="animate-spin" />
-                                ) : (
-                                  <CheckCircle2 size={14} />
-                                )}
-                                Clock Out
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        {/* Elaborated Full Card on Expand */}
+                        {isExpanded && (
+                          <div className="mt-3 pl-2 sm:pl-4 border-l-2 border-[#9a6c37]/40 animate-in fade-in slide-in-from-top-2 duration-200">
+                            {renderDutyCard(duty, false)}
+                          </div>
+                        )}
                       </div>
                     );
-                  })()}
+                  })}
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      )}
+              </section>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Decline Shift Reason Modal */}
       <DeclineShiftModal
@@ -857,8 +1049,6 @@ function Info({
     </div>
   );
 }
-
-
 
 function getDepartmentEmoji(role = "") {
   const r = role.toLowerCase();

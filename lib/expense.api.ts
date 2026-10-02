@@ -92,6 +92,26 @@ export interface EventProfitabilityData {
     count: number;
     list: Expense[];
   };
+  staffPayroll?: {
+    total: number;
+    paid: number;
+    pending: number;
+    count: number;
+    duties: Array<{
+      id: string;
+      staffName: string;
+      role: string;
+      department?: string;
+      dutyDate?: string;
+      startTime?: string;
+      endTime?: string;
+      hours: number;
+      hourlyRate: number;
+      amount: number;
+      paymentStatus: string;
+      status?: string;
+    }>;
+  };
   profitability: {
     netProfit: number;
     profitMargin: number;

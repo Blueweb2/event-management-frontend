@@ -81,6 +81,19 @@ export type EventStatus =
   | "Invoiced"
   | "Settled";
 
+export interface EventPaymentLog {
+  _id?: string;
+  amount: number;
+  paymentDate?: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  paymentType?: "ADVANCE" | "INSTALLMENT" | "FINAL_BALANCE" | string;
+  notes?: string;
+  recordedBy?: string | { _id: string; name: string; email?: string } | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Event {
   _id: string;
 
@@ -103,6 +116,11 @@ export interface Event {
   status: EventStatus;
 
   notes?: string;
+
+  advancePayment?: number;
+  paidAmount?: number;
+  paymentStatus?: "UNPAID" | "PARTIAL" | "PAID" | "REFUNDED" | string;
+  paymentHistory?: EventPaymentLog[];
 
   startedAt?: string | null;
   startedBy?:

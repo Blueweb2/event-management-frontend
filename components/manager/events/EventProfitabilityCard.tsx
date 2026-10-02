@@ -17,6 +17,8 @@ import {
   Tag,
   Trash2,
   TrendingUp,
+  Users,
+  UserCheck,
   Utensils,
   Wallet,
   X,
@@ -442,17 +444,90 @@ export default function EventProfitabilityCard({
           </div>
         )}
 
+        {/* Automatic Staff Duty Payroll Deductions */}
+        {data?.staffPayroll && data.staffPayroll.count > 0 && (
+          <div className="border-t border-[#f1ece5] p-5 sm:p-6 bg-[#faf8f5]/60">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <Users size={14} />
+                </span>
+                <h4 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
+                  Auto-Deducted Staff Duty Payroll ({data.staffPayroll.count} Crew Shifts)
+                </h4>
+                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-800">
+                  ⚡ Auto-Synced from Duties
+                </span>
+              </div>
+
+              <div className="text-[11px] font-extrabold text-[#29241f]">
+                Total Staff Cost: <span className="text-red-600 font-black">₹{data.staffPayroll.total.toLocaleString()}</span>
+                <span className="ml-2 text-gray-500 font-semibold">
+                  (₹{data.staffPayroll.paid.toLocaleString()} Paid · ₹{data.staffPayroll.pending.toLocaleString()} Pending)
+                </span>
+              </div>
+            </div>
+
+            <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-[#eee7dc] bg-white">
+              {data.staffPayroll.duties.map((duty) => (
+                <div
+                  key={duty.id}
+                  className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between transition hover:bg-[#faf8f5]"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-[#29241f] truncate">
+                        {duty.staffName}
+                      </span>
+                      <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
+                        {duty.role}
+                      </span>
+                      {duty.department && (
+                        <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                          {duty.department}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-0.5 text-[11px] text-gray-400">
+                      {duty.startTime && duty.endTime ? `${duty.startTime} - ${duty.endTime} · ` : ""}
+                      {duty.hours > 0 ? `${duty.hours} hrs` : ""}
+                      {duty.hourlyRate > 0 ? ` @ ₹${duty.hourlyRate}/hr` : ""}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-black text-red-600">
+                      -₹{duty.amount.toLocaleString()}
+                    </span>
+
+                    <span
+                      className={`rounded-lg px-2 py-0.5 text-[10px] font-extrabold ${
+                        duty.paymentStatus === "PAID"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
+                      }`}
+                    >
+                      {duty.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Logged Expenses Table */}
         <div className="border-t border-[#f1ece5] p-5 sm:p-6">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
-              Logged Event Expenses ({expenses.list.length})
+              Logged Vendor & Operational Expenses ({expenses.list.length})
             </h4>
           </div>
 
           {expenses.list.length === 0 ? (
             <p className="rounded-2xl bg-[#faf8f5] p-4 text-center text-xs text-gray-500">
-              No expenses recorded for this event yet. Tap <strong>Log Expense</strong> to track vendor receipts, staff payouts, or supply bills.
+              No manual vendor expenses recorded for this event yet. Tap <strong>Log Expense</strong> to track supplier invoices, decoration bills, or venue rentals.
             </p>
           ) : (
             <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-[#eee7dc]">

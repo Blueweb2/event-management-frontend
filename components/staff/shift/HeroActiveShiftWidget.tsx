@@ -22,17 +22,59 @@ export default function HeroActiveShiftWidget({
 }: HeroActiveShiftWidgetProps) {
   const { token } = useAuth();
 
-  // Find today's assignment
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayShift = assignments.find(
-    (item) => item.dutyDate.slice(0, 10) === todayStr && item.status !== "CANCELLED"
-  ) || assignments[0];
+  // Smart resolution of the active/today's shift
+  const todayShift = (() => {
+    if (!assignments || assignments.length === 0) return null;
+
+    const now = new Date();
+    const todayLocalYMD = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayUTC = now.toISOString().slice(0, 10);
+
+    // 1. Shift with currently active (checked in, not checked out) attendance
+    const activeAtt = attendance.find((att) => att.checkIn && !att.checkOut);
+    if (activeAtt) {
+      const activeDutyId = typeof activeAtt.duty === "string" ? activeAtt.duty : activeAtt.duty?._id;
+      const found = assignments.find((a) => a._id === activeDutyId);
+      if (found) return found;
+    }
+
+    // 2. Shift for an event that is in-progress today
+    const inProgressShift = assignments.find((a) => {
+      if (a.status === "CANCELLED" || a.status === "REJECTED" || a.status === "COMPLETED") return false;
+      const ev = typeof a.event === "object" && a.event !== null ? a.event : null;
+      if (!ev) return false;
+      const isEvCompleted = ["completed", "settled", "invoiced", "cancelled"].includes((ev.status || "").toLowerCase());
+      if (isEvCompleted) return false;
+      const isEvToday = ev.eventDate ? new Date(ev.eventDate).toDateString() === now.toDateString() : false;
+      return isEvToday && (ev.status === "IN_PROGRESS" || ev.status === "Ongoing");
+    });
+    if (inProgressShift) return inProgressShift;
+
+    // 3. Shift scheduled for today (local date or UTC date)
+    const todayMatch = assignments.find((a) => {
+      if (a.status === "CANCELLED" || a.status === "REJECTED") return false;
+      const d = a.dutyDate ? a.dutyDate.slice(0, 10) : "";
+      if (d === todayLocalYMD || d === todayUTC) return true;
+      const parsed = new Date(a.dutyDate);
+      return (
+        !isNaN(parsed.getTime()) &&
+        now.getFullYear() === parsed.getFullYear() &&
+        now.getMonth() === parsed.getMonth() &&
+        now.getDate() === parsed.getDate()
+      );
+    });
+    if (todayMatch) return todayMatch;
+
+    // 4. Nearest active assignment
+    const upcoming = assignments.find((a) => a.status !== "CANCELLED" && a.status !== "REJECTED");
+    return upcoming || assignments[0] || null;
+  })();
 
   // Find active attendance record for today's shift
   const todayAttendance = attendance.find((att) => {
     const dutyId = typeof att.duty === "string" ? att.duty : att.duty?._id;
     return dutyId === todayShift?._id;
-  }) || attendance[0];
+  }) || (todayShift ? null : attendance[0]);
 
   const checkInTime = todayAttendance?.checkIn ? new Date(todayAttendance.checkIn) : null;
   const checkOutTime = todayAttendance?.checkOut ? new Date(todayAttendance.checkOut) : null;
@@ -43,16 +85,26 @@ export default function HeroActiveShiftWidget({
   const isCheckedIn = Boolean(checkInTime && !checkOutTime);
   const isCompleted = Boolean(checkInTime && checkOutTime);
 
-  // Live clock for 15-minute start window validation
+  // Live clock
   const [nowDate, setNowDate] = useState(new Date());
 
   useEffect(() => {
-    const clockTimer = setInterval(() => setNowDate(new Date()), 5000);
+    const clockTimer = setInterval(() => setNowDate(new Date()), 3000);
     return () => clearInterval(clockTimer);
   }, []);
 
   const getCheckInWindowInfo = () => {
     if (!todayShift || !todayShift.dutyDate) {
+      return { canCheckIn: true, windowStartStr: "", reason: "", isWaitingForStart: false };
+    }
+
+    const eventObj = typeof todayShift.event === "object" && todayShift.event !== null ? todayShift.event : null;
+    const isEventStarted = eventObj
+      ? Boolean((eventObj as any).startedAt) || (eventObj.status && ["IN_PROGRESS", "Ongoing"].includes(eventObj.status))
+      : true;
+
+    // If event is started by the manager, staff can check in on time right away!
+    if (isEventStarted) {
       return { canCheckIn: true, windowStartStr: "", reason: "", isWaitingForStart: false };
     }
 
@@ -76,22 +128,12 @@ export default function HeroActiveShiftWidget({
       };
     }
 
-    // Verify manager has started the event
-    const eventObj = typeof todayShift.event === "object" && todayShift.event !== null ? todayShift.event : null;
-    const isEventStarted = eventObj
-      ? Boolean((eventObj as any).startedAt) || (eventObj.status && ["IN_PROGRESS", "Ongoing"].includes(eventObj.status))
-      : true;
-
-    if (!isEventStarted) {
-      return {
-        canCheckIn: false,
-        windowStartStr: "",
-        reason: "Waiting for manager to start the event",
-        isWaitingForStart: true,
-      };
-    }
-
-    return { canCheckIn: true, windowStartStr: "", reason: "", isWaitingForStart: false };
+    return {
+      canCheckIn: false,
+      windowStartStr: "",
+      reason: "Waiting for manager to start the event",
+      isWaitingForStart: true,
+    };
   };
 
   const checkInWindowInfo = getCheckInWindowInfo();

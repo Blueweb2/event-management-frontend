@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   X,
   CreditCard,
@@ -18,6 +18,8 @@ import {
   Percent,
   Phone,
   Mail,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import {
   getClientDetails,
@@ -32,6 +34,8 @@ import { useAuth } from "@/hooks/useAuth";
 interface ClientEventsPaymentsModalProps {
   isOpen: boolean;
   client: Client | null;
+  initialOpenPaymentForm?: boolean;
+  initialBookingId?: string;
   onClose: () => void;
   onPaymentRecorded?: () => void;
 }
@@ -47,10 +51,16 @@ export function formatINR(amount: number): string {
 export default function ClientEventsPaymentsModal({
   isOpen,
   client,
+  initialOpenPaymentForm = false,
+  initialBookingId,
   onClose,
   onPaymentRecorded,
 }: ClientEventsPaymentsModalProps) {
   const { token } = useAuth();
+
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+  const paymentFormRef = useRef<HTMLDivElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,9 +91,13 @@ export default function ClientEventsPaymentsModal({
       setEvents(res.data.events || []);
       setFinancialSummary(res.data.financialSummary || null);
 
-      if (res.data.events.length > 0 && !selectedBookingId) {
-        const firstBookingId = res.data.events[0].booking?._id || res.data.events[0]._id;
-        setSelectedBookingId(firstBookingId);
+      if (res.data.events.length > 0) {
+        if (initialBookingId) {
+          setSelectedBookingId(initialBookingId);
+        } else if (!selectedBookingId) {
+          const firstBookingId = res.data.events[0].booking?._id || res.data.events[0]._id;
+          setSelectedBookingId(firstBookingId);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load client payment details.");
@@ -94,12 +108,25 @@ export default function ClientEventsPaymentsModal({
 
   useEffect(() => {
     if (isOpen && client) {
+      if (initialBookingId) {
+        setSelectedBookingId(initialBookingId);
+      }
+      if (initialOpenPaymentForm) {
+        setShowPaymentForm(true);
+        setPaymentType("ADVANCE");
+        setTimeout(() => {
+          if (modalBodyRef.current) {
+            modalBodyRef.current.scrollTo({ top: 0, behavior: "smooth" });
+          }
+          amountInputRef.current?.focus();
+        }, 200);
+      }
       void loadDetails();
     } else {
       setShowPaymentForm(false);
       setFormError("");
     }
-  }, [isOpen, client]);
+  }, [isOpen, client, initialOpenPaymentForm, initialBookingId]);
 
   if (!isOpen || !client) return null;
 
@@ -183,6 +210,43 @@ export default function ClientEventsPaymentsModal({
     setPaymentType(defaultType);
     setShowPaymentForm(true);
     setFormError("");
+
+    const evt = events.find((ev) => (ev.booking?._id || ev._id) === bookingId);
+    if (evt) {
+      const tot = Number(evt.booking?.total || (evt as any).total || 0);
+      const pd = Number(evt.paidAmount || evt.booking?.paidAmount || 0);
+      const bal = Math.max(0, tot - pd);
+      if (defaultType === "ADVANCE" && pd === 0 && tot > 0) {
+        setPaymentAmount(Math.round(tot * 0.25).toString());
+      } else if (defaultType === "FINAL_BALANCE" && bal > 0) {
+        setPaymentAmount(bal.toString());
+      }
+    }
+
+    setTimeout(() => {
+      if (modalBodyRef.current) {
+        modalBodyRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      paymentFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      amountInputRef.current?.focus();
+    }, 120);
+  };
+
+  const handleTogglePaymentForm = () => {
+    setShowPaymentForm((prev) => {
+      const next = !prev;
+      if (next) {
+        setPaymentType("ADVANCE");
+        setTimeout(() => {
+          if (modalBodyRef.current) {
+            modalBodyRef.current.scrollTo({ top: 0, behavior: "smooth" });
+          }
+          paymentFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          amountInputRef.current?.focus();
+        }, 120);
+      }
+      return next;
+    });
   };
 
   const applyPresetPercentage = (pct: number) => {
@@ -251,8 +315,8 @@ export default function ClientEventsPaymentsModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowPaymentForm((prev) => !prev)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#b8894b] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#a3773e]"
+              onClick={handleTogglePaymentForm}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#b8894b] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#a3773e] active:scale-95"
             >
               <Plus size={15} />
               <span>Record Payment / Advance (₹)</span>
@@ -371,22 +435,32 @@ export default function ClientEventsPaymentsModal({
         )}
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div ref={modalBodyRef} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Form to Record Advance Payment or Installment */}
           {showPaymentForm && (
-            <div className="rounded-3xl border border-[#b8894b]/40 bg-[#faf6f0] p-5 shadow-md animate-in slide-in-from-top-3">
+            <div
+              ref={paymentFormRef}
+              className="rounded-3xl border-2 border-[#b8894b] bg-gradient-to-br from-[#faf6f0] to-[#f5ede0] p-5 sm:p-6 shadow-xl animate-in slide-in-from-top-3 ring-4 ring-[#b8894b]/10"
+            >
               <div className="flex items-center justify-between border-b border-[#eee7dc] pb-3">
-                <div className="flex items-center gap-2">
-                  <CreditCard size={18} className="text-[#9a6c37]" />
-                  <h3 className="text-sm font-black text-[#29241f]">
-                    Record Advance Payment or Installment (₹ INR)
-                  </h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#b8894b] text-white shadow-xs">
+                    <CreditCard size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#29241f]">
+                      Record Advance Payment / Deposit (₹ INR)
+                    </h3>
+                    <p className="text-[11px] font-medium text-gray-500">
+                      Instantly updates event balance and client ledger
+                    </p>
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setShowPaymentForm(false)}
-                  className="text-xs font-bold text-gray-500 hover:text-gray-900"
+                  className="rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-gray-500 border border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition"
                 >
                   Close Form ✕
                 </button>
@@ -449,28 +523,35 @@ export default function ClientEventsPaymentsModal({
 
                   {/* Payment Amount */}
                   <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <label className="block text-xs font-bold text-gray-700">
                         Payment Amount (₹ INR) *
                       </label>
 
                       {/* Quick Presets */}
                       {selectedEventTotal > 0 && (
-                        <div className="flex items-center gap-1 text-[11px]">
-                          <span className="text-gray-400 font-medium">Quick Presets:</span>
+                        <div className="flex flex-wrap items-center gap-1 text-[11px]">
+                          <span className="text-gray-400 font-medium">Presets:</span>
                           <button
                             type="button"
                             onClick={() => applyPresetPercentage(20)}
                             className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 font-bold text-amber-900 hover:bg-amber-100 transition"
                           >
-                            20% Adv ({formatINR(selectedEventTotal * 0.2)})
+                            20% ({formatINR(selectedEventTotal * 0.2)})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyPresetPercentage(25)}
+                            className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 font-bold text-amber-900 hover:bg-amber-100 transition"
+                          >
+                            25% ({formatINR(selectedEventTotal * 0.25)})
                           </button>
                           <button
                             type="button"
                             onClick={() => applyPresetPercentage(50)}
                             className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 font-bold text-amber-900 hover:bg-amber-100 transition"
                           >
-                            50% Adv ({formatINR(selectedEventTotal * 0.5)})
+                            50% ({formatINR(selectedEventTotal * 0.5)})
                           </button>
                           {selectedEventBalance > 0 && (
                             <button
@@ -490,6 +571,7 @@ export default function ClientEventsPaymentsModal({
                         ₹
                       </span>
                       <input
+                        ref={amountInputRef}
                         type="number"
                         required
                         min="1"

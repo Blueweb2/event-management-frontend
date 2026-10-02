@@ -87,6 +87,10 @@ export interface ClientDocumentData {
   gstAmount: number;
   total: number;
   currency: string;
+  advancePayment?: number;
+  paidAmount?: number;
+  balanceDue?: number;
+  paymentStatus?: string;
   notes?: string;
 }
 

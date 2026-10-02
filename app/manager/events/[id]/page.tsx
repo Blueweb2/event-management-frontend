@@ -409,25 +409,30 @@ export default function ManagerEventDetailsPage() {
   // Render
   // ==========================================
 
+  const bookingObj = typeof event.booking === "object" && event.booking !== null ? event.booking : null;
+  const eventTotal = bookingObj?.total || 0;
+  const eventPaid = (event.paidAmount ?? event.advancePayment) || 0;
+  const eventBalance = Math.max(0, eventTotal - eventPaid);
+
   const eventDocumentData: ClientDocumentData | null = event
     ? {
         documentType: "INVOICE",
         documentNumber: `INV-${event._id.slice(-6).toUpperCase()}`,
         date: new Date().toISOString().slice(0, 10),
-        status: event.status === "Completed" ? "PAID" : "CONFIRMED",
+        status: event.status === "Completed" || event.status === "Settled" || event.paymentStatus === "PAID" ? "PAID" : "CONFIRMED",
         company: defaultCompanyDetails,
         client: {
           name:
-            typeof event.client === "object"
+            typeof event.client === "object" && event.client?.name
               ? event.client.name
               : "Valued Client",
           phone:
-            typeof event.client === "object" ? event.client.phone : "",
+            typeof event.client === "object" ? event.client?.phone || "" : "",
           email:
-            typeof event.client === "object" ? event.client.email : "",
+            typeof event.client === "object" ? event.client?.email || "" : "",
           address:
             typeof event.client === "object"
-              ? event.client.address
+              ? event.client?.address
               : undefined,
         },
         event: {
@@ -440,10 +445,10 @@ export default function ManagerEventDetailsPage() {
           description: event.description || event.notes,
         },
         services:
-          typeof event.booking === "object" &&
-          Array.isArray(event.booking.services) &&
-          event.booking.services.length > 0
-            ? event.booking.services.map((s, idx) => ({
+          bookingObj &&
+          Array.isArray(bookingObj.services) &&
+          bookingObj.services.length > 0
+            ? bookingObj.services.map((s, idx) => ({
                 id: s._id || String(idx),
                 name: s.serviceName,
                 category: s.category,
@@ -455,104 +460,85 @@ export default function ManagerEventDetailsPage() {
             : [
                 {
                   id: "1",
-                  name: "Full Event Management & Production",
+                  name: "Full Event Production & Management Package",
+                  category: "Production",
                   quantity: 1,
+                  unitLabel: "Package",
                   unitPrice:
-                    typeof event.booking === "object" &&
-                    event.booking.total
-                      ? event.booking.total
-                      : 0,
+                    bookingObj?.subtotal || bookingObj?.total || 0,
                   total:
-                    typeof event.booking === "object" &&
-                    event.booking.total
-                      ? event.booking.total
-                      : 0,
+                    bookingObj?.subtotal || bookingObj?.total || 0,
                 },
               ],
         catering:
-          typeof event.booking === "object" &&
-          event.booking.foodMenu &&
-          event.booking.foodMenu.included
+          bookingObj &&
+          bookingObj.foodMenu &&
+          bookingObj.foodMenu.included
             ? {
                 included: true,
-                servingType: event.booking.foodMenu.servingType,
-                ratePerGuest: event.booking.foodMenu.ratePerGuest,
-                totalFoodAmount: event.booking.foodMenu.totalFoodAmount,
+                servingType: bookingObj.foodMenu.servingType,
+                ratePerGuest: bookingObj.foodMenu.ratePerGuest,
+                totalFoodAmount: bookingObj.foodMenu.totalFoodAmount,
                 guestCount: event.guests,
-                notes: event.booking.foodMenu.notes,
-                items: event.booking.foodMenu.items,
+                notes: bookingObj.foodMenu.notes,
+                items: bookingObj.foodMenu.items,
               }
             : undefined,
         subtotal:
-          typeof event.booking === "object" && event.booking.subtotal
-            ? event.booking.subtotal
-            : typeof event.booking === "object" && event.booking.total
-            ? event.booking.total
-            : 0,
+          bookingObj?.subtotal ||
+          bookingObj?.total ||
+          0,
         discount:
-          typeof event.booking === "object" &&
-          event.booking.discountAmount
-            ? event.booking.discountAmount
-            : 0,
+          bookingObj?.discountAmount || 0,
         additionalCharges:
-          typeof event.booking === "object" &&
-          event.booking.additionalCharges
-            ? event.booking.additionalCharges
-            : 0,
+          bookingObj?.additionalCharges || 0,
         gstRate:
-          typeof event.booking === "object" && event.booking.gstRate
-            ? event.booking.gstRate
-            : 18,
+          bookingObj?.gstRate || 18,
         gstAmount:
-          typeof event.booking === "object" && event.booking.gstAmount
-            ? event.booking.gstAmount
-            : 0,
-        total:
-          typeof event.booking === "object" && event.booking.total
-            ? event.booking.total
-            : 0,
+          bookingObj?.gstAmount || 0,
+        total: eventTotal,
         currency:
-          typeof event.booking === "object" && event.booking.currency
-            ? event.booking.currency
-            : "INR",
+          bookingObj?.currency || "INR",
+        advancePayment: event.advancePayment || 0,
+        paidAmount: eventPaid,
+        balanceDue: eventBalance,
+        paymentStatus: event.paymentStatus || (eventBalance === 0 && eventTotal > 0 ? "PAID" : "PARTIAL"),
       }
     : null;
 
   return (
-    <main className="min-h-screen bg-[#F8F7F3]">
-      <div className="mx-auto w-full max-w-5xl px-4 pb-24 pt-5 sm:px-6">
-
+    <div className="w-full max-w-5xl mx-auto space-y-6">
+      <div className="w-full">
         {/* ======================================
             Header
         ====================================== */}
-
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => router.back()}
               aria-label="Back to Events"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-sm"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-xs border border-gray-200 hover:bg-gray-50 transition active:scale-95"
             >
               ←
             </button>
 
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#8C7A55]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#8C7A55]">
                 Event Management
               </p>
 
-              <h1 className="mt-1 truncate text-xl font-bold tracking-tight text-[#252525]">
+              <h1 className="mt-0.5 truncate text-lg sm:text-2xl font-black tracking-tight text-[#252525]">
                 {event.eventName}
               </h1>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setEditModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition active:scale-95"
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
             >
               <Edit size={14} className="text-[#9A7B4F]" />
               <span>Edit Event</span>
@@ -561,7 +547,7 @@ export default function ManagerEventDetailsPage() {
             <button
               type="button"
               onClick={() => setDeleteModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-600 shadow-sm hover:bg-red-100 transition active:scale-95"
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 shadow-xs hover:bg-red-100 transition active:scale-95"
             >
               <Trash2 size={14} />
               <span>Delete</span>
@@ -572,7 +558,7 @@ export default function ManagerEventDetailsPage() {
               <button
                 type="button"
                 onClick={() => setExportModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-black transition active:scale-95 shrink-0"
+                className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95"
               >
                 <Sparkles size={14} className="text-[#D4AF37]" />
                 <span>Export Invoice & Quotation</span>
@@ -884,19 +870,11 @@ export default function ManagerEventDetailsPage() {
         {/* ======================================
             Actions
         ====================================== */}
-
         <section className="mt-6 space-y-3">
           <button
             type="button"
-            className="min-h-12 w-full rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98]"
-          >
-            Assign Staff
-          </button>
-
-          <button
-            type="button"
             onClick={() => setEditModalOpen(true)}
-            className="min-h-12 w-full rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-[#252525] transition hover:bg-gray-50 active:scale-[0.98]"
+            className="min-h-12 w-full rounded-2xl border border-gray-300 bg-white px-5 text-sm font-bold text-[#252525] shadow-xs transition hover:bg-gray-50 active:scale-[0.98]"
           >
             Edit Event Details & Status
           </button>
@@ -932,7 +910,7 @@ export default function ManagerEventDetailsPage() {
           }}
         />
       </div>
-    </main>
+    </div>
   );
 }
 

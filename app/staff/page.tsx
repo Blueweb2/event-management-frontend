@@ -12,6 +12,7 @@ import ShiftNotificationsFeed from "@/components/staff/shift/ShiftNotificationsF
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignments } from "@/lib/assignment.api";
 import { getAttendance } from "@/lib/attendance.api";
+import { getSocket } from "@/lib/socket";
 import type { Assignment } from "@/types/assignment";
 import type { Attendance } from "@/types/attendance";
 
@@ -45,6 +46,7 @@ export default function StaffHomePage() {
     [token]
   );
 
+  // Initial fetch and auto-polling fallback
   useEffect(() => {
     void loadDashboard(false);
 
@@ -52,10 +54,63 @@ export default function StaffHomePage() {
       void loadDashboard(true);
     }, 4000);
 
-    return () => clearInterval(interval);
+    const handleFocus = () => {
+      void loadDashboard(true);
+    };
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [loadDashboard]);
 
-  const activeAssignment = assignments[0];
+  // Real-time Socket.IO integration for instant Event Started updates
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const joinRooms = () => {
+      const userId = user?.id || (user as any)?._id;
+      if (userId) {
+        socket.emit("join:staff", userId);
+      }
+      assignments.forEach((a) => {
+        const evtId = typeof a.event === "object" && a.event !== null ? a.event._id : a.event;
+        if (evtId) {
+          socket.emit("join:event", evtId);
+        }
+      });
+    };
+
+    if (socket.connected) {
+      joinRooms();
+    }
+
+    const onConnect = () => {
+      joinRooms();
+    };
+
+    const handleRealtimeUpdate = () => {
+      void loadDashboard(true);
+    };
+
+    socket.on("connect", onConnect);
+    socket.on("event:started", handleRealtimeUpdate);
+    socket.on("duty:updated", handleRealtimeUpdate);
+    socket.on("duty:refresh", handleRealtimeUpdate);
+    socket.on("attendance:updated", handleRealtimeUpdate);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("event:started", handleRealtimeUpdate);
+      socket.off("duty:updated", handleRealtimeUpdate);
+      socket.off("duty:refresh", handleRealtimeUpdate);
+      socket.off("attendance:updated", handleRealtimeUpdate);
+    };
+  }, [assignments, loadDashboard, user]);
 
   return (
     <main className="space-y-4 sm:space-y-6 lg:space-y-8 py-3.5 sm:py-6">

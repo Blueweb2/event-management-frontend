@@ -26,6 +26,7 @@ export default function ManagerClientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [viewPaymentsClient, setViewPaymentsClient] = useState<Client | null>(null);
+  const [openPaymentFormDirectly, setOpenPaymentFormDirectly] = useState(false);
 
   const fetchClients = useCallback(async (nextFilters: GetClientsParams = filters) => {
     try {
@@ -72,6 +73,12 @@ export default function ManagerClientsPage() {
 
   const openPayments = (client: Client) => {
     setViewPaymentsClient(client);
+    setOpenPaymentFormDirectly(false);
+  };
+
+  const openRecordAdvance = (client: Client) => {
+    setViewPaymentsClient(client);
+    setOpenPaymentFormDirectly(true);
   };
 
   const handleFiltersChange = (nextFilters: GetClientsParams) => {
@@ -93,11 +100,33 @@ export default function ManagerClientsPage() {
         <SummaryCard label="On this page" value={clients.length} tone="gold" />
       </div>
 
-      <ClientDirectory clients={clients} pagination={pagination} loading={loading} error={error} filters={filters} onFiltersChange={handleFiltersChange} onEdit={openEdit} onViewPayments={openPayments} onAdd={openCreate} onRefresh={() => void fetchClients(filters)} />
+      <ClientDirectory
+        clients={clients}
+        pagination={pagination}
+        loading={loading}
+        error={error}
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        onEdit={openEdit}
+        onViewPayments={openPayments}
+        onRecordAdvance={openRecordAdvance}
+        onAdd={openCreate}
+        onRefresh={() => void fetchClients(filters)}
+      />
 
       <ClientModal key={`${isModalOpen}-${editingClient?._id || "new"}`} isOpen={isModalOpen} editingClient={editingClient} onClose={() => setIsModalOpen(false)} onSave={handleSave} />
 
-      <ClientEventsPaymentsModal key={`payments-${viewPaymentsClient?._id || "none"}`} isOpen={Boolean(viewPaymentsClient)} client={viewPaymentsClient} onClose={() => setViewPaymentsClient(null)} onPaymentRecorded={() => void fetchClients(filters)} />
+      <ClientEventsPaymentsModal
+        key={`payments-${viewPaymentsClient?._id || "none"}-${openPaymentFormDirectly}`}
+        isOpen={Boolean(viewPaymentsClient)}
+        client={viewPaymentsClient}
+        initialOpenPaymentForm={openPaymentFormDirectly}
+        onClose={() => {
+          setViewPaymentsClient(null);
+          setOpenPaymentFormDirectly(false);
+        }}
+        onPaymentRecorded={() => void fetchClients(filters)}
+      />
     </main>
   );
 }

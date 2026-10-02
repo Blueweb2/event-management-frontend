@@ -44,7 +44,7 @@ export default function ClientDocumentModal({
     documentData.documentType || "ESTIMATE"
   );
   const [activeTab, setActiveTab] = useState<"preview" | "whatsapp">("preview");
-  const [showItemizedPrices, setShowItemizedPrices] = useState(false);
+  const [showItemizedPrices, setShowItemizedPrices] = useState(true);
   const [copied, setCopied] = useState(false);
   const [customNote, setCustomNote] = useState("");
 
@@ -102,11 +102,12 @@ export default function ClientDocumentModal({
       <style jsx global>{`
         @media print {
           @page {
-            margin: 10mm;
-            size: auto;
+            margin: 12mm;
+            size: portrait;
           }
           html, body {
             background: #ffffff !important;
+            color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
             height: auto !important;
@@ -116,14 +117,26 @@ export default function ClientDocumentModal({
           body * {
             visibility: hidden !important;
           }
+          .fixed,
+          .overflow-y-auto,
+          .overflow-hidden {
+            position: static !important;
+            overflow: visible !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+          }
           #printable-client-document,
           #printable-client-document * {
             visibility: visible !important;
           }
           #printable-client-document {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+            position: relative !important;
+            display: block !important;
+            left: auto !important;
+            top: auto !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -131,9 +144,8 @@ export default function ClientDocumentModal({
             box-shadow: none !important;
             border: none !important;
             background: #ffffff !important;
-            color: #29241f !important;
-            page-break-before: avoid !important;
-            break-before: avoid !important;
+            color: #1a1a1a !important;
+            page-break-inside: auto !important;
           }
           .no-print {
             display: none !important;
@@ -538,46 +550,42 @@ export default function ClientDocumentModal({
                   </p>
                 </div>
 
-                {/* Final Estimate Amount Totals */}
-                <div className="w-full sm:w-72 space-y-2 text-xs">
-                  {showItemizedPrices && (
-                    <>
-                      <div className="flex justify-between text-[#756D64]">
-                        <span>Subtotal</span>
-                        <span className="font-medium text-[#29241F]">
-                          {formatINR(currentDoc.subtotal, currentDoc.currency)}
-                        </span>
-                      </div>
+                {/* Final Estimate / Invoice Amount Totals */}
+                <div className="w-full sm:w-80 space-y-2 text-xs">
+                  <div className="flex justify-between text-[#756D64]">
+                    <span>Event Subtotal</span>
+                    <span className="font-medium text-[#29241F]">
+                      {formatINR(currentDoc.subtotal || currentDoc.total, currentDoc.currency)}
+                    </span>
+                  </div>
 
-                      {currentDoc.discount > 0 && (
-                        <div className="flex justify-between text-emerald-700 font-medium">
-                          <span>Discount</span>
-                          <span>-{formatINR(currentDoc.discount, currentDoc.currency)}</span>
-                        </div>
-                      )}
+                  {currentDoc.discount > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-medium">
+                      <span>Discount Applied</span>
+                      <span>-{formatINR(currentDoc.discount, currentDoc.currency)}</span>
+                    </div>
+                  )}
 
-                      {currentDoc.gstAmount > 0 && (
-                        <div className="flex justify-between text-[#756D64]">
-                          <span>GST ({currentDoc.gstRate || 18}%)</span>
-                          <span className="font-medium text-[#29241F]">
-                            +{formatINR(currentDoc.gstAmount, currentDoc.currency)}
-                          </span>
-                        </div>
-                      )}
+                  {currentDoc.gstAmount > 0 && (
+                    <div className="flex justify-between text-[#756D64]">
+                      <span>GST ({currentDoc.gstRate || 18}%)</span>
+                      <span className="font-medium text-[#29241F]">
+                        +{formatINR(currentDoc.gstAmount, currentDoc.currency)}
+                      </span>
+                    </div>
+                  )}
 
-                      {currentDoc.additionalCharges > 0 && (
-                        <div className="flex justify-between text-[#756D64]">
-                          <span>Additional Charges</span>
-                          <span className="font-medium text-[#29241F]">
-                            +{formatINR(currentDoc.additionalCharges, currentDoc.currency)}
-                          </span>
-                        </div>
-                      )}
-                    </>
+                  {currentDoc.additionalCharges > 0 && (
+                    <div className="flex justify-between text-[#756D64]">
+                      <span>Additional Charges</span>
+                      <span className="font-medium text-[#29241F]">
+                        +{formatINR(currentDoc.additionalCharges, currentDoc.currency)}
+                      </span>
+                    </div>
                   )}
 
                   {/* Primary Final Estimate / Total Box */}
-                  <div className="rounded-2xl border-2 border-[#29241F] bg-[#FAF8F5] p-3.5">
+                  <div className="rounded-2xl border-2 border-[#29241F] bg-[#FAF8F5] p-3.5 space-y-2">
                     <div className="flex justify-between items-baseline">
                       <span className="text-xs font-black uppercase tracking-wider text-[#29241F]">
                         {isInvoice ? "Grand Total Payable" : "Final Estimate Amount"}
@@ -586,14 +594,28 @@ export default function ClientDocumentModal({
                         {formatINR(currentDoc.total, currentDoc.currency)}
                       </span>
                     </div>
-                    <p className="mt-1 text-[10px] text-gray-500">
+                    <p className="text-[10px] text-gray-500">
                       All-inclusive proposal for {currentDoc.event.guests} guests
                     </p>
+
+                    {/* Payment & Balance Row */}
+                    {(currentDoc.paidAmount !== undefined && currentDoc.paidAmount > 0) && (
+                      <div className="pt-2 border-t border-[#E8E1D8] space-y-1 text-[11px]">
+                        <div className="flex justify-between text-emerald-800 font-semibold">
+                          <span>Advance Received:</span>
+                          <span>{formatINR(currentDoc.paidAmount, currentDoc.currency)}</span>
+                        </div>
+                        <div className="flex justify-between text-[#29241F] font-black">
+                          <span>Balance Due:</span>
+                          <span>{formatINR(currentDoc.balanceDue ?? Math.max(0, currentDoc.total - currentDoc.paidAmount), currentDoc.currency)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-1 flex justify-between items-center text-[11px]">
-                    <span className="text-[#756D64]">Proposal Status:</span>
-                    <span className="font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider text-[10px]">
+                    <span className="text-[#756D64]">Document Status:</span>
+                    <span className="font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider text-[10px]">
                       {currentDoc.status || (isInvoice ? "PAID" : "PROPOSED")}
                     </span>
                   </div>

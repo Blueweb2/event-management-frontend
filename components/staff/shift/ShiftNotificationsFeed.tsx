@@ -31,7 +31,21 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
     const dateFormatted = new Date(item.dutyDate).toLocaleDateString("en-IN", { month: "short", day: "numeric" });
     const items: NotificationItem[] = [];
 
-    // 1. Shift Check-in Reminder (targets Hero Active Shift Widget)
+    // 1. Live Event Started by Manager Notification
+    if (event && (Boolean((event as any).startedAt) || event.status === "IN_PROGRESS" || event.status === "Ongoing")) {
+      items.push({
+        id: `notif-started-${item._id}-${idx}`,
+        title: `🟢 Event Started: ${event.eventName || item.dutyTitle}`,
+        message: `The manager has officially started ${event.eventName || "the event"}. You can now clock in on time to log your active shift.`,
+        timestamp: "Live Now",
+        type: "REMINDER",
+        read: false,
+        targetId: "active-shift",
+        actionText: "Clock In Now →",
+      });
+    }
+
+    // 2. Shift Check-in Reminder (targets Hero Active Shift Widget)
     if (item.status === "ACCEPTED" || item.status === "IN_PROGRESS") {
       items.push({
         id: `notif-remind-${item._id}-${idx}`,
