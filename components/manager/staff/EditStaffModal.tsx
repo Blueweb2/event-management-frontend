@@ -12,7 +12,6 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import type {
   Staff,
@@ -142,16 +141,17 @@ export default function EditStaffModal({
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid image file.");
+      setError("Please upload a valid image file (PNG, JPG, WEBP).");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image file size must be less than 5MB.");
+      setError("Image file size must be less than 5MB.");
       return;
     }
 
     try {
+      setError(null);
       setIsUploadingAvatar(true);
       let newAvatarUrl = "";
       if (staff.id) {
@@ -162,10 +162,9 @@ export default function EditStaffModal({
 
       if (newAvatarUrl) {
         setFormData((prev) => ({ ...prev, avatar: newAvatarUrl }));
-        toast.success("Profile photo updated successfully!");
       }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to upload photo.");
+      setError(err?.message || "Failed to upload photo.");
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) {

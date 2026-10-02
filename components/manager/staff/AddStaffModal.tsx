@@ -21,7 +21,6 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import type {
   Staff,
@@ -149,24 +148,24 @@ export default function AddStaffModal({
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid image file.");
+      setError("Please upload a valid image file (PNG, JPG, WEBP).");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image file size must be less than 5MB.");
+      setError("Image file size must be less than 5MB.");
       return;
     }
 
     try {
+      setError(null);
       setIsUploadingAvatar(true);
       const uploadedUrl = await uploadGeneralStaffAvatar(file, token || undefined);
       if (uploadedUrl) {
         setFormData((prev) => ({ ...prev, avatar: uploadedUrl }));
-        toast.success("Profile image uploaded successfully!");
       }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to upload profile image.");
+      setError(err?.message || "Failed to upload profile image.");
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) {
