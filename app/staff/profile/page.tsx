@@ -1,25 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   AlertCircle,
   BadgeCheck,
   Building,
+  Camera,
   CheckCircle2,
   Edit3,
   Hash,
   KeyRound,
+  Loader2,
   Lock,
   Mail,
   MapPin,
   Phone,
   Save,
   ShieldCheck,
+  Upload,
   User,
   UserRound,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { get, put, patch, ApiResponse } from "@/lib/api";
+import { uploadMyAvatarImage, getStaffAvatarUrl } from "@/lib/staff.api";
 
 interface StaffProfile {
   id: string;
@@ -28,6 +32,7 @@ interface StaffProfile {
   department?: string;
   name: string;
   email: string;
+  avatar?: string;
   phone: string;
   location: string;
   employmentType: string;
@@ -38,12 +43,18 @@ interface StaffProfile {
 
 export default function StaffProfilePage() {
   const { token, user: authUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<"details" | "edit" | "security">(
     "details"
   );
+
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarToast, setAvatarToast] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
   // Edit Profile Form State
   const [editName, setEditName] = useState("");
@@ -93,6 +104,38 @@ export default function StaffProfilePage() {
   useEffect(() => {
     void loadProfile();
   }, [token]);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select a valid image file (PNG, JPG, JPEG, WEBP).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Image file size must be under 5MB.");
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+      setAvatarError("");
+      setAvatarToast("");
+
+      const uploadedUrl = await uploadMyAvatarImage(file, token || undefined);
+      setProfile((prev) => (prev ? { ...prev, avatar: uploadedUrl } : null));
+
+      setAvatarToast("Profile photo updated successfully!");
+      setTimeout(() => setAvatarToast(""), 4000);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +213,14 @@ export default function StaffProfilePage() {
 
   return (
     <main className="space-y-6 py-5 sm:space-y-8 sm:py-6">
+      {/* Toast */}
+      {avatarToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 shadow-xl animate-in fade-in">
+          <CheckCircle2 size={16} className="text-emerald-600" />
+          <span>{avatarToast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b border-[#e8e1d8] pb-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-[#9a6c37]">
@@ -193,6 +244,16 @@ export default function StaffProfilePage() {
         </div>
       )}
 
+      {avatarError && (
+        <div
+          role="alert"
+          className="flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700"
+        >
+          <AlertCircle size={16} />
+          <span className="flex-1">{avatarError}</span>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white">
           <div className="text-center">
@@ -211,23 +272,60 @@ export default function StaffProfilePage() {
           {/* Main Hero Profile Banner */}
           <section className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm">
 
+            {/* Hidden Photo Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleAvatarFileChange}
+              className="hidden"
+            />
+
             {/* Profile Header */}
             <div className="relative overflow-hidden border-b border-[#eee8e1] bg-[#f7f2eb] px-5 py-6 sm:px-8 sm:py-7">
               {/* Decorative background */}
               <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#b8894b]/10" />
               <div className="absolute -bottom-16 right-20 h-28 w-28 rounded-full bg-[#9a6c37]/5" />
 
-              <div className="relative flex items-center gap-4 sm:gap-5">
+              <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
 
-                {/* Avatar */}
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-[#9a6c37] to-[#c3975d] text-white shadow-md sm:h-20 sm:w-20">
-                  <UserRound size={30} className="sm:hidden" />
-                  <UserRound size={36} className="hidden sm:block" />
+                {/* Avatar with Interactive Upload Trigger */}
+                <div className="relative group shrink-0">
+                  <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-gradient-to-br from-[#9a6c37] to-[#c3975d] text-white shadow-md">
+                    {profile.avatar ? (
+                      <img
+                        src={getStaffAvatarUrl(profile.avatar)}
+                        alt={profile.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <>
+                        <UserRound size={36} className="sm:hidden" />
+                        <UserRound size={44} className="hidden sm:block" />
+                      </>
+                    )}
+
+                    {avatarUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-xs">
+                        <Loader2 size={24} className="animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarUploading}
+                    title="Upload profile photo"
+                    aria-label="Upload profile photo"
+                    className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#29241f] text-white shadow-md border-2 border-white transition hover:bg-[#b8894b] active:scale-90"
+                  >
+                    <Camera size={14} />
+                  </button>
                 </div>
 
                 {/* Main Info */}
                 <div className="min-w-0 flex-1">
-                  
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate text-xl font-extrabold tracking-tight text-[#29241f] sm:text-2xl">
                       {profile.name}
@@ -254,8 +352,16 @@ export default function StaffProfilePage() {
                       <BadgeCheck size={12} className="text-[#a7773f]" />
                       {profile.employmentType || "Full-Time"}
                     </span>
-                  </div>
 
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1 font-bold text-[#b8894b] hover:underline"
+                    >
+                      <Upload size={12} />
+                      <span>{profile.avatar ? "Change Photo" : "Upload Photo"}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

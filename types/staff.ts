@@ -83,6 +83,7 @@ export type CreateStaffPayload = {
   password: string;
 
   phone?: string;
+  avatar?: string;
   location?: string;
 
   employeeId?: string;
@@ -109,6 +110,7 @@ export type UpdateStaffPayload = {
   email?: string;
 
   phone?: string;
+  avatar?: string;
   location?: string;
 
   employmentType?: EmploymentType;

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import type { Staff } from "@/types/staff";
+import { getStaffAvatarUrl } from "@/lib/staff.api";
 
 interface StaffCardProps {
   staff: Staff;
@@ -18,6 +19,7 @@ export default function StaffCard({
   staff,
 }: StaffCardProps) {
   const isActive = staff.isActive;
+  const avatarSrc = getStaffAvatarUrl(staff.avatar);
 
   return (
     <Link
@@ -27,9 +29,9 @@ export default function StaffCard({
       {/* Top Section */}
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        {staff.avatar ? (
+        {avatarSrc ? (
           <img
-            src={staff.avatar}
+            src={avatarSrc}
             alt={staff.name}
             className="h-12 w-12 shrink-0 rounded-full object-cover"
           />

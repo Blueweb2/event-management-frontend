@@ -210,3 +210,86 @@ export const resetStaffPassword = async (
 
   return result.data;
 };
+
+// ==========================================
+// AVATAR UPLOAD HELPERS & APIS
+// ==========================================
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+export function getStaffAvatarUrl(avatarUrl?: string): string | undefined {
+  if (!avatarUrl) return undefined;
+  if (avatarUrl.startsWith("http") || avatarUrl.startsWith("data:")) return avatarUrl;
+  const baseUrl = API_URL.replace(/\/api$/, "");
+  return `${baseUrl}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
+
+/**
+ * Upload an avatar for the currently logged in staff/user
+ */
+export async function uploadMyAvatarImage(file: File, token?: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const response = await fetch(`${API_URL}/users/me/avatar`, {
+    method: "POST",
+    body: formData,
+    headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : undefined,
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.message || "Failed to upload avatar image");
+  }
+
+  return result.data.avatarUrl;
+}
+
+/**
+ * Upload an avatar for a specific staff member (manager/admin action)
+ */
+export async function uploadStaffAvatarImage(
+  staffId: string,
+  file: File,
+  token?: string
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const response = await fetch(`${API_URL}/users/staff/${staffId}/avatar`, {
+    method: "POST",
+    body: formData,
+    headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : undefined,
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.message || "Failed to upload staff photo");
+  }
+
+  return result.data.avatarUrl;
+}
+
+/**
+ * Upload general staff photo (e.g. while creating a new staff before saving ID)
+ */
+export async function uploadGeneralStaffAvatar(file: File, token?: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const response = await fetch(`${API_URL}/users/staff/upload-avatar`, {
+    method: "POST",
+    body: formData,
+    headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : undefined,
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result?.message || "Failed to upload staff photo");
+  }
+
+  return result.data.avatarUrl;
+}

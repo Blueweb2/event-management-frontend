@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   CalendarDays,
+  Camera,
   Clock,
   IndianRupee,
   User,
@@ -14,12 +15,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Upload,
 } from "lucide-react";
 
 import StaffStatusBadge from "./StaffStatusBadge";
 import StaffDetails from "./StaffDetails";
 import StaffActions from "./StaffActions";
 import { getAssignments } from "@/lib/assignment.api";
+import { uploadStaffAvatarImage, getStaffAvatarUrl } from "@/lib/staff.api";
 import { calculateHoursFromTime } from "@/lib/duty-mapper";
 import type { Assignment } from "@/types/assignment";
 
@@ -56,9 +59,13 @@ export default function StaffProfile({
   onStaffUpdated,
   onPasswordReset,
 }: StaffProfileProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<"details" | "hours">("details");
   const [duties, setDuties] = useState<Assignment[]>([]);
   const [loadingDuties, setLoadingDuties] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarToast, setAvatarToast] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
   const targetStaffId = staff.id || (staff as any)._id;
 
@@ -71,6 +78,35 @@ export default function StaffProfile({
         .finally(() => setLoadingDuties(false));
     }
   }, [token, targetStaffId]);
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !targetStaffId) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please select a valid image file.");
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      setAvatarError("");
+      setAvatarToast("");
+
+      const uploadedUrl = await uploadStaffAvatarImage(targetStaffId, file, token || undefined);
+      if (onStaffUpdated) {
+        await onStaffUpdated(targetStaffId, { avatar: uploadedUrl });
+      }
+
+      setAvatarToast("Staff photo updated successfully!");
+      setTimeout(() => setAvatarToast(""), 4000);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to upload photo.");
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const initials = getInitials(staff.name);
 
@@ -90,8 +126,27 @@ export default function StaffProfile({
     else pendingEarnings += pay;
   });
 
+  const avatarUrl = getStaffAvatarUrl(staff.avatar);
+
   return (
     <div className="space-y-5">
+      {/* Toast */}
+      {avatarToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 shadow-xl animate-in fade-in">
+          <CheckCircle2 size={16} className="text-emerald-600" />
+          <span>{avatarToast}</span>
+        </div>
+      )}
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        onChange={handleAvatarFileChange}
+        className="hidden"
+      />
+
       {/* Back Button */}
       <Link
         href="/manager/staff"
@@ -105,21 +160,47 @@ export default function StaffProfile({
         <span>Staff</span>
       </Link>
 
+      {avatarError && (
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 border border-red-200">
+          <AlertCircle size={15} />
+          <span>{avatarError}</span>
+        </div>
+      )}
+
       {/* Profile Header */}
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col items-center text-center">
           {/* Avatar */}
-          {staff.avatar ? (
-            <img
-              src={staff.avatar}
-              alt={staff.name}
-              className="h-20 w-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F4EBDD] text-xl font-semibold text-[#9A7B4F]">
-              {initials}
-            </div>
-          )}
+          <div className="relative group">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={staff.name}
+                className="h-24 w-24 rounded-3xl border-4 border-white shadow-md object-cover"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-3xl border-4 border-white shadow-md bg-[#F4EBDD] text-2xl font-bold text-[#9A7B4F]">
+                {initials}
+              </div>
+            )}
+
+            {uploadingAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/60 backdrop-blur-xs">
+                <Loader2 size={24} className="animate-spin text-white" />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              title="Upload / change staff photo"
+              aria-label="Upload staff photo"
+              className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-[#29241f] text-white shadow-md border-2 border-white transition hover:bg-[#b8894b] active:scale-90"
+            >
+              <Camera size={14} />
+            </button>
+          </div>
 
           {/* Name */}
           <h1 className="mt-4 text-xl font-semibold tracking-tight text-[#1F1F1F]">

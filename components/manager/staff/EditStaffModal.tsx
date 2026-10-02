@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   Mail,
   Phone,
@@ -8,12 +8,18 @@ import {
   Building2,
   X,
   Loader2,
+  Camera,
+  Trash2,
+  UserRound,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import type {
   Staff,
   UpdateStaffPayload,
 } from "@/types/staff";
+import { uploadStaffAvatarImage, uploadGeneralStaffAvatar, getStaffAvatarUrl } from "@/lib/staff.api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface EditStaffModalProps {
   staff: Staff;
@@ -22,6 +28,15 @@ interface EditStaffModalProps {
   onSave: (
     payload: UpdateStaffPayload,
   ) => Promise<Staff>;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  department: string;
+  avatar: string;
 }
 
 import {
@@ -35,6 +50,9 @@ export default function EditStaffModal({
   onClose,
   onSave,
 }: EditStaffModalProps) {
+  const { token } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [formData, setFormData] =
     useState<FormData>({
       name: staff.name ?? "",
@@ -42,6 +60,7 @@ export default function EditStaffModal({
       phone: staff.phone ?? "",
       role: staff.role ?? "",
       department: staff.department ?? "",
+      avatar: staff.avatar ?? "",
     });
 
   const [departmentOptions, setDepartmentOptions] =
@@ -51,6 +70,9 @@ export default function EditStaffModal({
     useState<string | null>(null);
 
   const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [isUploadingAvatar, setIsUploadingAvatar] =
     useState(false);
 
   /*
@@ -68,9 +90,11 @@ export default function EditStaffModal({
       phone: staff.phone ?? "",
       role: staff.role ?? "",
       department: staff.department ?? "",
+      avatar: staff.avatar ?? "",
     });
 
     setError(null);
+    setIsUploadingAvatar(false);
 
     void getDepartmentAndServiceOptions(staff.department).then((opts) => {
       setDepartmentOptions(opts);
@@ -113,6 +137,47 @@ export default function EditStaffModal({
     }
   };
 
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image file size must be less than 5MB.");
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      let newAvatarUrl = "";
+      if (staff.id) {
+        newAvatarUrl = await uploadStaffAvatarImage(staff.id, file, token || undefined);
+      } else {
+        newAvatarUrl = await uploadGeneralStaffAvatar(file, token || undefined);
+      }
+
+      if (newAvatarUrl) {
+        setFormData((prev) => ({ ...prev, avatar: newAvatarUrl }));
+        toast.success("Profile photo updated successfully!");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to upload photo.");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setFormData((prev) => ({ ...prev, avatar: "" }));
+  };
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
@@ -149,6 +214,7 @@ export default function EditStaffModal({
       role,
       department:
         department || undefined,
+      avatar: formData.avatar,
     };
 
     try {
@@ -167,6 +233,8 @@ export default function EditStaffModal({
       setIsSaving(false);
     }
   };
+
+  const avatarDisplayUrl = getStaffAvatarUrl(formData.avatar);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
@@ -223,6 +291,69 @@ export default function EditStaffModal({
           onSubmit={handleSubmit}
           className="space-y-4 px-5 pb-6 pt-5"
         >
+          {/* Avatar Upload Section */}
+          <div className="flex flex-col items-center justify-center gap-2 pb-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handleAvatarFileSelect}
+              disabled={isSaving || isUploadingAvatar}
+            />
+
+            <div className="relative group">
+              {avatarDisplayUrl ? (
+                <img
+                  src={avatarDisplayUrl}
+                  alt="Staff Preview"
+                  className="h-20 w-20 rounded-full object-cover border-2 border-[#9A7B4F]/30 shadow-sm"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F4EBDD] text-[#9A7B4F] text-xl font-bold border-2 border-dashed border-[#9A7B4F]/40 shadow-inner">
+                  {formData.name ? formData.name.charAt(0).toUpperCase() : <UserRound size={28} />}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSaving || isUploadingAvatar}
+                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#9A7B4F] text-white shadow-md transition hover:bg-[#85673E] active:scale-90 disabled:opacity-50"
+                title="Change staff photo"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Camera size={13} />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSaving || isUploadingAvatar}
+                className="text-[11px] font-medium text-[#9A7B4F] hover:underline"
+              >
+                {formData.avatar ? "Change Photo" : "Upload Photo"}
+              </button>
+              {formData.avatar && (
+                <>
+                  <span className="text-gray-300 text-xs">•</span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={isSaving || isUploadingAvatar}
+                    className="text-[11px] font-medium text-red-500 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
           {/* Name */}
           <FormField
             label="Full Name"
@@ -379,18 +510,6 @@ export default function EditStaffModal({
       </div>
     </div>
   );
-}
-
-/* ==========================================
-   TYPES
-========================================== */
-
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  department: string;
 }
 
 /* ==========================================
