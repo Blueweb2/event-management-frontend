@@ -60,61 +60,57 @@ export default function SelectedServicesSummary({
     if (selectedItems.length === 0) return null;
 
     return (
-      <div className="fixed inset-x-0 bottom-0 z-40 lg:hidden animate-in slide-in-from-bottom duration-300">
+      <div className="fixed inset-x-0 bottom-[68px] z-20 sm:hidden animate-in slide-in-from-bottom duration-300">
         {/* Mobile Expanded Drawer Backdrop */}
         {isMobileExpanded && (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-30"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-10"
             onClick={() => setIsMobileExpanded(false)}
           />
         )}
 
         {/* Mobile Drawer Sheet */}
-        <div className="relative z-40 border-t border-[#e8e1d8] bg-white shadow-2xl rounded-t-3xl overflow-hidden">
+        <div className="relative z-20 mx-3 border border-[#e8e1d8] bg-white shadow-2xl rounded-2xl overflow-hidden">
           {/* Drawer Handle Header */}
           <div
             onClick={() => setIsMobileExpanded(!isMobileExpanded)}
-            className="flex items-center justify-between px-5 py-3.5 bg-[#faf8f5] border-b border-[#eee7dc] cursor-pointer"
+            className="flex items-center justify-between px-4 py-2.5 bg-[#faf8f5] cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#29241f] text-white">
-                <ShoppingBag size={14} className="text-[#d8a86c]" />
+                <ShoppingBag size={13} className="text-[#d8a86c]" />
               </span>
               <div>
-                <p className="text-xs font-black text-[#29241f]">
-                  Your Event Selection ({selectedItems.length})
+                <p className="text-xs font-bold text-[#29241f]">
+                  {selectedItems.length} {selectedItems.length === 1 ? "Service" : "Services"} Selected
                 </p>
-                <p className="text-[10px] text-gray-500">Tap to {isMobileExpanded ? "collapse" : "view items"}</p>
+                <p className="text-[10px] text-gray-500">Tap to {isMobileExpanded ? "collapse" : "view list"}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-black text-[#29241f]">
-                  {formatCurrency(calculatedTotal)}
-                </p>
-                <p className="text-[10px] text-gray-500">Est. Total</p>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#29241f]">
+                {formatCurrency(calculatedTotal)}
+              </span>
               <button
                 type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600"
+                className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600"
               >
-                {isMobileExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                {isMobileExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
               </button>
             </div>
           </div>
 
           {/* Expanded Item List on Mobile */}
           {isMobileExpanded && (
-            <div className="max-h-72 overflow-y-auto p-4 space-y-3 bg-white">
+            <div className="max-h-60 overflow-y-auto p-3 space-y-2 bg-white border-t border-[#eee7dc]">
               {selectedItems.map((item) => {
-                const IconComponent = getCategoryIcon(item.category);
                 const lineTotal = Number(item.unitPrice || 0) * (Number(item.quantity) || 1);
 
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-[#faf8f5] p-3"
+                    className="flex items-center justify-between gap-2.5 rounded-xl border border-gray-200 bg-[#faf8f5] p-2.5"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
@@ -134,7 +130,7 @@ export default function SelectedServicesSummary({
                       <button
                         type="button"
                         onClick={() => onRemoveItem(item.id)}
-                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                        className="rounded-lg p-1 text-gray-400 hover:text-red-600"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -144,29 +140,6 @@ export default function SelectedServicesSummary({
               })}
             </div>
           )}
-
-          {/* Mobile Bottom CTA Bar */}
-          <div className="flex items-center justify-between gap-3 p-4 bg-white border-t border-[#eee7dc]">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-bold text-[#8d847b]">
-                Estimated Total
-              </p>
-              <p className="text-lg font-black text-[#29241f]">
-                {formatCurrency(calculatedTotal)}
-              </p>
-            </div>
-
-            {onContinue && (
-              <button
-                type="button"
-                onClick={onContinue}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#29241f] px-6 py-3 text-xs font-black text-white shadow-md active:scale-95 transition"
-              >
-                <span>Continue</span>
-                <ArrowRight size={14} />
-              </button>
-            )}
-          </div>
         </div>
       </div>
     );

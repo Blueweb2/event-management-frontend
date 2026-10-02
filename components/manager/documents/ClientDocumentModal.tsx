@@ -101,6 +101,10 @@ export default function ClientDocumentModal({
       {/* Print-specific style block to cleanly print ONLY the document container */}
       <style jsx global>{`
         @media print {
+          @page {
+            margin: 10mm;
+            size: auto;
+          }
           html, body {
             background: #ffffff !important;
             margin: 0 !important;
@@ -116,21 +120,6 @@ export default function ClientDocumentModal({
           #printable-client-document * {
             visibility: visible !important;
           }
-          .fixed,
-          .overflow-hidden,
-          .overflow-y-auto,
-          [class*="max-h-"],
-          [class*="backdrop-blur"] {
-            position: static !important;
-            overflow: visible !important;
-            max-height: none !important;
-            height: auto !important;
-            width: 100% !important;
-            box-shadow: none !important;
-            background: transparent !important;
-            border: none !important;
-            transform: none !important;
-          }
           #printable-client-document {
             position: absolute !important;
             left: 0 !important;
@@ -138,11 +127,13 @@ export default function ClientDocumentModal({
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
-            padding: 24px !important;
+            padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
             background: #ffffff !important;
             color: #29241f !important;
+            page-break-before: avoid !important;
+            break-before: avoid !important;
           }
           .no-print {
             display: none !important;

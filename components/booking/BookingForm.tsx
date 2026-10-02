@@ -11,11 +11,8 @@ import ClientDetailsStep from "./steps/ClientDetailsStep";
 import FoodMenuStep from "./steps/FoodMenuStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
-import Button from "@/components/ui/Button";
-
 import type { BookingFormData } from "./types";
 import { createEstimate, type Estimate } from "@/lib/estimates.api";
-import { ArrowLeft } from "lucide-react";
 
 // ==========================================
 // INITIAL FORM DATA
@@ -480,29 +477,28 @@ export default function BookingForm() {
     nextStep();
   };
 
-
+  // Direct step jump (only for previously validated/completed steps)
+  const handleStepJump = (targetStep: number) => {
+    if (targetStep < currentStep) {
+      setCurrentStep(targetStep);
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // RENDER
   return (
-    <>
-
+    <div className="pb-24 sm:pb-12">
       {/* Progress */}
-      <BookingProgress currentStep={currentStep} />
-
-      <Button
-        type="button"
-        variant="secondary"
-        size="md"
-        onClick={previousStep}
-        disabled={isCreatingEstimate}
-        icon={<ArrowLeft size={17} />}
-        className="mt-4 mx-4 md:hidden"
-      >
-        Back
-      </Button>
+      <BookingProgress
+        currentStep={currentStep}
+        onStepClick={handleStepJump}
+      />
 
       {/* Main Content */}
-      <section className="px-4 py-2 sm:px-6 sm:py-10 lg:px-8">
+      <section className="mt-4 sm:mt-8">
         <div className={`mx-auto transition-all duration-300 ${currentStep === 4 ? "max-w-6xl" : "max-w-4xl"}`}>
 
           {/* STEP 1 - EVENT DETAILS */}
@@ -567,9 +563,9 @@ export default function BookingForm() {
           {error && (
             <div
               role="alert"
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+              className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 animate-in fade-in slide-in-from-top-2"
             >
-              <p className="text-sm font-medium text-red-600">
+              <p className="text-xs sm:text-sm font-semibold text-red-700">
                 {error}
               </p>
             </div>
@@ -596,6 +592,6 @@ export default function BookingForm() {
           />
         </div>
       </section>
-    </>
+    </div>
   );
 }
