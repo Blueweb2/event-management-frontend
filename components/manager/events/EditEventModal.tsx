@@ -121,13 +121,13 @@ export default function EditEventModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
       {/* Backdrop */}
       <button
         type="button"
         aria-label="Close modal overlay"
         onClick={() => !loading && onClose()}
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-transparent"
       />
 
       {/* Modal Dialog */}
@@ -135,20 +135,20 @@ export default function EditEventModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-event-title"
-        className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl transition-all sm:p-8"
+        className="relative z-10 w-full max-w-2xl max-h-[92dvh] flex flex-col rounded-3xl bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="shrink-0 flex items-center justify-between border-b border-gray-100 p-5 sm:p-6 bg-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f5ede4] text-[#9A7B4F]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#f5ede4] text-[#9A7B4F]">
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 id="edit-event-title" className="text-lg font-bold text-gray-900">
+              <h2 id="edit-event-title" className="text-base sm:text-lg font-bold text-gray-900">
                 Edit Event
               </h2>
               <p className="text-xs text-gray-500">
-                Modify event schedule, location, guest size, and operational status.
+                Modify event schedule, location, guest size, and status.
               </p>
             </div>
           </div>
@@ -156,23 +156,22 @@ export default function EditEventModal({
           <button
             type="button"
             onClick={() => !loading && onClose()}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-2 text-gray-400 hover:bg-gray-100 transition"
             aria-label="Close dialog"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          {/* Row 1: Event Name & Event Type */}
+        {/* Form Container */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+            {/* Error Alert */}
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
+                {error}
+              </div>
+            )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-bold text-gray-700">
@@ -333,13 +332,15 @@ export default function EditEventModal({
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
+          </div>
+
+          {/* Action Buttons Footer */}
+          <div className="shrink-0 flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/70 p-4 sm:p-5">
             <button
               type="button"
               disabled={loading}
               onClick={onClose}
-              className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+              className="min-h-11 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 active:scale-95 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -347,7 +348,7 @@ export default function EditEventModal({
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#29241f] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black disabled:opacity-60"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#29241f] px-6 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-95 disabled:opacity-60"
             >
               {loading && <Loader2 size={14} className="animate-spin" />}
               <span>{loading ? "Saving..." : "Save Changes"}</span>

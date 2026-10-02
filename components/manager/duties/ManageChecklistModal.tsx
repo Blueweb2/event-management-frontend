@@ -156,11 +156,11 @@ export default function ManageChecklistModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto animate-in fade-in"
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-3xl border border-[#e8e1d8] bg-white shadow-2xl overflow-hidden animate-in zoom-in-95">
+      <div className="relative flex max-h-[92dvh] w-full max-w-2xl flex-col rounded-3xl border border-[#e8e1d8] bg-white shadow-2xl overflow-hidden animate-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-[#eee7dc] bg-[#faf8f5] px-6 py-5">
+        <div className="flex items-start justify-between border-b border-[#eee7dc] bg-[#faf8f5] px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-lg bg-[#29241f] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
@@ -436,12 +436,12 @@ export default function ManageChecklistModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#eee7dc] bg-[#faf8f5] px-6 py-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[#eee7dc] bg-[#faf8f5] px-4 py-3.5 sm:px-6 sm:py-4">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-100"
+            className="min-h-11 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-100 active:scale-95"
           >
             {isLocked ? "Close" : "Cancel"}
           </button>
@@ -451,14 +451,14 @@ export default function ManageChecklistModal({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#29241f] px-6 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#29241f] px-5 sm:px-6 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black active:scale-95 disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <ListChecks size={14} />
               )}
-              Save Sub-Tasks & Notify Staff
+              <span>Save Sub-Tasks & Notify Staff</span>
             </button>
           )}
         </div>

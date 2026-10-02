@@ -36,13 +36,13 @@ export default function DeleteEventModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
       {/* Backdrop */}
       <button
         type="button"
         aria-label="Close modal overlay"
         onClick={() => !loading && onClose()}
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-transparent"
       />
 
       {/* Modal Dialog */}
@@ -50,11 +50,11 @@ export default function DeleteEventModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-event-title"
-        className="relative z-10 w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl transition-all sm:p-7"
+        className="relative z-10 w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-3xl bg-white p-5 sm:p-7 shadow-2xl transition-all animate-in fade-in zoom-in-95"
       >
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
               <AlertTriangle size={20} />
             </div>
             <div>
@@ -68,7 +68,7 @@ export default function DeleteEventModal({
           <button
             type="button"
             onClick={() => !loading && onClose()}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition"
             aria-label="Close dialog"
           >
             <X size={18} />
@@ -96,7 +96,7 @@ export default function DeleteEventModal({
             type="button"
             disabled={loading}
             onClick={onClose}
-            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            className="min-h-11 rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 active:scale-95 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -105,7 +105,7 @@ export default function DeleteEventModal({
             type="button"
             disabled={loading}
             onClick={handleDelete}
-            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 active:scale-95 disabled:opacity-60"
           >
             {loading ? (
               <Loader2 size={14} className="animate-spin" />

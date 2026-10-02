@@ -651,17 +651,18 @@ export default function EventServiceStaffingMatrix({
       {/* Quick Allocation Modal */}
       {allocatingStream && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-3xl border border-[#e8e1d8] bg-white p-6 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="relative my-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-3xl border border-[#e8e1d8] bg-white shadow-2xl overflow-hidden animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 bg-[#faf8f5] px-5 py-4 shrink-0">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9a6c37]">
                   Allocate to {allocatingStream.department}
                 </p>
-                <h3 className="text-lg font-black text-[#29241f]">
+                <h3 className="text-base sm:text-lg font-black text-[#29241f]">
                   {allocatingStaff
                     ? `Assign ${allocatingStaff.name}`
                     : `New Duty: ${allocatingStream.title}`}
@@ -670,193 +671,197 @@ export default function EventServiceStaffingMatrix({
               <button
                 type="button"
                 onClick={closeAllocateModal}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-gray-500 hover:bg-gray-100 border border-gray-200 transition"
               >
                 <X size={16} />
               </button>
             </div>
 
             {modalError && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 border border-red-200">
-                <AlertCircle size={15} />
+              <div className="mx-5 mt-3 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 border border-red-200 shrink-0">
+                <AlertCircle size={15} className="shrink-0" />
                 <span>{modalError}</span>
               </div>
             )}
 
-            <form onSubmit={handleAllocateSubmit} className="mt-4 space-y-4">
-              {/* Staff Selector (if not preselected) */}
-              {!allocatingStaff ? (
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Select Available Staff Member *
-                  </label>
-                  <select
-                    required
-                    onChange={(e) => {
-                      const found = allocatingStream.departmentStaff.find(
-                        (s) => s.id === e.target.value
-                      );
-                      setAllocatingStaff(found || null);
-                    }}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  >
-                    <option value="">-- Choose Staff Member --</option>
-                    {allocatingStream.departmentStaff.map((staff) => (
-                      <option
-                        key={staff.id}
-                        value={staff.id}
-                        disabled={!staff.isAvailable}
-                      >
-                        {staff.name} ({staff.employeeId}) — {staff.statusLabel}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] border border-[#eee7dc] p-3 text-xs">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b8894b] font-bold text-white">
-                    {allocatingStaff.name[0]}
-                  </div>
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleAllocateSubmit} className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                {/* Staff Selector (if not preselected) */}
+                {!allocatingStaff ? (
                   <div>
-                    <p className="font-extrabold text-[#29241f]">
-                      {allocatingStaff.name}
-                    </p>
-                    <p className="text-[11px] text-gray-500">
-                      ID: {allocatingStaff.employeeId} · Department:{" "}
-                      {allocatingStaff.department}
-                    </p>
+                    <label className="block text-xs font-bold text-gray-700">
+                      Select Available Staff Member *
+                    </label>
+                    <select
+                      required
+                      onChange={(e) => {
+                        const found = allocatingStream.departmentStaff.find(
+                          (s) => s.id === e.target.value
+                        );
+                        setAllocatingStaff(found || null);
+                      }}
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 bg-white px-3 text-sm outline-none focus:border-[#9a6c37]"
+                    >
+                      <option value="">-- Choose Staff Member --</option>
+                      {allocatingStream.departmentStaff.map((staff) => (
+                        <option
+                          key={staff.id}
+                          value={staff.id}
+                          disabled={!staff.isAvailable}
+                        >
+                          {staff.name} ({staff.employeeId}) — {staff.statusLabel}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center gap-3 rounded-2xl bg-[#faf8f5] border border-[#eee7dc] p-3 text-xs">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#b8894b] font-bold text-white">
+                      {allocatingStaff.name[0]}
+                    </div>
+                    <div>
+                      <p className="font-extrabold text-[#29241f]">
+                        {allocatingStaff.name}
+                      </p>
+                      <p className="text-[11px] text-gray-500">
+                        ID: {allocatingStaff.employeeId} · Department:{" "}
+                        {allocatingStaff.department}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700">
-                  Duty Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Head Decorator / Buffet Steward"
-                  value={dutyTitle}
-                  onChange={(e) => setDutyTitle(e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold text-gray-700">
-                    Role / Sub-department
+                    Duty Title *
                   </label>
                   <input
                     type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Duty Date *
-                  </label>
-                  <input
-                    type="date"
                     required
-                    value={dutyDate}
-                    onChange={(e) => setDutyDate(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
+                    placeholder="e.g. Head Decorator / Buffet Steward"
+                    value={dutyTitle}
+                    onChange={(e) => setDutyTitle(e.target.value)}
+                    className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Start Time *
-                  </label>
-                  <input
-                    type="time"
-                    required
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700">
+                      Role / Sub-department
+                    </label>
+                    <input
+                      type="text"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    End Time *
-                  </label>
-                  <input
-                    type="time"
-                    required
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700">
+                      Duty Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={dutyDate}
+                      onChange={(e) => setDutyDate(e.target.value)}
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
+                    />
+                  </div>
 
-              {/* Salary Per Hour & Payout Summary */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Salary Per Hour ($/hr)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
-                    placeholder="e.g. 25.00"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
+                    />
+                  </div>
 
-                <div className="flex flex-col justify-center rounded-xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">
-                  <p className="font-semibold text-gray-700">Calculated Payout</p>
-                  <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
-                    <span>Duration: <strong>{(() => {
-                      if (!startTime || !endTime) return "0.0";
-                      const [sH, sM] = startTime.split(":").map(Number);
-                      const [eH, eM] = endTime.split(":").map(Number);
-                      let startMin = sH * 60 + (sM || 0);
-                      let endMin = eH * 60 + (eM || 0);
-                      if (endMin < startMin) endMin += 24 * 60;
-                      return (Math.max(0, endMin - startMin) / 60).toFixed(1);
-                    })()} hrs</strong></span>
-                    <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
-                      if (!startTime || !endTime) return "0.00";
-                      const [sH, sM] = startTime.split(":").map(Number);
-                      const [eH, eM] = endTime.split(":").map(Number);
-                      let startMin = sH * 60 + (sM || 0);
-                      let endMin = eH * 60 + (eM || 0);
-                      if (endMin < startMin) endMin += 24 * 60;
-                      const hours = Math.max(0, endMin - startMin) / 60;
-                      return (hours * (Number(hourlyRate) || 0)).toFixed(2);
-                    })()}</span>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700">
+                      End Time *
+                    </label>
+                    <input
+                      type="time"
+                      required
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
+                    />
                   </div>
                 </div>
+
+                {/* Salary Per Hour & Payout Summary */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700">
+                      Salary Per Hour ($/hr)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
+                      placeholder="e.g. 25.00"
+                      className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
+                    />
+                  </div>
+
+                  <div className="flex flex-col justify-center rounded-2xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">
+                    <p className="font-semibold text-gray-700">Calculated Payout</p>
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
+                      <span>Duration: <strong>{(() => {
+                        if (!startTime || !endTime) return "0.0";
+                        const [sH, sM] = startTime.split(":").map(Number);
+                        const [eH, eM] = endTime.split(":").map(Number);
+                        let startMin = sH * 60 + (sM || 0);
+                        let endMin = eH * 60 + (eM || 0);
+                        if (endMin < startMin) endMin += 24 * 60;
+                        return (Math.max(0, endMin - startMin) / 60).toFixed(1);
+                      })()} hrs</strong></span>
+                      <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
+                        if (!startTime || !endTime) return "0.00";
+                        const [sH, sM] = startTime.split(":").map(Number);
+                        const [eH, eM] = endTime.split(":").map(Number);
+                        let startMin = sH * 60 + (sM || 0);
+                        let endMin = eH * 60 + (eM || 0);
+                        if (endMin < startMin) endMin += 24 * 60;
+                        const hours = Math.max(0, endMin - startMin) / 60;
+                        return (hours * (Number(hourlyRate) || 0)).toFixed(2);
+                      })()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700">
+                    Duty Instructions & Notes (optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Special instructions, dress code, checklist items..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="mt-1.5 w-full rounded-2xl border border-gray-200 p-3 text-sm outline-none focus:border-[#9a6c37]"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700">
-                  Duty Instructions & Notes (optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Special instructions, dress code, checklist items..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-gray-200 p-3 text-xs outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
+              {/* Sticky Modal Action Buttons at Bottom */}
+              <div className="flex items-center gap-3 border-t border-gray-100 bg-[#faf8f5] px-5 py-3.5 shrink-0">
                 <button
                   type="button"
                   onClick={closeAllocateModal}
-                  className="h-11 flex-1 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 hover:bg-gray-50"
+                  className="h-12 flex-1 rounded-2xl border border-gray-300 bg-white font-bold text-xs text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -864,7 +869,7 @@ export default function EventServiceStaffingMatrix({
                 <button
                   type="submit"
                   disabled={submitting || !allocatingStaff}
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#29241f] font-bold text-xs text-white hover:bg-black disabled:opacity-50"
+                  className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#29241f] font-bold text-xs text-white hover:bg-black active:scale-95 transition disabled:opacity-50 shadow-sm cursor-pointer"
                 >
                   {submitting ? (
                     <Loader2 size={16} className="animate-spin" />

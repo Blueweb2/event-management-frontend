@@ -513,11 +513,11 @@ export default function EventProfitabilityCard({
       {/* Log Event Expense Modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-lg rounded-3xl border border-[#e8e1d8] bg-white p-6 shadow-2xl animate-in zoom-in-95">
+          <div className="w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-2xl animate-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9a6c37]">

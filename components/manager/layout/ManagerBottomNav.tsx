@@ -42,10 +42,12 @@ onMenuClick,
 }: ManagerBottomNavProps) {
 const pathname = usePathname();
 
-return ( <nav
-  className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden"
-   aria-label="Manager bottom navigation"
- > <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
+return (
+  <nav
+    className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)] md:hidden shadow-lg"
+    aria-label="Manager bottom navigation"
+  >
+    <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
 {navigationItems.map((item) => {
 const Icon = item.icon;
 

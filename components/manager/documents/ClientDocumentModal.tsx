@@ -97,7 +97,7 @@ export default function ClientDocumentModal({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
       {/* Print-specific style block to cleanly print ONLY the document container */}
       <style jsx global>{`
         @media print {
@@ -141,7 +141,7 @@ export default function ClientDocumentModal({
         }
       `}</style>
 
-      <div className="relative w-full max-w-4xl max-h-[94vh] flex flex-col rounded-3xl bg-[#FAF8F5] border border-[#E8E1D8] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl bg-[#FAF8F5] border border-[#E8E1D8] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* ==========================================
             Modal Control Header (Screen Only)
         ========================================== */}
