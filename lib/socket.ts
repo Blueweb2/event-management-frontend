@@ -28,5 +28,5 @@ export const getSocket = (): Socket | null => {
 
   return socket;
 };
-
+  
 export default getSocket;
