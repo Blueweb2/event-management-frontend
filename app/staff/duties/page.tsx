@@ -50,6 +50,8 @@ import ErrorMessage from "@/components/common/ErrorMessage";
 import DeclineShiftModal from "@/components/staff/shift/DeclineShiftModal";
 import PauseShiftModal from "@/components/staff/shift/PauseShiftModal";
 import CompleteTaskModal from "@/components/staff/shift/CompleteTaskModal";
+import TodayDuties from "@/components/staff/TodayDuties";
+import InteractiveDutyChecklist from "@/components/staff/shift/InteractiveDutyChecklist";
 
 const getLocation = (): Promise<string> => {
   return new Promise((resolve) => {
@@ -851,6 +853,16 @@ export default function StaffDutiesPage() {
 
         return (
           <div className="space-y-10">
+            {/* Today's Assigned Duties & Duty Sub-Task Checklist */}
+            <div className="grid gap-6 xl:grid-cols-2">
+              <div id="today-duties">
+                <TodayDuties assignments={localDuties} />
+              </div>
+              <div id="duty-checklist" className="w-full min-w-0 overflow-x-auto">
+                <InteractiveDutyChecklist assignments={localDuties} onUpdate={fetchAssignments} />
+              </div>
+            </div>
+
             {/* 1. IN-PROGRESS SHIFTS (MOST TOP) */}
             {inProgressDuties.length > 0 && (
               <section className="space-y-4">

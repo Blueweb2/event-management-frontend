@@ -65,9 +65,8 @@ export default function HeroActiveShiftWidget({
     });
     if (todayMatch) return todayMatch;
 
-    // 4. Nearest active assignment
-    const upcoming = assignments.find((a) => a.status !== "CANCELLED" && a.status !== "REJECTED");
-    return upcoming || assignments[0] || null;
+    // No shift today
+    return null;
   })();
 
   // Find active attendance record for today's shift

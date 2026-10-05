@@ -8,8 +8,10 @@ import { formatTime24to12 } from "@/lib/duty-mapper";
 
 export default function TodayDuties({
   assignments,
+  showViewAllLink = false,
 }: {
   assignments: Assignment[];
+  showViewAllLink?: boolean;
 }) {
   const [expandedDutyIds, setExpandedDutyIds] = useState<Set<string>>(new Set());
 
@@ -69,12 +71,18 @@ export default function TodayDuties({
           </h2>
           <p className="text-xs text-[#756d64]">Live shifts and tasks assigned to you</p>
         </div>
-        <Link
-          href="/staff/duties"
-          className="text-xs font-semibold text-[#9a6c37] hover:underline"
-        >
-          View All Duties
-        </Link>
+        {showViewAllLink ? (
+          <Link
+            href="/staff/duties"
+            className="text-xs font-semibold text-[#9a6c37] hover:underline"
+          >
+            View All Duties
+          </Link>
+        ) : (
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-[#9a6c37]">
+            Today
+          </span>
+        )}
       </div>
 
       {duties.length === 0 ? (

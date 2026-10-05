@@ -20,9 +20,13 @@ interface NotificationItem {
 
 interface ShiftNotificationsFeedProps {
   assignments: Assignment[];
+  onClose?: () => void;
 }
 
-export default function ShiftNotificationsFeed({ assignments }: ShiftNotificationsFeedProps) {
+export default function ShiftNotificationsFeed({
+  assignments,
+  onClose,
+}: ShiftNotificationsFeedProps) {
   const router = useRouter();
 
   // Generate realistic notifications from assigned shifts with specific navigation targets
@@ -123,6 +127,7 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
     if (item.targetId) {
       const element = document.getElementById(item.targetId);
       if (element) {
+        onClose?.();
         element.scrollIntoView({ behavior: "smooth", block: "center" });
         element.classList.add("ring-2", "ring-[#9a6c37]", "ring-offset-2", "rounded-2xl", "transition-all", "duration-500");
         setTimeout(() => {
@@ -134,7 +139,10 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
 
     // 2. Otherwise navigate to target route if specified
     if (item.targetUrl) {
+      onClose?.();
       router.push(item.targetUrl);
+    } else {
+      onClose?.();
     }
   };
 
@@ -142,12 +150,12 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-xs">
+    <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100">
         <div className="flex items-center gap-2 text-[#9a6c37]">
           <Bell size={18} />
-          <h2 className="text-base font-bold text-[#29241f]">Shift Reminders & Notifications</h2>
+          <h2 className="text-sm sm:text-base font-bold text-[#29241f]">Shift Reminders & Notifications</h2>
           {unreadCount > 0 && (
             <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-extrabold text-white">
               {unreadCount}
@@ -170,7 +178,16 @@ export default function ShiftNotificationsFeed({ assignments }: ShiftNotificatio
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800"
             >
               <CheckCheck size={14} />
-              <span>Mark all read</span>
+              <span className="hidden xs:inline">Mark all read</span>
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="ml-1 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            >
+              <span className="text-base font-bold">✕</span>
             </button>
           )}
         </div>

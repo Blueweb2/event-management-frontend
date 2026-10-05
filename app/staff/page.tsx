@@ -4,11 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import StaffHeader from "@/components/staff/StaffHeader";
 import StaffStats from "@/components/staff/StaffStats";
-import TodayDuties from "@/components/staff/TodayDuties";
 import UpcomingEvents from "@/components/staff/UpcomingEvents";
 import HeroActiveShiftWidget from "@/components/staff/shift/HeroActiveShiftWidget";
-import InteractiveDutyChecklist from "@/components/staff/shift/InteractiveDutyChecklist";
-import ShiftNotificationsFeed from "@/components/staff/shift/ShiftNotificationsFeed";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignments } from "@/lib/assignment.api";
 import { getAttendance } from "@/lib/attendance.api";
@@ -114,7 +111,7 @@ export default function StaffHomePage() {
 
   return (
     <main className="space-y-4 sm:space-y-6 lg:space-y-8 py-3.5 sm:py-6">
-      <StaffHeader />
+      <StaffHeader assignments={assignments} />
 
       <section>
         <p className="text-xs sm:text-sm font-semibold text-[#9a6c37]">Staff Portal</p>
@@ -122,7 +119,7 @@ export default function StaffHomePage() {
           Good morning, {user?.name || "Staff Member"} 👋
         </h1>
         <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#756d64]">
-          Here&apos;s your active shift, checklist, and schedule updates for today.
+          Here&apos;s your active shift overview and upcoming schedule.
         </p>
       </section>
 
@@ -143,7 +140,7 @@ export default function StaffHomePage() {
         </div>
       ) : (
         <>
-          {/* 1. Hero Active Shift Widget */}
+          {/* 1. Hero Active Shift Widget (Shows today's shift if any, otherwise 'No shift scheduled today') */}
           <div id="active-shift">
             <HeroActiveShiftWidget
               assignments={assignments}
@@ -155,22 +152,9 @@ export default function StaffHomePage() {
           {/* Quick Stats Bar */}
           <StaffStats assignments={assignments} attendance={attendance} />
 
-          {/* 2 & 3: Interactive Duty Checklist & Shift Notifications Feed */}
-          <div className="grid gap-6 xl:grid-cols-2">
-            <div id="duty-checklist" className="w-full min-w-0 overflow-x-auto">
-              <InteractiveDutyChecklist assignments={assignments} onUpdate={loadDashboard} />
-            </div>
-            <ShiftNotificationsFeed assignments={assignments} />
-          </div>
-
-          {/* Duties & Upcoming Events */}
-          <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
-            <div id="today-duties">
-              <TodayDuties assignments={assignments} />
-            </div>
-            <div id="upcoming-events">
-              <UpcomingEvents assignments={assignments} />
-            </div>
+          {/* Upcoming Events / Schedule */}
+          <div id="upcoming-events">
+            <UpcomingEvents assignments={assignments} />
           </div>
         </>
       )}
