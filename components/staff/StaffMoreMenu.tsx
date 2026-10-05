@@ -27,7 +27,7 @@ export default function StaffMoreMenu({ open, onClose }: StaffMoreMenuProps) {
   const handleLogout = () => {
     logout();
     onClose();
-    router.push("/login");
+    router.replace("/login");
   };
 
   const moreItems = [

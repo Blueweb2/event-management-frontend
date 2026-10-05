@@ -74,7 +74,7 @@ export function clearAuth() {
   getStorage("session")?.removeItem(USER_KEY);
 
   if (typeof document !== "undefined") {
-    document.cookie = "token=; path=/; max-age=0";
-    document.cookie = "user_role=; path=/; max-age=0";
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
+    document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
   }
 }

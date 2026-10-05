@@ -29,7 +29,7 @@ export default function StaffHeader({ assignments = [] }: StaffHeaderProps) {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.replace("/login");
   };
 
   return (

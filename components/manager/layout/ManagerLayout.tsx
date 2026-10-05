@@ -55,7 +55,7 @@ export default function ManagerLayout({
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
-    router.push("/login");
+    router.replace("/login");
   };
 
   if (loading) {
