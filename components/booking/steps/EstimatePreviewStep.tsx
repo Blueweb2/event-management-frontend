@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -322,8 +321,8 @@ export default function EstimatePreviewStep({
                 formData.message?.trim() ||
                 "",
               referralSource:
-                formData.referralSource === "Other" && formData.customReferral
-                  ? `Other (${formData.customReferral.trim()})`
+                formData.customReferral && formData.customReferral.trim()
+                  ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
                   : formData.referralSource || "",
             },
 
@@ -889,8 +888,8 @@ export default function EstimatePreviewStep({
                 How Discovered / Referral Source:{" "}
               </span>
               <span className="font-semibold text-[#29241f]">
-                {formData.referralSource === "Other" && formData.customReferral
-                  ? `Other (${formData.customReferral.trim()})`
+                {formData.customReferral && formData.customReferral.trim()
+                  ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
                   : formData.referralSource}
               </span>
             </div>
@@ -1310,39 +1309,7 @@ export default function EstimatePreviewStep({
           />
         </div>
 
-        {/* ================================== */}
-        {/* Create Estimate */}
-        {/* ================================== */}
-
-        {!estimate && (
-          <button
-            type="button"
-            onClick={
-              handleCreateEstimate
-            }
-            disabled={isCreating}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--sage-dark)] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isCreating ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-
-                Creating Estimate...
-              </>
-            ) : (
-              <>
-                Create Estimate
-
-                <ArrowRight
-                  size={17}
-                />
-              </>
-            )}
-          </button>
-        )}
-
         {/* Created status */}
-
         {estimate && (
           <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[var(--sage-light)] px-4 py-3">
             <CheckCircle2

@@ -10,6 +10,7 @@ import {
   LogOut,
   ChevronRight,
   ShieldAlert,
+  Package,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -31,6 +32,7 @@ export default function StaffMoreMenu({ open, onClose }: StaffMoreMenuProps) {
   };
 
   const moreItems = [
+    { label: "My Stock & Equipment", href: "/staff/stock", icon: Package },
     { label: "My Attendance", href: "/staff/attendance", icon: UserCheck },
     { label: "My Availability", href: "/staff/availability", icon: CalendarDays },
     { label: "Staff Profile", href: "/staff/profile", icon: UserCircle },

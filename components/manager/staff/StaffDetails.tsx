@@ -7,6 +7,7 @@ import {
   Phone,
   UserRound,
   Building2,
+  IndianRupee,
 } from "lucide-react";
 
 import type { Staff } from "@/types/staff";
@@ -61,6 +62,27 @@ export default function StaffDetails({
             value={staff.department}
           />
         )}
+
+        {/* Base Salary & Pay Rate */}
+        <DetailRow
+          icon={IndianRupee}
+          label="Base Salary / Rate"
+          value={
+            typeof staff.salary === "number" && staff.salary > 0
+              ? `₹${staff.salary.toLocaleString("en-IN")}${
+                  staff.salaryType === "hourly"
+                    ? " / hr (Hourly)"
+                    : staff.salaryType === "daily"
+                    ? " / day (Daily)"
+                    : staff.salaryType === "monthly"
+                    ? " / mo (Monthly)"
+                    : " / event (Per Event)"
+                }`
+              : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
+              ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr (Hourly)`
+              : "₹0.00 (Not configured)"
+          }
+        />
 
         {/* Email */}
         <DetailRow

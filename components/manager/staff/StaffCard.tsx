@@ -61,10 +61,10 @@ export default function StaffCard({
             />
           </div>
 
-          {/* Status */}
-          <div className="mt-2">
+          {/* Status & Rate */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
                 isActive
                   ? "bg-[#E8F5E9] text-[#2E7D32]"
                   : "bg-gray-100 text-gray-500"
@@ -80,6 +80,19 @@ export default function StaffCard({
 
               {isActive ? "Active" : "Inactive"}
             </span>
+
+            {(typeof staff.salary === "number" && staff.salary > 0) || (typeof staff.hourlyRate === "number" && staff.hourlyRate > 0) ? (
+              <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-200">
+                ₹{((staff.salary || staff.hourlyRate) as number).toLocaleString("en-IN")}
+                {staff.salaryType === "hourly"
+                  ? "/hr"
+                  : staff.salaryType === "daily"
+                  ? "/day"
+                  : staff.salaryType === "monthly"
+                  ? "/mo"
+                  : "/event"}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>

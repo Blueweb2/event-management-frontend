@@ -22,6 +22,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Package,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -80,6 +81,11 @@ const menuItems = [
     label: "Food Menu",
     href: "/manager/food",
     icon: Utensils,
+  },
+  {
+    label: "Stock & Equipment",
+    href: "/manager/stock",
+    icon: Package,
   },
 
   // ==========================================

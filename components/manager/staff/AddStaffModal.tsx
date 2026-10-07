@@ -20,6 +20,7 @@ import {
   Camera,
   Trash2,
   Upload,
+  IndianRupee,
 } from "lucide-react";
 
 import type {
@@ -43,6 +44,8 @@ interface FormData {
   phone: string;
   role: string;
   department: string;
+  salary: string;
+  salaryType: "hourly" | "daily" | "monthly" | "per_event";
   password: string;
   confirmPassword: string;
   avatar: string;
@@ -54,6 +57,8 @@ const initialFormData: FormData = {
   phone: "",
   role: "",
   department: "",
+  salary: "",
+  salaryType: "hourly",
   password: "",
   confirmPassword: "",
   avatar: "",
@@ -233,6 +238,8 @@ export default function AddStaffModal({
     const sanitizedUsername = rawUsername.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
     const validUsername = sanitizedUsername.length >= 3 ? sanitizedUsername.slice(0, 30) : `${sanitizedUsername}staff`;
 
+    const numSalary = Number(formData.salary) || 0;
+
     const payload: CreateStaffPayload = {
       name,
       username: validUsername,
@@ -241,6 +248,9 @@ export default function AddStaffModal({
       role,
       department:
         department || undefined,
+      salary: numSalary,
+      salaryType: formData.salaryType,
+      hourlyRate: formData.salaryType === "hourly" ? numSalary : undefined,
       password,
       avatar: formData.avatar ? formData.avatar : undefined,
     };
@@ -511,6 +521,55 @@ export default function AddStaffModal({
               Populated from active services configured in your Service Menu.
             </p>
           </FormField>
+
+          {/* Salary & Pay Structure */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3 border border-[#e8e1d8]">
+            <FormField
+              label="Salary / Pay Rate (₹)"
+              icon={IndianRupee}
+            >
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={formData.salary}
+                onChange={(event) =>
+                  handleChange(
+                    "salary",
+                    event.target.value,
+                  )
+                }
+                placeholder="e.g. 500"
+                disabled={isSaving}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+              />
+            </FormField>
+
+            <FormField
+              label="Rate Structure"
+              icon={IndianRupee}
+            >
+              <select
+                value={formData.salaryType}
+                onChange={(event) =>
+                  handleChange(
+                    "salaryType",
+                    event.target.value as any,
+                  )
+                }
+                disabled={isSaving}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+              >
+                <option value="hourly">Hourly Rate (₹/hr)</option>
+                <option value="daily">Daily Rate (₹/day)</option>
+                <option value="monthly">Monthly Salary (₹/mo)</option>
+                <option value="per_event">Per Event Pay (₹/event)</option>
+              </select>
+            </FormField>
+            <p className="col-span-full text-[10px] text-gray-500 italic">
+              Configured rate will automatically apply when assigning this staff member to events.
+            </p>
+          </div>
 
           {/* Password */}
           <FormField

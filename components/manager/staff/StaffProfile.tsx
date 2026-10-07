@@ -213,7 +213,7 @@ export default function StaffProfile({
           </p>
 
           {/* Status */}
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
             <StaffStatusBadge
               status={
                 staff.isActive
@@ -222,6 +222,27 @@ export default function StaffProfile({
               }
               size="md"
             />
+
+            {/* Base Rate Badge */}
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50/80 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-900">
+              <IndianRupee size={12} className="text-amber-700" />
+              <span>
+                Rate:{" "}
+                {typeof staff.salary === "number" && staff.salary > 0
+                  ? `₹${staff.salary.toLocaleString("en-IN")}${
+                      staff.salaryType === "hourly"
+                        ? " / hr"
+                        : staff.salaryType === "daily"
+                        ? " / day"
+                        : staff.salaryType === "monthly"
+                        ? " / mo"
+                        : " / event"
+                    }`
+                  : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
+                  ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr`
+                  : "Unset"}
+              </span>
+            </div>
           </div>
 
           {/* Staff ID */}
