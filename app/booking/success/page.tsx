@@ -332,17 +332,24 @@ function SuccessContent() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
-            href="/"
+            href="/manager/estimates"
             className="flex min-h-12 items-center justify-center rounded-2xl bg-[#4f5745] px-8 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#363d2e] hover:shadow-lg active:scale-[0.99]"
           >
-            Back to Home
+            View in Estimates Dashboard
           </Link>
 
           <Link
-            href="/booking"
+            href="/manager/booking"
             className="flex min-h-12 items-center justify-center rounded-2xl border border-[#e5e0d5] bg-white px-8 text-sm font-semibold text-[#363833] transition hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
           >
-            Submit Another Booking
+            Create Another Booking
+          </Link>
+
+          <Link
+            href="/manager"
+            className="flex min-h-12 items-center justify-center rounded-2xl border border-[#e5e0d5] bg-[#faf8f5] px-6 text-sm font-semibold text-[#756d64] transition hover:-translate-y-0.5 hover:bg-white active:scale-[0.99]"
+          >
+            Manager Portal
           </Link>
         </div>
 

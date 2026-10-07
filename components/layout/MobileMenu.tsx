@@ -166,7 +166,7 @@ export default function MobileMenu({
           </Link>
 
           <Link
-            href="/booking"
+            href="/manager"
             onClick={onClose}
             className={[
               "flex min-h-12 w-full items-center justify-center gap-2",
@@ -176,7 +176,7 @@ export default function MobileMenu({
               "transition hover:bg-[var(--sage)]",
             ].join(" ")}
           >
-            Book Your Event
+            Manager Portal
             <ArrowRight size={17} />
           </Link>
         </div>

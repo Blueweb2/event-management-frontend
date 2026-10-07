@@ -98,7 +98,7 @@ export default function Hero() {
 
               {/* Primary */}
               <Link
-                href="/booking"
+                href="/manager"
                 className={[
                   "group inline-flex min-h-12 items-center justify-center gap-2",
                   "rounded-full",
@@ -114,7 +114,7 @@ export default function Hero() {
                   "active:translate-y-0",
                 ].join(" ")}
               >
-                Plan Your Event
+                Manager Portal
 
                 <ArrowRight
                   size={18}
@@ -372,7 +372,7 @@ export default function Hero() {
 
                 {/* Continue Button */}
                 <Link
-                  href="/booking"
+                  href="/manager"
                   className={[
                     "group flex min-h-12 w-full items-center justify-center gap-2",
                     "rounded-full",
@@ -382,7 +382,7 @@ export default function Hero() {
                     "hover:bg-[var(--sage)]",
                   ].join(" ")}
                 >
-                  Continue Booking
+                  Open Manager Portal
 
                   <ArrowRight
                     size={17}

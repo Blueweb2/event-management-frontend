@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowRight,
   CalendarDays,
+  CalendarPlus,
   CheckCircle2,
   CircleCheck,
   Eye,
@@ -452,6 +453,15 @@ export default function EstimatesPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/manager/booking")}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#252525] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1f1f1f]"
+              >
+                <CalendarPlus size={16} />
+                New Booking
+              </button>
+
               <button
                 type="button"
                 onClick={() => router.push("/manager/events")}

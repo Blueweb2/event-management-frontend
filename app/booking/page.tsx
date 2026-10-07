@@ -1,13 +1,5 @@
-import BookingHeader from "@/components/booking/BookingHeader";
-import BookingForm from "@/components/booking/BookingForm";
+import { redirect } from "next/navigation";
 
 export default function BookingPage() {
-  return (
-    <main className="min-h-screen bg-[#F8F7F3]">
-      <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-10 lg:px-8">
-        <BookingHeader />
-        <BookingForm />
-      </div>
-    </main>
-  );
-}
+  redirect("/manager/booking");
+}

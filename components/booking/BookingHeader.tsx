@@ -1,4 +1,5 @@
-import { Sparkles, CalendarPlus } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, CalendarPlus, ArrowLeft } from "lucide-react";
 
 export default function BookingHeader() {
   return (
@@ -23,6 +24,16 @@ export default function BookingHeader() {
           </p>
         </div>
       </div>
+
+      <Link
+        href="/manager"
+        className="inline-flex items-center gap-1.5 rounded-2xl border border-[#d8cfc4] bg-[#faf8f5] px-3.5 py-2 text-xs font-bold text-[#29241f] hover:bg-[#eee8de] active:scale-95 transition shadow-2xs"
+        title="Return to Manager Dashboard"
+      >
+        <ArrowLeft size={15} />
+        <span className="hidden sm:inline">Manager Portal</span>
+        <span className="sm:hidden">Back</span>
+      </Link>
     </div>
   );
 }

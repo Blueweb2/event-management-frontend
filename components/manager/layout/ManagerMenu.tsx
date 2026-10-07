@@ -13,6 +13,7 @@ import {
   Clock3,
   UserCheck,
   CalendarCheck,
+  CalendarPlus,
   FileText,
   Utensils,
   BriefcaseBusiness,
@@ -52,6 +53,11 @@ const menuItems = [
   // Core Management & Operations
   // ==========================================
 
+  {
+    label: "New Booking",
+    href: "/manager/booking",
+    icon: CalendarPlus,
+  },
   {
     label: "Operations Hub",
     href: "/manager/duties",

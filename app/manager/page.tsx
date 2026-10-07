@@ -22,7 +22,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         <Link
-          href="/booking"
+          href="/manager/booking"
           className="inline-flex h-11 items-center justify-center rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98] sm:h-12 shrink-0 hover:bg-[#1f1f1f]"
         >
           New Booking
