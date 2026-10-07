@@ -173,10 +173,10 @@ export default function FoodMenuStep({
         </div>
 
         <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#29241f]">
-          Design Your Event Dining Experience
+          Configure Food &amp; Catering Menu
         </h2>
         <p className="text-xs sm:text-sm text-[#756d64]">
-          Select appetizers, main course delicacies, live counters, and beverages.
+          Choose starters, main courses, live counters, desserts, and specify dietary instructions.
         </p>
       </div>
 

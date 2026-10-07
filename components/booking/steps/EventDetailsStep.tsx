@@ -34,10 +34,10 @@ export default function EventDetailsStep({
         </div>
         <div>
           <h2 className="text-lg sm:text-xl font-black text-[#29241f]">
-            Event Core Details
+            Event Information
           </h2>
           <p className="mt-0.5 text-xs text-[#756d64]">
-            Tell us the occasion, expected guests, venue, and timing.
+            Enter the event name, type, date, schedule, expected guests, and venue location.
           </p>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function EventDetailsStep({
           </div>
 
           <p className="mt-2.5 text-xs text-[#756d64]">
-            Guest count helps calculate per-guest services, seating layouts, and staffing requirements.
+            Guest count is used to calculate per-guest services, catering quantities, and staff allocations.
           </p>
         </div>
 
@@ -283,14 +283,14 @@ export default function EventDetailsStep({
             htmlFor="description"
             className="mb-1.5 block text-xs sm:text-sm font-semibold text-[#29241f]"
           >
-            Event Description & Vision
+            Event Notes &amp; Setup Requirements
             <span className="ml-1 text-[#b8894b]">*</span>
           </label>
 
           <textarea
             id="description"
             rows={4}
-            placeholder="Describe your event theme, special preferences, setup style, or specific requirements..."
+            placeholder="Enter client theme, special instructions, decor preferences, floor plan requirements, or coordinator notes..."
             value={formData.description}
             onChange={(event) =>
               updateField("description", event.target.value)

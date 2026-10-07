@@ -156,7 +156,7 @@ export default function SelectedServicesSummary({
           </span>
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-[#29241f]">
-              Your Event Selection
+              Selected Services &amp; Equipment
             </h3>
             <p className="text-[11px] text-[#8d847b]">
               {selectedItems.length} {selectedItems.length === 1 ? "service" : "services"} included
@@ -184,7 +184,7 @@ export default function SelectedServicesSummary({
             </span>
             <p className="mt-3 text-xs font-bold text-gray-700">No services selected yet</p>
             <p className="mt-1 max-w-[200px] text-[11px] leading-relaxed text-gray-400">
-              Browse categories and click any photo card to curate your event plan.
+              Select services, rentals, or packages from the list to add them to this booking.
             </p>
           </div>
         ) : (

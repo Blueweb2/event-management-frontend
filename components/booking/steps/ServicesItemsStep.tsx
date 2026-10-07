@@ -270,17 +270,16 @@ export default function ServicesItemsStep({
             <Sparkles size={14} className="text-[#d8a86c]" />
           </span>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9A7B4F]">
-            Step 4 • Visual Event Configurator
+            Step 4 • Services & Equipment
           </p>
         </div>
 
         <div>
           <h2 className="text-2xl font-black tracking-tight text-[#29241f] sm:text-3xl">
-            Curate Your Event Services & Designs
+            Select Event Services, Decor & Equipment
           </h2>
           <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-[#756d64]">
-            Browse photos of stage decorations, dining setups, lighting themes, photography, and entertainment.
-            Click any design card to include it in your personalized event plan.
+            Select stage decorations, dining setups, lighting themes, photography, sound systems, and equipment packages required for this event.
           </p>
         </div>
       </div>
@@ -301,10 +300,10 @@ export default function ServicesItemsStep({
         <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-3xl border border-[#eee7dc] bg-white p-12 text-center">
           <Loader2 size={32} className="animate-spin text-[#9A7B4F]" />
           <p className="text-sm font-bold text-[#29241f]">
-            Loading visual service collection...
+            Loading services catalog...
           </p>
           <p className="text-xs text-gray-400">
-            Fetching high-resolution setup themes & packages
+            Fetching available setups, decor, and equipment packages
           </p>
         </div>
       ) : services.length === 0 ? (
@@ -314,7 +313,7 @@ export default function ServicesItemsStep({
             No services currently available
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Please check back soon or contact your event manager.
+            Create or activate services in Manager &gt; Services.
           </p>
         </div>
       ) : (

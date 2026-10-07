@@ -136,7 +136,7 @@ export default function BookingForm() {
 
       if (!formData.eventDate) {
         setError(
-          "Please select your event date.",
+          "Please select the event date.",
         );
 
         return false;
@@ -144,7 +144,7 @@ export default function BookingForm() {
 
       if (!formData.eventTime) {
         setError(
-          "Please select your event time.",
+          "Please select the event time.",
         );
 
         return false;
@@ -183,7 +183,7 @@ export default function BookingForm() {
 
       if (!formData.description.trim()) {
         setError(
-          "Please describe your event.",
+          "Please enter event notes or setup requirements.",
         );
 
         return false;
@@ -259,7 +259,7 @@ export default function BookingForm() {
         formData.services.length === 0
       ) {
         setError(
-          "Please add at least one service or item.",
+          "Please select at least one service or equipment item.",
         );
 
         return false;
@@ -421,6 +421,10 @@ export default function BookingForm() {
           phone: formData.phone.trim(),
           email: formData.email.trim().toLowerCase(),
           message: formData.message?.trim() || "",
+          referralSource:
+            formData.customReferral && formData.customReferral.trim()
+              ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
+              : formData.referralSource || "",
         },
         services: formData.services.map((item) => ({
           serviceId: item.serviceId,

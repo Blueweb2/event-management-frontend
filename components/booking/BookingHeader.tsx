@@ -12,15 +12,15 @@ export default function BookingHeader() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-xl font-black tracking-tight text-[#29241f]">
-              Event Booking Studio
+              Create Event Booking &amp; Estimate
             </h1>
-            <span className="hidden xs:inline-flex items-center gap-1 rounded-full bg-[#9A7B4F]/10 px-2 py-0.5 text-[10px] font-bold text-[#9A7B4F]">
+            <span className="hidden xs:inline-flex items-center gap-1 rounded-full bg-[#9A7B4F]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#9A7B4F]">
               <Sparkles size={11} />
-              <span>Instant Estimate</span>
+              <span>Manager Studio</span>
             </span>
           </div>
           <p className="text-[11px] sm:text-xs text-[#756d64]">
-            Customize services, catering, and generate your quote in minutes
+            Fill in event details, client info, catering, and services to generate an official booking estimate.
           </p>
         </div>
       </div>

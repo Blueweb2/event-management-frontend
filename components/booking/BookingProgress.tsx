@@ -25,7 +25,7 @@ const steps = [
   {
     number: 2,
     title: "Client",
-    fullTitle: "Client Details",
+    fullTitle: "Client Information",
     icon: UserRound,
   },
   {
@@ -37,13 +37,13 @@ const steps = [
   {
     number: 4,
     title: "Services",
-    fullTitle: "Services & Decor",
+    fullTitle: "Services & Equipment",
     icon: ReceiptText,
   },
   {
     number: 5,
     title: "Estimate",
-    fullTitle: "Estimate Preview",
+    fullTitle: "Review & Final Estimate",
     icon: Send,
   },
 ];
