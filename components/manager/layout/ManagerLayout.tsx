@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import ManagerHeader from "./ManagerHeader";
 import ManagerMenu from "./ManagerMenu";
 import ManagerBottomNav from "./ManagerBottomNav";
@@ -17,6 +17,9 @@ export default function ManagerLayout({
   children,
 }: ManagerLayoutProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isBookingPage =
+    pathname === "/manager/booking" || pathname?.startsWith("/manager/booking");
   const { user, token, loading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotifsOpen, setIsNotifsOpen] = useState(false);
@@ -65,6 +68,18 @@ export default function ManagerLayout({
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#9A7B4F] border-t-transparent" />
           <p className="text-sm font-medium text-gray-500">Loading Manager Portal...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isBookingPage) {
+    return (
+      <div className="min-h-screen bg-[#F8F7F3] text-[#1F1F1F]">
+        <main className="min-h-screen">
+          <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
+            {children}
+          </div>
+        </main>
       </div>
     );
   }

@@ -53,11 +53,7 @@ const menuItems = [
   // Core Management & Operations
   // ==========================================
 
-  {
-    label: "New Booking",
-    href: "/manager/booking",
-    icon: CalendarPlus,
-  },
+ 
   {
     label: "Operations Hub",
     href: "/manager/duties",

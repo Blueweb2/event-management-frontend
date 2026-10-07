@@ -29,16 +29,12 @@ export default function EventDetailsStep({
     <div className="rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-8 shadow-xs">
       {/* Step Header */}
       <div className="mb-6 flex items-start gap-3 border-b border-[#eee7dc] pb-5">
-        <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#29241f] text-white shrink-0 shadow-xs">
-          <FileText size={18} className="text-[#d8a86c]" />
-        </div>
+       
         <div>
           <h2 className="text-lg sm:text-xl font-black text-[#29241f]">
             Event Information
           </h2>
-          <p className="mt-0.5 text-xs text-[#756d64]">
-            Enter the event name, type, date, schedule, expected guests, and venue location.
-          </p>
+     
         </div>
       </div>
 
