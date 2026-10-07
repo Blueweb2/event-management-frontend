@@ -173,10 +173,10 @@ export default function FoodMenuStep({
         </div>
 
         <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#29241f]">
-          Design Your Event Dining Experience
+          Configure Food &amp; Catering Menu
         </h2>
         <p className="text-xs sm:text-sm text-[#756d64]">
-          Select appetizers, main course delicacies, live counters, and beverages.
+          Choose starters, main courses, live counters, desserts, and specify dietary instructions.
         </p>
       </div>
 
@@ -430,38 +430,44 @@ export default function FoodMenuStep({
 
                           return (
                             <div
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-2.5"
                               onClick={(event) => event.stopPropagation()}
                             >
-                              <div className="flex items-center rounded-xl border border-[#d8cfc4] bg-white shadow-2xs">
+                              <div className="flex items-center overflow-hidden rounded-xl border border-[#d8cfc4] bg-[#faf8f5] shadow-xs">
                                 <button
                                   type="button"
                                   aria-label={`Decrease ${item.name} quantity`}
-                                  onClick={() =>
+                                  disabled={quantity <= 1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextQty = Math.max(1, quantity - 1);
                                     updateFoodMenu({
                                       items: currentMenu.items.map((food) =>
                                         food.foodItemId === item._id || food.name === item.name
                                           ? {
                                               ...food,
-                                              quantity: Math.max(1, quantity - 1),
-                                              amount:
-                                                Number(food.rate || 0) * Math.max(1, quantity - 1),
+                                              quantity: nextQty,
+                                              amount: Number(food.rate || 0) * nextQty,
                                             }
                                           : food,
                                       ),
-                                    })
-                                  }
-                                  className="flex h-8 w-8 items-center justify-center text-gray-700 hover:text-[#29241f] active:scale-95"
+                                    });
+                                  }}
+                                  className="flex h-8 w-8 items-center justify-center bg-white text-[#5c544a] hover:bg-[#eee6d8] hover:text-[#29241f] active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
-                                  <Minus size={13} />
+                                  <Minus size={13} strokeWidth={2.5} />
                                 </button>
+
                                 <input
-                                  type="number"
-                                  min={1}
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
                                   value={quantity}
                                   onClick={(e) => e.stopPropagation()}
+                                  onFocus={(e) => e.target.select()}
                                   onChange={(e) => {
-                                    const newQty = Math.max(1, parseInt(e.target.value, 10) || 1);
+                                    const raw = e.target.value.replace(/\D/g, "");
+                                    const newQty = raw === "" ? 1 : Math.max(1, parseInt(raw, 10));
                                     updateFoodMenu({
                                       items: currentMenu.items.map((food) =>
                                         food.foodItemId === item._id || food.name === item.name
@@ -474,32 +480,38 @@ export default function FoodMenuStep({
                                       ),
                                     });
                                   }}
-                                  className="w-8 text-center text-xs font-black text-[#29241f] bg-transparent focus:outline-none"
+                                  className="w-10 bg-transparent text-center text-xs font-black text-[#29241f] focus:outline-none"
                                 />
+
                                 <button
                                   type="button"
                                   aria-label={`Increase ${item.name} quantity`}
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextQty = quantity + 1;
                                     updateFoodMenu({
                                       items: currentMenu.items.map((food) =>
                                         food.foodItemId === item._id || food.name === item.name
                                           ? {
                                               ...food,
-                                              quantity: quantity + 1,
-                                              amount: Number(food.rate || 0) * (quantity + 1),
+                                              quantity: nextQty,
+                                              amount: Number(food.rate || 0) * nextQty,
                                             }
                                           : food,
                                       ),
-                                    })
-                                  }
-                                  className="flex h-8 w-8 items-center justify-center text-gray-700 hover:text-[#29241f] active:scale-95"
+                                    });
+                                  }}
+                                  className="flex h-8 w-8 items-center justify-center bg-white text-[#5c544a] hover:bg-[#eee6d8] hover:text-[#29241f] active:scale-90 transition-all"
                                 >
-                                  <Plus size={13} />
+                                  <Plus size={13} strokeWidth={2.5} />
                                 </button>
                               </div>
-                              <span className="text-xs font-black text-[#29241f]">
-                                ₹{amount.toLocaleString("en-IN")}
-                              </span>
+
+                              <div className="flex flex-col items-end">
+                                <span className="text-xs font-black text-[#29241f]">
+                                  ₹{amount.toLocaleString("en-IN")}
+                                </span>
+                              </div>
                             </div>
                           );
                         })()

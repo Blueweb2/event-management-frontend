@@ -13,6 +13,7 @@ import {
   Clock3,
   UserCheck,
   CalendarCheck,
+  CalendarPlus,
   FileText,
   Utensils,
   BriefcaseBusiness,
@@ -22,6 +23,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Package,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -52,6 +54,11 @@ const menuItems = [
   // ==========================================
 
   {
+    label: "New Booking",
+    href: "/manager/booking",
+    icon: CalendarPlus,
+  },
+  {
     label: "Operations Hub",
     href: "/manager/duties",
     icon: ClipboardList,
@@ -80,6 +87,11 @@ const menuItems = [
     label: "Food Menu",
     href: "/manager/food",
     icon: Utensils,
+  },
+  {
+    label: "Stock & Equipment",
+    href: "/manager/stock",
+    icon: Package,
   },
 
   // ==========================================

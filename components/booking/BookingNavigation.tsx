@@ -16,6 +16,7 @@ interface BookingNavigationProps {
   loading?: boolean;
   submitLabel?: string;
   submitIcon?: React.ReactNode;
+  backLabel?: string;
 }
 
 export default function BookingNavigation({
@@ -27,6 +28,7 @@ export default function BookingNavigation({
   loading = false,
   submitLabel,
   submitIcon,
+  backLabel,
 }: BookingNavigationProps) {
   const isFirstStep = currentStep === 1;
   const isLastStep = currentStep === totalSteps;
@@ -38,17 +40,16 @@ export default function BookingNavigation({
       ========================================== */}
       <div className="fixed inset-x-0 bottom-0 z-30 sm:hidden border-t border-[#e8e1d8] bg-white/95 px-4 py-3 backdrop-blur-md shadow-2xl">
         <div className="flex items-center gap-2.5">
-          {!isFirstStep && (
-            <button
-              type="button"
-              onClick={onBack}
-              disabled={loading}
-              className="flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[#d8cfc4] bg-[#faf8f5] px-4 text-xs font-bold text-[#29241f] active:scale-95 transition disabled:opacity-50"
-            >
-              <ArrowLeft size={16} />
-              <span>Back</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={loading}
+            className="flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[#d8cfc4] bg-[#faf8f5] px-4 text-xs font-bold text-[#29241f] active:scale-95 transition disabled:opacity-50"
+            title={isFirstStep ? "Return to previous page" : "Previous step"}
+          >
+            <ArrowLeft size={16} />
+            <span>{backLabel || (isFirstStep ? "Back" : "Back")}</span>
+          </button>
 
           {isLastStep ? (
             <button
@@ -83,20 +84,16 @@ export default function BookingNavigation({
       ========================================== */}
       <div className="mt-8 hidden sm:flex items-center justify-between gap-3 border-t border-[#e8e1d8] pt-6">
         {/* Back */}
-        {!isFirstStep ? (
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            onClick={onBack}
-            disabled={loading}
-            icon={<ArrowLeft size={17} />}
-          >
-            Back
-          </Button>
-        ) : (
-          <div />
-        )}
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          onClick={onBack}
+          disabled={loading}
+          icon={<ArrowLeft size={17} />}
+        >
+          {backLabel || (isFirstStep ? "Back" : "Back")}
+        </Button>
 
         {/* Continue / Submit */}
         {isLastStep ? (

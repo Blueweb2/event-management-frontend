@@ -146,10 +146,10 @@ export default function Navbar({
             Login
           </Link>
 
-          {/* Booking CTA */}
-          <Link href="/booking">
+          {/* Manager Portal CTA */}
+          <Link href="/manager">
             <Button size="sm">
-              Book Your Event
+              Manager Portal
             </Button>
           </Link>
         </div>

@@ -125,7 +125,8 @@ export default function EventServiceStaffingMatrix({
     setRole(stream.department);
     setDutyDate(data?.targetDate || "");
     setStartTime(data?.event.eventTime || "10:00");
-    setHourlyRate(25);
+    const profileRate = (staffMember as any)?.hourlyRate || (staffMember as any)?.salary || 0;
+    setHourlyRate(profileRate);
 
     // Calculate default end time (+4 hours)
     if (data?.event.eventTime) {
@@ -623,7 +624,7 @@ export default function EventServiceStaffingMatrix({
                             }`}
                           >
                             <UserPlus size={13} />
-                            Allocate
+                            Choose
                           </button>
                         </div>
                       ))
@@ -803,7 +804,7 @@ export default function EventServiceStaffingMatrix({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
-                      Salary Per Hour ($/hr)
+                      Hourly Pay Rate (₹/hr)
                     </label>
                     <input
                       type="number"
@@ -811,9 +812,12 @@ export default function EventServiceStaffingMatrix({
                       step="0.5"
                       value={hourlyRate}
                       onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
-                      placeholder="e.g. 25.00"
+                      placeholder="e.g. 500.00"
                       className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
                     />
+                    <p className="mt-1 text-[10px] text-gray-400">
+                      Auto-filled from staff member&apos;s base salary profile.
+                    </p>
                   </div>
 
                   <div className="flex flex-col justify-center rounded-2xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">

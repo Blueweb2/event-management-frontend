@@ -80,10 +80,10 @@ export default function ClientDetailsStep({
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-black text-[#29241f]">
-              Contact Information
+              Client Information
             </h2>
             <p className="mt-0.5 text-xs text-[#756d64]">
-              How our planners can reach you with your finalized quotation.
+              Enter client contact details for booking confirmation, estimates, and billing.
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function ClientDetailsStep({
                 onChange={(event) =>
                   updateField("name", event.target.value)
                 }
-                placeholder="Enter your full name"
+                placeholder="Enter client's full name"
                 required
                 className="h-12 w-full rounded-2xl border border-[#d8cfc4] bg-white pl-11 pr-4 text-sm text-[#29241f] outline-none transition placeholder:text-gray-400 focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/20 shadow-2xs"
               />
@@ -221,10 +221,10 @@ export default function ClientDetailsStep({
           <Compass size={18} className="text-[#9A7B4F]" />
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[#29241f]">
-              How Did You Hear About Us?
+              Lead / Inquiry Source
             </h3>
             <p className="text-xs text-[#756d64]">
-              Helps us improve our event services and customer offerings.
+              Record how this client reached out or discovered our event management services.
             </p>
           </div>
         </div>
@@ -277,14 +277,19 @@ export default function ClientDetailsStep({
           })}
         </div>
 
-        {/* Custom text field if 'Other' or 'Social Media' is selected */}
-        {(formData.referralSource === "Other" || formData.referralSource === "Social Media") && (
-          <div className="mt-4 animate-in fade-in">
+        {/* Custom text field if 'Friend / Referral', 'Social Media', or 'Other' is selected */}
+        {(formData.referralSource === "Friend / Referral" ||
+          formData.referralSource === "Social Media" ||
+          formData.referralSource === "Other") && (
+          <div className="mt-4 animate-in fade-in transition-all">
             <label
               htmlFor="customReferral"
-              className="mb-1.5 block text-xs font-semibold text-gray-700"
+              className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700"
             >
-              {formData.referralSource === "Social Media"
+              <UserCheck size={14} className="text-[#9A7B4F]" />
+              {formData.referralSource === "Friend / Referral"
+                ? "Which friend or family member referred you? (Mention their name)"
+                : formData.referralSource === "Social Media"
                 ? "Please specify which platform (Instagram, Facebook, LinkedIn...):"
                 : "Please specify your referral source:"}
             </label>
@@ -292,7 +297,9 @@ export default function ClientDetailsStep({
               id="customReferral"
               type="text"
               placeholder={
-                formData.referralSource === "Social Media"
+                formData.referralSource === "Friend / Referral"
+                  ? "e.g. Rahul Sharma, Priya Mehta, Uncle Verma..."
+                  : formData.referralSource === "Social Media"
                   ? "e.g. Instagram @handle, viral reel, LinkedIn..."
                   : "e.g. Corporate event, magazine, wedding expo..."
               }
@@ -300,7 +307,7 @@ export default function ClientDetailsStep({
               onChange={(event) =>
                 updateField("customReferral", event.target.value)
               }
-              className="h-12 w-full rounded-2xl border border-[#d8cfc4] bg-white px-4 text-sm text-[#29241f] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/20"
+              className="h-12 w-full rounded-2xl border border-[#d8cfc4] bg-white px-4 text-sm text-[#29241f] outline-none transition placeholder:text-gray-400 focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/20 shadow-2xs"
             />
           </div>
         )}
@@ -309,7 +316,7 @@ export default function ClientDetailsStep({
       {/* PRIVACY / CONTACT NOTE */}
       <div className="flex items-center gap-2 rounded-2xl border border-[#e8e1d8] bg-[#faf8f5] px-4 py-3 text-xs text-[#756d64]">
         <ShieldCheck size={16} className="text-emerald-700 shrink-0" />
-        <span>Your contact details are encrypted and only used to prepare your quotation.</span>
+        <span>Client profile will be saved to your Client CRM for estimates, invoices, and future event coordination.</span>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export type DutyFormValues = {
 };
 
 type EventOption = { id: string; name: string; date: string; time: string };
-type StaffOption = { id: string; name: string; department?: string };
+type StaffOption = { id: string; name: string; department?: string; salary?: number; hourlyRate?: number; salaryType?: string };
 
 interface AddDutyModalProps {
   open: boolean;
@@ -265,7 +265,16 @@ export default function AddDutyModal({
             <select
               id="duty-staff"
               value={form.staff}
-              onChange={(e) => updateField("staff", e.target.value)}
+              onChange={(e) => {
+                const staffId = e.target.value;
+                const member = staff.find((s) => s.id === staffId);
+                const rate = member?.hourlyRate || member?.salary || 0;
+                setForm((prev) => ({
+                  ...prev,
+                  staff: staffId,
+                  hourlyRate: rate > 0 ? rate : prev.hourlyRate,
+                }));
+              }}
               disabled={loading}
               required
               className={inputClass}
@@ -279,10 +288,11 @@ export default function AddDutyModal({
                     d.status !== "CANCELLED" &&
                     d.status !== "REJECTED"
                 );
+                const rateLabel = (member.hourlyRate || member.salary) ? `(₹${member.hourlyRate || member.salary}/hr)` : "";
 
                 return (
                   <option key={member.id} value={member.id}>
-                    {member.name} {member.department ? `(${member.department})` : ""}{" "}
+                    {member.name} {member.department ? `[${member.department}]` : ""} {rateLabel}{" "}
                     {isConflicted ? "⚠️ [Assigned on Date]" : "🟢 [Available]"}
                   </option>
                 );
@@ -366,18 +376,21 @@ export default function AddDutyModal({
 
           {/* Salary Per Hour & Working Hours Summary */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Salary Per Hour ($/hr)" htmlFor="duty-hourly-rate">
+            <Field label="Hourly Pay Rate (₹/hr)" htmlFor="duty-hourly-rate">
               <input
                 id="duty-hourly-rate"
                 type="number"
                 min="0"
                 step="0.5"
-                placeholder="e.g. 25.00"
+                placeholder="e.g. 500.00"
                 value={form.hourlyRate ?? 0}
                 onChange={(e) => updateField("hourlyRate" as any, e.target.value)}
                 disabled={loading}
                 className={inputClass}
               />
+              <p className="mt-1 text-[10px] text-gray-500">
+                Auto-populated from staff member&apos;s configured base salary.
+              </p>
             </Field>
 
             <div className="flex flex-col justify-center rounded-xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -322,8 +321,8 @@ export default function EstimatePreviewStep({
                 formData.message?.trim() ||
                 "",
               referralSource:
-                formData.referralSource === "Other" && formData.customReferral
-                  ? `Other (${formData.customReferral.trim()})`
+                formData.customReferral && formData.customReferral.trim()
+                  ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
                   : formData.referralSource || "",
             },
 
@@ -554,16 +553,15 @@ export default function EstimatePreviewStep({
 
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--sage)]">
-          Step 4
+          Step 5
         </p>
 
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--sage-dark)] sm:text-3xl">
-          Estimate Preview
+          Estimate Preview &amp; Generation
         </h2>
 
         <p className="mt-2 text-sm leading-6 text-[var(--taupe)] sm:text-base">
-          Review the estimate details before
-          sending it to the client.
+          Review the calculated pricing, adjust discounts or additional charges, and generate the formal estimate for this booking.
         </p>
       </div>
 
@@ -886,11 +884,11 @@ export default function EstimatePreviewStep({
           {formData.referralSource && (
             <div className="mt-4 rounded-xl border border-[#e8e1d8] bg-[#faf6f0] p-3 text-xs">
               <span className="font-bold uppercase tracking-wider text-[#9a6c37]">
-                How Discovered / Referral Source:{" "}
+                Lead / Inquiry Source:{" "}
               </span>
               <span className="font-semibold text-[#29241f]">
-                {formData.referralSource === "Other" && formData.customReferral
-                  ? `Other (${formData.customReferral.trim()})`
+                {formData.customReferral && formData.customReferral.trim()
+                  ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
                   : formData.referralSource}
               </span>
             </div>
@@ -1280,7 +1278,7 @@ export default function EstimatePreviewStep({
           <p className="mt-1 text-sm text-[var(--taupe)]">
             {estimate
               ? `Estimate #${estimate.estimateNumber} has been saved successfully.`
-              : "Review the details above, then create the estimate."}
+              : "Review the pricing breakdown above, then generate and save the estimate."}
           </p>
         </div>
 
@@ -1310,39 +1308,7 @@ export default function EstimatePreviewStep({
           />
         </div>
 
-        {/* ================================== */}
-        {/* Create Estimate */}
-        {/* ================================== */}
-
-        {!estimate && (
-          <button
-            type="button"
-            onClick={
-              handleCreateEstimate
-            }
-            disabled={isCreating}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--sage-dark)] px-5 py-3.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isCreating ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-
-                Creating Estimate...
-              </>
-            ) : (
-              <>
-                Create Estimate
-
-                <ArrowRight
-                  size={17}
-                />
-              </>
-            )}
-          </button>
-        )}
-
         {/* Created status */}
-
         {estimate && (
           <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-[var(--sage-light)] px-4 py-3">
             <CheckCircle2
@@ -1367,9 +1333,7 @@ export default function EstimatePreviewStep({
 
       <div className="rounded-xl border border-[var(--sage)]/20 bg-[var(--sage-light)]/30 px-4 py-3">
         <p className="text-xs leading-5 text-[var(--sage-dark)]">
-          Review all event, client, service
-          and pricing details before creating
-          the estimate.
+          Verify all event details, client information, catering, and service selections before generating the final estimate.
         </p>
       </div>
     </div>

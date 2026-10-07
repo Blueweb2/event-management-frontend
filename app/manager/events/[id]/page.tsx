@@ -17,6 +17,7 @@ import EventProfitabilityCard from "@/components/manager/events/EventProfitabili
 import EventStaffAttendanceCard from "@/components/manager/events/EventStaffAttendanceCard";
 import EventTaskProgressCard from "@/components/manager/events/EventTaskProgressCard";
 import EventActivityTimelineCard from "@/components/manager/events/EventActivityTimelineCard";
+import EventStockTab from "@/components/manager/events/EventStockTab";
 import EditEventModal from "@/components/manager/events/EditEventModal";
 import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import { getEventStaffAttendance } from "@/lib/attendance.api";
@@ -672,6 +673,17 @@ export default function ManagerEventDetailsPage() {
               });
               void fetchMonitoringData();
             }}
+          />
+        </section>
+
+        {/* ======================================
+            Event Stock & Equipment Allocation
+        ====================================== */}
+        <section className="mt-6">
+          <EventStockTab
+            eventId={eventId}
+            eventName={event.eventName}
+            token={token || undefined}
           />
         </section>
 

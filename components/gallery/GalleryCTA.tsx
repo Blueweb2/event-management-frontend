@@ -27,10 +27,10 @@ export default function GalleryCTA() {
 
           {/* Button */}
           <Link
-            href="/booking"
+            href="/manager"
             className="mt-8 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#b8894b] px-6 text-sm font-semibold text-white transition hover:bg-[#9f733d] focus:outline-none focus:ring-2 focus:ring-[#b8894b]/30 focus:ring-offset-2"
           >
-            Start Planning
+            Manager Portal
             <ArrowRight size={17} />
           </Link>
         </div>

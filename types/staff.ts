@@ -34,6 +34,12 @@ export type EmergencyContact = {
   relationship: string;
 };
 
+export type SalaryType =
+  | "hourly"
+  | "daily"
+  | "monthly"
+  | "per_event";
+
 // ==========================================
 // STAFF
 // ==========================================
@@ -51,6 +57,10 @@ export type Staff = {
   department: string;
 
   employmentType: EmploymentType;
+
+  salary?: number;
+  salaryType?: SalaryType;
+  hourlyRate?: number;
 
   role: StaffRole;
 
@@ -91,6 +101,10 @@ export type CreateStaffPayload = {
 
   employmentType?: EmploymentType;
 
+  salary?: number;
+  salaryType?: SalaryType;
+  hourlyRate?: number;
+
   role?: string;
 
   emergencyContact?: {
@@ -114,6 +128,10 @@ export type UpdateStaffPayload = {
   location?: string;
 
   employmentType?: EmploymentType;
+
+  salary?: number;
+  salaryType?: SalaryType;
+  hourlyRate?: number;
 
   role?: string;
 

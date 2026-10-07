@@ -179,7 +179,7 @@ export default function EventLifecycleBoard() {
       setError(null);
 
       const result = await convertEstimateToBooking(estimateId);
-      showToast(`🎉 Estimate converted to event "${result.event.eventName}"!`);
+      showToast(` Estimate converted to event "${result.event.eventName}"!`);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to convert estimate");
