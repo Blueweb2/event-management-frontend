@@ -62,7 +62,7 @@ const menuItems = [
     icon: CalendarCheck,
   },
   {
-    label: "Estimates",
+    label: "Proposals",
     href: "/manager/estimates",
     icon: FileText,
   },
