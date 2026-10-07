@@ -443,12 +443,12 @@ export default function EstimatesPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-semibold text-[var(--ink)] sm:text-2xl">
-                Estimates
+                Proposals
               </h1>
 
               <p className="mt-1 text-sm text-[var(--muted)]">
                 View and manage customer
-                estimates.
+                proposals.
               </p>
             </div>
 
@@ -513,7 +513,7 @@ export default function EstimatesPage() {
               </p>
 
               <p className="mt-0.5 text-xs font-medium text-[#756d64]">
-                Total Estimates
+                Total Proposals
               </p>
             </div>
 
@@ -535,7 +535,7 @@ export default function EstimatesPage() {
               </p>
 
               <p className="mt-0.5 text-xs font-medium text-[#756d64]">
-                Draft Estimates
+                Draft Proposals
               </p>
             </div>
 
@@ -557,7 +557,7 @@ export default function EstimatesPage() {
               </p>
 
               <p className="mt-0.5 text-xs font-medium text-[#756d64]">
-                Accepted Estimates
+                Accepted Proposals
               </p>
             </div>
 
@@ -594,7 +594,7 @@ export default function EstimatesPage() {
 
               <div>
                 <p className="font-medium">
-                  Unable to load estimates
+                  Unable to load proposals
                 </p>
 
                 <p className="mt-1">
@@ -721,7 +721,7 @@ export default function EstimatesPage() {
                 </div>
 
                 <h3 className="mt-4 text-base font-semibold text-[var(--ink)]">
-                  No estimates found
+                  No proposals found
                 </h3>
 
                 <p className="mt-1 text-sm text-[var(--muted)]">
@@ -1120,7 +1120,7 @@ export default function EstimatesPage() {
               <span className="font-semibold text-[#51483f]">
                 {estimates.length}
               </span>{" "}
-              estimates
+              proposals
             </p>
           )}
         </div>
