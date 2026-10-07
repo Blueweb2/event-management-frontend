@@ -106,7 +106,7 @@ export default function ManagerLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <ManagerBottomNav onMenuClick={openMenu} />
+      <ManagerBottomNav />
     </div>
   );
 }

@@ -10,9 +10,9 @@ CalendarDays,
 MoreHorizontal,
 } from "lucide-react";
 
-interface ManagerBottomNavProps {
-onMenuClick?: () => void;
-}
+// interface ManagerBottomNavProps {
+// onMenuClick?: () => void;
+// }
 
 const navigationItems = [
   {
@@ -37,9 +37,7 @@ const navigationItems = [
   },
 ];
 
-export default function ManagerBottomNav({
-onMenuClick,
-}: ManagerBottomNavProps) {
+export default function ManagerBottomNav() {
 const pathname = usePathname();
 
 return (
@@ -84,7 +82,7 @@ const Icon = item.icon;
     })}
 
     {/* More / Menu */}
-    <button
+    {/* <button
       type="button"
       onClick={onMenuClick}
       className="flex min-w-16 flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1 text-xs font-medium text-gray-500 transition hover:text-gray-800 active:scale-95"
@@ -95,7 +93,7 @@ const Icon = item.icon;
       </span>
 
       <span>More</span>
-    </button>
+    </button> */}
   </div>
 </nav>
 
