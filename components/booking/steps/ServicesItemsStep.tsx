@@ -263,26 +263,7 @@ export default function ServicesItemsStep({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-3 rounded-3xl border border-[#eee7dc] bg-gradient-to-r from-[#faf8f5] via-white to-[#f5efe6] p-6 sm:p-8 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#29241f] text-white shadow-xs">
-            <Sparkles size={14} className="text-[#d8a86c]" />
-          </span>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9A7B4F]">
-            Step 4 • Services & Equipment
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#29241f] sm:text-3xl">
-            Select Event Services, Decor & Equipment
-          </h2>
-          <p className="mt-1.5 max-w-2xl text-xs sm:text-sm leading-relaxed text-[#756d64]">
-            Select stage decorations, dining setups, lighting themes, photography, sound systems, and equipment packages required for this event.
-          </p>
-        </div>
-      </div>
+  
 
       {/* Error Alert */}
       {error && (

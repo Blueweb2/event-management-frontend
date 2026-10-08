@@ -39,30 +39,14 @@ const REFERRAL_OPTIONS = [
     subLabel: "Word of mouth recommendation",
     icon: Users,
   },
-  {
-    id: "Search Engine",
-    label: "Google / Search",
-    subLabel: "Online search engine",
-    icon: Search,
-  },
+ 
   {
     id: "Past Event",
     label: "Past Event",
     subLabel: "Attended a previous event",
     icon: PartyPopper,
   },
-  {
-    id: "Advertisement",
-    label: "Ad / Expo",
-    subLabel: "Banner, flyer, event expo",
-    icon: Megaphone,
-  },
-  {
-    id: "Other",
-    label: "Other Source",
-    subLabel: "Custom source",
-    icon: HelpCircle,
-  },
+ 
 ];
 
 export default function ClientDetailsStep({

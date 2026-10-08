@@ -51,7 +51,7 @@ export default function FoodMenuStep({
   const [error, setError] = useState("");
 
   const [activeCategory, setActiveCategory] =
-    useState<FoodCategory>("Starters / Appetizers");
+    useState<FoodCategory>("Welcome Drinks");
   const [dietaryFilter, setDietaryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
@@ -161,96 +161,13 @@ export default function FoodMenuStep({
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col gap-2 rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-8 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#29241f] text-white">
-            <Utensils size={14} className="text-[#d8a86c]" />
-          </span>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#9A7B4F]">
-            Step 3 • Food & Catering Menu
-          </p>
-        </div>
-
-        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#29241f]">
-          Configure Food &amp; Catering Menu
-        </h2>
-        <p className="text-xs sm:text-sm text-[#756d64]">
-          Choose starters, main courses, live counters, desserts, and specify dietary instructions.
-        </p>
-      </div>
-
-      {/* Include Catering Toggle Card */}
-      <div className="flex items-center justify-between gap-4 rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-6 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-[#faf6f0] text-[#9A7B4F]">
-            <ChefHat size={22} />
-          </div>
-          <div>
-            <h3 className="text-xs sm:text-sm font-bold text-[#29241f]">
-              Include Food & Catering Services
-            </h3>
-            <p className="text-[11px] sm:text-xs text-[#756d64]">
-              {currentMenu.included
-                ? "Dishes will be included in the total estimate."
-                : "Skip food catering for this event proposal."}
-            </p>
-          </div>
-        </div>
-
-        <label className="relative inline-flex cursor-pointer items-center shrink-0">
-          <input
-            type="checkbox"
-            checked={currentMenu.included}
-            onChange={(e) => updateFoodMenu({ included: e.target.checked })}
-            className="peer sr-only"
-          />
-          <div className="peer h-7 w-12 rounded-full bg-gray-200 after:absolute after:left-[3px] after:top-[3px] after:h-5.5 after:w-5.5 after:rounded-full after:bg-white after:shadow-sm after:transition-all peer-checked:bg-[#29241f] peer-checked:after:translate-x-5 peer-focus:outline-none" />
-        </label>
-      </div>
+     
 
       {/* Main Content when Catering is Included */}
       {currentMenu.included ? (
         <div className="space-y-4 sm:space-y-6">
           {/* Catering Total Banner */}
-          <div className="rounded-3xl border border-[#e8e1d8] bg-gradient-to-br from-[#faf8f5] to-[#f4ecdc] p-4 sm:p-6 shadow-xs">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Receipt size={16} className="text-[#9A7B4F]" />
-                  <h4 className="text-xs sm:text-sm font-bold text-[#29241f]">
-                    Food Catering Total
-                  </h4>
-                </div>
-                <p className="mt-0.5 text-xs text-[#756d64]">
-                  Total calculated from dish quantities and unit plate rates.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between sm:flex-col sm:items-end rounded-2xl bg-white/90 p-3 sm:p-2.5 border border-[#e8dfd2]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8d847b]">
-                  Catering Total:
-                </span>
-                <span className="text-base sm:text-lg font-black text-[#29241f]">
-                  ₹{currentMenu.totalFoodAmount.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </div>
-
-            {/* Special Instructions */}
-            <div className="mt-3 border-t border-[#e8e1d8] pt-3">
-              <label className="block text-xs font-semibold text-[#29241f]">
-                Dietary & Kitchen Instructions
-              </label>
-              <input
-                type="text"
-                value={currentMenu.notes || ""}
-                onChange={(e) => updateFoodMenu({ notes: e.target.value })}
-                placeholder="e.g., 25 Jain meals, welcome drinks on entry, live pasta counter..."
-                className="mt-1 w-full rounded-xl border border-[#d8cfc4] bg-white px-3.5 py-2 text-xs text-[#29241f] placeholder-gray-400 focus:border-[#9A7B4F] focus:outline-none focus:ring-1 focus:ring-[#9A7B4F]"
-              />
-            </div>
-          </div>
+          
 
           {/* Search and Dietary Filter */}
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">

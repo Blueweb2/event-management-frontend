@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Clock, Trash2, Sparkles } from "lucide-react";
 
 import BookingProgress from "./BookingProgress";
 import BookingNavigation from "./BookingNavigation";
@@ -13,6 +14,19 @@ import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
 import type { BookingFormData } from "./types";
 import { createEstimate, type Estimate } from "@/lib/estimates.api";
+
+// ==========================================
+// DRAFT STORAGE CONSTANTS (7 DAYS EXPIRY)
+// ==========================================
+
+const DRAFT_STORAGE_KEY = "pircello_booking_draft_v1";
+const DRAFT_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+interface BookingDraft {
+  formData: BookingFormData;
+  currentStep: number;
+  savedAt: number;
+}
 
 // ==========================================
 // INITIAL FORM DATA
@@ -76,7 +90,6 @@ const initialFormData: BookingFormData = {
 // ==========================================
 
 export default function BookingForm() {
-
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -84,9 +97,95 @@ export default function BookingForm() {
   const [error, setError] = useState("");
   const [createdEstimate, setCreatedEstimate] = useState<Estimate | null>(null);
   const [isCreatingEstimate, setIsCreatingEstimate] = useState(false);
+  const [draftRestoredInfo, setDraftRestoredInfo] = useState<{
+    savedAt: number;
+    daysLeft: number;
+  } | null>(null);
+
+  // Restore draft on mount if within 7 days; auto-delete if expired
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+
+      const draft: BookingDraft = JSON.parse(raw);
+      const now = Date.now();
+      const age = now - (draft.savedAt || 0);
+
+      // If draft is older than 7 days, delete automatically
+      if (age > DRAFT_EXPIRY_MS || !draft.formData) {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        return;
+      }
+
+      // Check if draft has user-entered content to restore
+      const hasContent =
+        Boolean(draft.formData.eventName?.trim()) ||
+        Boolean(draft.formData.name?.trim()) ||
+        Boolean(draft.formData.phone?.trim()) ||
+        Boolean(draft.formData.email?.trim()) ||
+        Boolean(draft.formData.eventType) ||
+        (Array.isArray(draft.formData.services) && draft.formData.services.length > 0) ||
+        (draft.formData.foodMenu?.items && draft.formData.foodMenu.items.length > 0);
+
+      if (hasContent) {
+        setFormData(draft.formData);
+        if (draft.currentStep && draft.currentStep >= 1 && draft.currentStep <= 5) {
+          setCurrentStep(draft.currentStep);
+        }
+        const daysLeft = Math.max(1, Math.ceil((DRAFT_EXPIRY_MS - age) / (24 * 60 * 60 * 1000)));
+        setDraftRestoredInfo({
+          savedAt: draft.savedAt,
+          daysLeft,
+        });
+      }
+    } catch (err) {
+      console.warn("Could not parse booking draft from localStorage", err);
+    }
+  }, []);
+
+  // Auto-save draft on changes (held for 7 days)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hasData =
+      Boolean(formData.eventName.trim()) ||
+      Boolean(formData.name.trim()) ||
+      Boolean(formData.phone.trim()) ||
+      Boolean(formData.email.trim()) ||
+      Boolean(formData.eventType) ||
+      formData.services.length > 0 ||
+      (formData.foodMenu.items && formData.foodMenu.items.length > 0);
+
+    if (hasData) {
+      const draft: BookingDraft = {
+        formData,
+        currentStep,
+        savedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch (err) {
+        console.warn("Could not save booking draft to localStorage", err);
+      }
+    }
+  }, [formData, currentStep]);
+
+  // Discard draft & start fresh
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+    setFormData(initialFormData);
+    setCurrentStep(1);
+    setDraftRestoredInfo(null);
+    setError("");
+  };
 
   // Update Field
-  const updateField = < K extends keyof BookingFormData>(
+  const updateField = <K extends keyof BookingFormData>(
     field: K,
     value: BookingFormData[K],
   ) => {
@@ -438,6 +537,10 @@ export default function BookingForm() {
       });
 
       setCreatedEstimate(result);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+      setDraftRestoredInfo(null);
     } catch (err) {
       console.error("Failed to create estimate:", err);
       setError(
@@ -458,6 +561,10 @@ export default function BookingForm() {
 
     if (currentStep === 5) {
       if (createdEstimate) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+
         // ======================================
         // Redirect to customer success page
         // ======================================
@@ -509,6 +616,42 @@ export default function BookingForm() {
       {/* Main Content */}
       <section className="mt-4 sm:mt-8">
         <div className={`mx-auto transition-all duration-300 ${currentStep === 4 ? "max-w-6xl" : "max-w-4xl"}`}>
+          {/* Draft Restored Banner */}
+          {draftRestoredInfo && (
+            <div className="mb-4 sm:mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 sm:p-4 text-xs text-amber-900 shadow-2xs backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center gap-2.5">
+                <Clock size={16} className="text-amber-700 shrink-0" />
+                <span>
+                  <strong>Draft Restored:</strong> We recovered your in-progress proposal from{" "}
+                  {new Date(draftRestoredInfo.savedAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  ({draftRestoredInfo.daysLeft} days remaining before automatic cleanup).
+                </span>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="inline-flex items-center gap-1 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-900 hover:bg-amber-100 transition shadow-2xs active:scale-95"
+                  title="Discard this draft and start a blank proposal"
+                >
+                  <Trash2 size={12} />
+                  Start Fresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDraftRestoredInfo(null)}
+                  className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 px-1"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* STEP 1 - EVENT DETAILS */}
           {currentStep === 1 && (

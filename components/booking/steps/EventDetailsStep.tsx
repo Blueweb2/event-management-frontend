@@ -230,7 +230,7 @@ export default function EventDetailsStep({
           </div>
 
           {/* Quick Preset Chips */}
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {/* <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-[#8d847b] font-medium mr-1">Quick Select:</span>
             {[50, 100, 200, 350, 500, 1000].map((preset) => {
               const isSelected = formData.guests === String(preset);
@@ -249,7 +249,7 @@ export default function EventDetailsStep({
                 </button>
               );
             })}
-          </div>
+          </div> */}
 
           <p className="mt-2.5 text-xs text-[#756d64]">
             Guest count is used to calculate per-guest services, catering quantities, and staff allocations.

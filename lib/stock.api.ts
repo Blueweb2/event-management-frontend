@@ -195,6 +195,26 @@ export async function getStaffStockSummary(
   return get<ApiResponse<StaffStockSummary>>(endpoint, token);
 }
 
+export async function holdStock(
+  payload: {
+    stockItemId: string;
+    quantity: number;
+    eventId?: string;
+    notes?: string;
+    expectedReturnAt?: string;
+  },
+  token?: string
+): Promise<ApiResponse<EventStockAllocation>> {
+  return post<ApiResponse<EventStockAllocation>>("/stock/staff/hold", payload, token);
+}
+
+export async function releaseStockHold(
+  eventStockId: string,
+  token?: string
+): Promise<ApiResponse<{ success: boolean }>> {
+  return post<ApiResponse<{ success: boolean }>>(`/stock/staff/hold/${eventStockId}/release`, {}, token);
+}
+
 export async function takeStock(
   eventStockId: string,
   payload: {
