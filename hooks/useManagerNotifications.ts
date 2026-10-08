@@ -156,7 +156,7 @@ export function useManagerNotifications() {
             message: `Estimate for "${est.eventName}" (₹${est.total.toLocaleString("en-IN")}) is in ${est.status} status.`,
             timestamp: est.createdAt,
             timeAgo: "Active Proposal",
-            link: `/manager/estimates`,
+            link: `/manager/events?tab=estimates`,
             read: false,
             priority: "LOW",
           });

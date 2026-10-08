@@ -49,10 +49,16 @@ export default function ManagerStats() {
           const eventsList = Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [];
           eventCount = eventsRes.value.pagination?.total ?? eventsList.length;
           
-          // Calculate revenue from confirmed events
+          // Calculate revenue from payments received from clients
           revenue = eventsList.reduce((sum: number, ev: any) => {
-            const bookingTotal = typeof ev.booking === "object" ? Number(ev.booking?.total || 0) : 0;
-            return sum + bookingTotal;
+            const evPaid = Number(
+              ev.paidAmount ??
+              (typeof ev.booking === "object" ? ev.booking?.paidAmount : 0) ??
+              ev.advancePayment ??
+              (typeof ev.booking === "object" ? ev.booking?.advancePayment : 0) ??
+              0
+            );
+            return sum + evPaid;
           }, 0);
         }
 
@@ -76,7 +82,7 @@ export default function ManagerStats() {
 
         if (analyticsRes.status === "fulfilled" && analyticsRes.value?.data) {
           staffHours = analyticsRes.value.data.totalStaffHours || 0;
-          if (analyticsRes.value.data.totalRevenue) {
+          if (analyticsRes.value.data.totalRevenue !== undefined) {
             revenue = analyticsRes.value.data.totalRevenue;
           }
         }
@@ -113,7 +119,7 @@ export default function ManagerStats() {
       label: "Total Revenue",
       value: counts.loaded ? formatCurrency(counts.totalRevenue) : "...",
       icon: IndianRupee,
-      description: "Confirmed event bookings",
+      description: "Paid amount from clients",
     },
     {
       label: "Pending Estimates",

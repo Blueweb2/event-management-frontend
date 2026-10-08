@@ -332,10 +332,10 @@ function SuccessContent() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
-            href="/manager/estimates"
+            href="/manager/events?tab=estimates"
             className="flex min-h-12 items-center justify-center rounded-2xl bg-[#4f5745] px-8 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#363d2e] hover:shadow-lg active:scale-[0.99]"
           >
-            View in Estimates Dashboard
+            View Proposals & Estimates
           </Link>
 
           <Link

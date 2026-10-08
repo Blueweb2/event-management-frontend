@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Kanban, ListFilter } from "lucide-react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Kanban, ListFilter, FileText } from "lucide-react";
 
 import {
   getEvents,
@@ -19,15 +20,25 @@ import EmptyEvents from "@/components/manager/events/EmptyEvents";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import EventLifecycleBoard from "@/components/manager/events/EventLifecycleBoard";
+import EventEstimatesTab from "@/components/manager/events/EventEstimatesTab";
 import EditEventModal from "@/components/manager/events/EditEventModal";
 import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import { useAuth } from "@/hooks/useAuth";
 
-type ViewMode = "list" | "pipeline";
+type ViewMode = "list" | "pipeline" | "estimates";
 
-export default function ManagerEventsPage() {
+function ManagerEventsContent() {
   const { token } = useAuth();
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    initialTab === "estimates"
+      ? "estimates"
+      : initialTab === "pipeline"
+      ? "pipeline"
+      : "list"
+  );
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<EventStatus | "All">("All");
@@ -36,6 +47,26 @@ export default function ManagerEventsPage() {
 
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "estimates") setViewMode("estimates");
+    else if (tab === "pipeline") setViewMode("pipeline");
+    else if (tab === "list" || !tab) setViewMode("list");
+  }, [searchParams]);
+
+  const handleTabChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (mode === "list") {
+        url.searchParams.delete("tab");
+      } else {
+        url.searchParams.set("tab", mode);
+      }
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -133,7 +164,7 @@ export default function ManagerEventsPage() {
           <div className="inline-flex rounded-xl bg-gray-200/70 p-1">
             <button
               type="button"
-              onClick={() => setViewMode("list")}
+              onClick={() => handleTabChange("list")}
               className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "list"
                   ? "bg-white text-gray-900 shadow-sm"
@@ -141,12 +172,12 @@ export default function ManagerEventsPage() {
               }`}
             >
               <ListFilter size={15} />
-              List View
+              Events List
             </button>
 
             <button
               type="button"
-              onClick={() => setViewMode("pipeline")}
+              onClick={() => handleTabChange("pipeline")}
               className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "pipeline"
                   ? "bg-white text-gray-900 shadow-sm"
@@ -154,10 +185,30 @@ export default function ManagerEventsPage() {
               }`}
             >
               <Kanban size={15} />
-              Lifecycle Pipeline
+              Pipeline
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange("estimates")}
+              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                viewMode === "estimates"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FileText size={15} />
+              Proposals & Estimates
             </button>
           </div>
         </div>
+
+        {/* ESTIMATES TAB */}
+        {viewMode === "estimates" && (
+          <section className="mt-6">
+            <EventEstimatesTab onSwitchToList={() => handleTabChange("list")} />
+          </section>
+        )}
 
         {/* PIPELINE KANBAN VIEW */}
         {viewMode === "pipeline" && (
@@ -232,5 +283,19 @@ export default function ManagerEventsPage() {
         onConfirm={handleDeleteConfirm}
       />
     </div>
+  );
+}
+
+export default function ManagerEventsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      }
+    >
+      <ManagerEventsContent />
+    </Suspense>
   );
 }

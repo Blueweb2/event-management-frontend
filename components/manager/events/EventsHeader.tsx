@@ -26,19 +26,17 @@ export default function EventsHeader() {
       </div>
 
       {/* ======================================
-          Add Event — navigates to Estimates
-          so manager can convert an accepted
-          estimate into an event.
+          Add Event / Create Booking
       ====================================== */}
 
       <button
         type="button"
         onClick={() => {
-          router.push("/manager/estimates");
+          router.push("/manager/booking");
         }}
-        aria-label="Add event from estimate"
-        title="Convert an accepted estimate to an event"
-        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#252525] text-xl font-light text-white shadow-sm transition active:scale-95"
+        aria-label="Create new booking"
+        title="Create a new event proposal & booking"
+        className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[#252525] text-xl font-light text-white shadow-xs transition hover:bg-black active:scale-95"
       >
         +
       </button>

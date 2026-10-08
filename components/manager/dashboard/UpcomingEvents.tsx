@@ -107,11 +107,11 @@ export default function UpcomingEvents() {
             Confirmed bookings will automatically appear here as active events.
           </p>
           <Link
-            href="/manager/estimates"
+            href="/manager/booking"
             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#9A7B4F] px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#7D623E]"
           >
             <Plus size={14} />
-            Create Estimate
+            Create Booking
           </Link>
         </div>
       )}

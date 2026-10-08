@@ -65,11 +65,6 @@ const menuItems = [
     icon: CalendarCheck,
   },
   {
-    label: "Proposals",
-    href: "/manager/estimates",
-    icon: FileText,
-  },
-  {
     label: "Clients",
     href: "/manager/clients",
     icon: UserRound,
