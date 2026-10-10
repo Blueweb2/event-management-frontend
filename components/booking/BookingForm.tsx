@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Clock, Trash2, Sparkles } from "lucide-react";
+import { Clock, Trash2, Sparkles, Mic, CheckCircle2 } from "lucide-react";
 
 import BookingProgress from "./BookingProgress";
 import BookingNavigation from "./BookingNavigation";
@@ -12,8 +12,11 @@ import ClientDetailsStep from "./steps/ClientDetailsStep";
 import FoodMenuStep from "./steps/FoodMenuStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
-import type { BookingFormData } from "./types";
+import type { BookingFormData, ServiceItem } from "./types";
 import { createEstimate, type Estimate } from "@/lib/estimates.api";
+import { getServices } from "@/lib/services.api";
+import VoiceBookingModal from "./ai/VoiceBookingModal";
+import type { ExtractedBookingFields } from "@/lib/ai-booking-parser";
 
 // ==========================================
 // DRAFT STORAGE CONSTANTS (7 DAYS EXPIRY)
@@ -97,6 +100,11 @@ export default function BookingForm() {
   const [error, setError] = useState("");
   const [createdEstimate, setCreatedEstimate] = useState<Estimate | null>(null);
   const [isCreatingEstimate, setIsCreatingEstimate] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [aiSuccessBanner, setAiSuccessBanner] = useState<{
+    message: string;
+    fieldsCount: number;
+  } | null>(null);
   const [draftRestoredInfo, setDraftRestoredInfo] = useState<{
     savedAt: number;
     daysLeft: number;
@@ -181,7 +189,112 @@ export default function BookingForm() {
     setFormData(initialFormData);
     setCurrentStep(1);
     setDraftRestoredInfo(null);
+    setAiSuccessBanner(null);
     setError("");
+  };
+
+  // AI Voice Auto-Fill Handler
+  const handleApplyAIBooking = async (data: ExtractedBookingFields) => {
+    setFormData((prev) => {
+      const next: BookingFormData = {
+        ...prev,
+        eventName: data.eventName || prev.eventName,
+        eventType: data.eventType || prev.eventType,
+        eventDate: data.eventDate || prev.eventDate,
+        eventTime: data.eventTime || prev.eventTime,
+        guests: data.guests || prev.guests,
+        location: data.location || prev.location,
+        description: data.description || prev.description,
+        name: data.name || prev.name,
+        phone: data.phone || prev.phone,
+        email: data.email || prev.email,
+        address: data.address || prev.address,
+      };
+
+      if (data.cateringIncluded !== undefined) {
+        next.foodMenu = {
+          ...next.foodMenu,
+          included: data.cateringIncluded,
+          servingType: data.cateringServingType ?? next.foodMenu.servingType,
+          notes: data.cateringNotes || next.foodMenu.notes,
+        };
+      }
+
+      return next;
+    });
+
+    // Auto-match services from catalog if requested
+    if (data.requestedServices && data.requestedServices.length > 0) {
+      try {
+        const availableServices = await getServices();
+        if (availableServices && availableServices.length > 0) {
+          const matchedItems: ServiceItem[] = [];
+
+          for (const reqSvc of data.requestedServices) {
+            const lowerReq = reqSvc.toLowerCase();
+            const matched = availableServices.find((s) => {
+              const nameLower = (s.name || "").toLowerCase();
+              const catLower = (s.category || "").toLowerCase();
+              return (
+                nameLower.includes(lowerReq) ||
+                lowerReq.includes(nameLower) ||
+                (lowerReq.includes("photo") && (nameLower.includes("photo") || catLower.includes("photo"))) ||
+                (lowerReq.includes("light") && (nameLower.includes("light") || catLower.includes("light"))) ||
+                (lowerReq.includes("sound") && (nameLower.includes("sound") || catLower.includes("sound") || nameLower.includes("dj"))) ||
+                (lowerReq.includes("decor") && (nameLower.includes("decor") || catLower.includes("decor"))) ||
+                (lowerReq.includes("catering") && (nameLower.includes("catering") || catLower.includes("catering")))
+              );
+            });
+
+            if (matched) {
+              const firstOption = matched.options?.[0];
+              matchedItems.push({
+                id: `${matched._id}-${firstOption?._id || "default"}`,
+                serviceId: matched._id,
+                optionId: firstOption?._id,
+                name: matched.name,
+                category: matched.category,
+                quantity: 1,
+                unitPrice: firstOption?.price || matched.basePrice || 0,
+                pricingType: firstOption?.pricingType || "flat",
+                unitLabel: firstOption?.unitLabel || "unit",
+              });
+            }
+          }
+
+          if (matchedItems.length > 0) {
+            setFormData((prev) => {
+              const existingIds = new Set(prev.services.map((s) => s.serviceId));
+              const newUnique = matchedItems.filter((m) => !existingIds.has(m.serviceId));
+              return {
+                ...prev,
+                services: [...prev.services, ...newUnique],
+              };
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not match services catalog:", err);
+      }
+    }
+
+    const filledCount = [
+      data.eventName,
+      data.eventType,
+      data.eventDate,
+      data.eventTime,
+      data.guests,
+      data.location,
+      data.name,
+      data.phone,
+      data.email,
+      data.requestedServices?.length,
+    ].filter(Boolean).length;
+
+    setAiSuccessBanner({
+      fieldsCount: filledCount,
+      message: `✨ AI successfully auto-filled ${filledCount} fields into your proposal! Review details below or proceed.`,
+    });
   };
 
   // Update Field
@@ -616,6 +729,56 @@ export default function BookingForm() {
       {/* Main Content */}
       <section className="mt-4 sm:mt-8">
         <div className={`mx-auto transition-all duration-300 ${currentStep === 4 ? "max-w-6xl" : "max-w-4xl"}`}>
+          {/* AI Voice Assistant Trigger Banner */}
+          <div className="mb-4 sm:mb-6 rounded-3xl border border-[#E8E1D8] bg-gradient-to-r from-white via-[#FAF8F5] to-white p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9A6C37] to-[#B8894B] text-white shadow-md">
+                <Sparkles size={22} className="animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[#29241F]">
+                    AI Voice Auto-Fill Assistant
+                  </h3>
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
+                    ⚡ 10x Faster
+                  </span>
+                </div>
+                <p className="text-xs text-[#756D64] mt-0.5">
+                  Speak or paste event notes to automatically fill event dates, guests, client info, and services.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsVoiceModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#29241F] to-[#403932] px-4.5 py-2.5 text-xs font-bold text-white shadow-md hover:from-black hover:to-[#29241F] active:scale-95 transition cursor-pointer shrink-0"
+            >
+              <Mic size={15} className="text-[#D4AF37]" />
+              <span>Speak to Auto-Fill</span>
+            </button>
+          </div>
+
+          {/* AI Success Confirmation Banner */}
+          {aiSuccessBanner && (
+            <div className="mb-4 sm:mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-3.5 sm:p-4 text-xs text-emerald-900 shadow-2xs backdrop-blur-sm flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+                <span>
+                  <strong>AI Auto-Fill Completed:</strong> {aiSuccessBanner.message}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiSuccessBanner(null)}
+                className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 px-1.5 py-0.5 rounded-lg hover:bg-emerald-100 transition shrink-0 cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {/* Draft Restored Banner */}
           {draftRestoredInfo && (
             <div className="mb-4 sm:mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 sm:p-4 text-xs text-amber-900 shadow-2xs backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
@@ -744,6 +907,13 @@ export default function BookingForm() {
           />
         </div>
       </section>
+
+      {/* Voice Booking Modal */}
+      <VoiceBookingModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onApply={handleApplyAIBooking}
+      />
     </div>
   );
 }
