@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -10,11 +10,13 @@ import {
   Mail,
   ArrowRight,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import { writeAuth } from "@/lib/auth-storage";
+import { resetLogoutState } from "@/lib/api";
 import type { AuthResult } from "@/types/auth";
 import Image from "next/image";
 
@@ -24,8 +26,57 @@ interface LoginResponse {
   data?: AuthResult;
 }
 
+/**
+ * Validates redirect URLs to prevent open-redirect vulnerabilities
+ * and enforce role boundaries.
+ */
+function getSafeRedirectUrl(
+  target: string | null | undefined,
+  userRole: string,
+): string {
+  const role = (userRole || "").toLowerCase();
+  const defaultPath = role === "admin" || role === "manager" ? "/manager" : "/staff";
+
+  if (!target) return defaultPath;
+
+  try {
+    const decoded = decodeURIComponent(target).trim();
+
+    // Must start with single '/' and not protocol-relative '//' or '/\'
+    if (!decoded.startsWith("/") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
+      return defaultPath;
+    }
+
+    // Disallow protocols (javascript:, http:, https:) or path traversal
+    if (decoded.includes(":") || decoded.includes("..")) {
+      return defaultPath;
+    }
+
+    // Prevent loops back to auth pages
+    if (decoded.startsWith("/login") || decoded.startsWith("/register")) {
+      return defaultPath;
+    }
+
+    // Enforce role-based dashboard access
+    if (role === "staff" && decoded.startsWith("/manager")) {
+      return "/staff";
+    }
+    if ((role === "admin" || role === "manager") && decoded.startsWith("/staff")) {
+      return "/manager";
+    }
+
+    return decoded;
+  } catch {
+    return defaultPath;
+  }
+}
+
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isExpired = searchParams?.get("expired") === "1";
+  const redirectParam = searchParams?.get("redirect");
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -71,15 +122,12 @@ export default function LoginForm() {
 
       const { user, token } = result.data;
 
-      writeAuth(token, user);
+      resetLogoutState();
+      writeAuth(token, user, true);
 
-      // Redirect based on role (manager/admin -> /manager, staff -> /staff)
-      const role = (user.role || "").toLowerCase();
-      if (role === "admin" || role === "manager") {
-        router.push("/manager");
-      } else {
-        router.push("/staff");
-      }
+      // Redirect safely to intended destination or role default
+      const destination = getSafeRedirectUrl(redirectParam, user.role || "");
+      router.push(destination);
     } catch (error) {
       console.error("Login error:", error);
 
@@ -110,6 +158,14 @@ export default function LoginForm() {
       {/* Card */} 
       <div className="rounded-2xl border border-[#2A2A2A] bg-[#171717] p-6 shadow-2xl shadow-black/30 sm:p-8">
       
+        {/* Session expired notification */}
+        {isExpired && !error && (
+          <div className="mt-2 flex items-start gap-3 rounded-xl border border-amber-800/60 bg-amber-950/40 p-3.5 text-amber-200">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-amber-400" />
+            <p className="text-sm font-medium">Your session has expired. Please sign in again.</p>
+          </div>
+        )}
+
         {/* Error message */} 
         {error && ( 
           <div className="mt-6 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3"> 

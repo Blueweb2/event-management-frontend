@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Clock3, MapPin, Plus } from "lucide-react";
 import { api } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-storage";
 
 interface EventItem {
   _id: string;
@@ -33,7 +34,16 @@ export default function UpcomingEvents() {
 
     async function loadEvents() {
       try {
-        const res = await api<{ success: boolean; data: EventItem[] }>("/events?status=Upcoming&limit=10");
+        const token = getAuthToken();
+        if (!token) {
+          if (isMounted) setLoading(false);
+          return;
+        }
+
+        const res = await api<{ success: boolean; data: EventItem[] }>(
+          "/events?status=Upcoming&limit=10",
+          { token }
+        );
         if (isMounted && res.success && Array.isArray(res.data) && res.data.length > 0) {
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);

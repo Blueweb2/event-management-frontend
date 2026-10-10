@@ -42,8 +42,8 @@ const steps = [
   },
   {
     number: 5,
-    title: "Estimate",
-    fullTitle: "Review & Final Estimate",
+    title: "Proposal",
+    fullTitle: "Review & Final Proposal",
     icon: Send,
   },
 ];
@@ -105,22 +105,20 @@ export default function BookingProgress({
                 aria-label={`Step ${step.number}: ${step.title}`}
               >
                 <div
-                  className={`h-1.5 w-full rounded-full transition-all duration-300 ${
-                    isCompleted
+                  className={`h-1.5 w-full rounded-full transition-all duration-300 ${isCompleted
                       ? "bg-emerald-600"
                       : isCurrent
-                      ? "bg-[#29241f]"
-                      : "bg-gray-200"
-                  }`}
+                        ? "bg-[#29241f]"
+                        : "bg-gray-200"
+                    }`}
                 />
                 <span
-                  className={`text-[9px] font-bold transition ${
-                    isCurrent
+                  className={`text-[9px] font-bold transition ${isCurrent
                       ? "text-[#29241f]"
                       : isCompleted
-                      ? "text-emerald-700"
-                      : "text-gray-400"
-                  }`}
+                        ? "text-emerald-700"
+                        : "text-gray-400"
+                    }`}
                 >
                   {step.title}
                 </span>
@@ -149,11 +147,10 @@ export default function BookingProgress({
                 {index < steps.length - 1 && (
                   <div className="absolute left-1/2 top-5 w-full -translate-y-1/2 px-2">
                     <div
-                      className={`h-0.5 w-full transition-all duration-300 ${
-                        currentStep > step.number
+                      className={`h-0.5 w-full transition-all duration-300 ${currentStep > step.number
                           ? "bg-[#29241f]"
                           : "bg-gray-200"
-                      }`}
+                        }`}
                     />
                   </div>
                 )}
@@ -167,13 +164,12 @@ export default function BookingProgress({
                     }
                   }}
                   disabled={step.number > currentStep}
-                  className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border-2 transition-all duration-200 shadow-2xs ${
-                    isCompleted
+                  className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border-2 transition-all duration-200 shadow-2xs ${isCompleted
                       ? "border-emerald-600 bg-emerald-600 text-white cursor-pointer hover:bg-emerald-700"
                       : isCurrent
-                      ? "border-[#29241f] bg-[#29241f] text-white shadow-md scale-105"
-                      : "border-gray-200 bg-white text-gray-400 cursor-default"
-                  }`}
+                        ? "border-[#29241f] bg-[#29241f] text-white shadow-md scale-105"
+                        : "border-gray-200 bg-white text-gray-400 cursor-default"
+                    }`}
                 >
                   {isCompleted ? (
                     <Check size={18} strokeWidth={3} />
@@ -185,13 +181,12 @@ export default function BookingProgress({
                 {/* Label */}
                 <div className="mt-2 text-center">
                   <p
-                    className={`text-xs font-bold transition ${
-                      isCurrent
+                    className={`text-xs font-bold transition ${isCurrent
                         ? "text-[#29241f]"
                         : isCompleted
-                        ? "text-emerald-800"
-                        : "text-gray-400"
-                    }`}
+                          ? "text-emerald-800"
+                          : "text-gray-400"
+                      }`}
                   >
                     {step.title}
                   </p>

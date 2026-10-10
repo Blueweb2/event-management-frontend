@@ -22,16 +22,21 @@ export default function StaffLayout({
 
   useEffect(() => {
     if (!loading && !token) {
-      router.push("/login");
+      const fullPath = typeof window !== "undefined"
+        ? window.location.pathname + window.location.search
+        : "/staff";
+      router.push(`/login?redirect=${encodeURIComponent(fullPath)}`);
     }
   }, [loading, token, router]);
 
-  if (loading) {
+  if (loading || !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fbf6ef]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#9a6c37] border-t-transparent" />
-          <p className="text-sm font-medium text-gray-500">Loading Staff Portal...</p>
+          <p className="text-sm font-medium text-gray-500">
+            {loading ? "Loading Staff Portal..." : "Redirecting to login..."}
+          </p>
         </div>
       </div>
     );

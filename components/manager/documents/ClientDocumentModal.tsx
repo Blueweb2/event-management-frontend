@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Printer,
@@ -40,6 +41,7 @@ export default function ClientDocumentModal({
   onClose,
   documentData,
 }: ClientDocumentModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [docType, setDocType] = useState<"ESTIMATE" | "INVOICE">(
     documentData.documentType || "ESTIMATE"
   );
@@ -48,7 +50,37 @@ export default function ClientDocumentModal({
   const [copied, setCopied] = useState(false);
   const [customNote, setCustomNote] = useState("");
 
-  if (!open) return null;
+  useEffect(() => {
+    setMounted(true);
+
+    const handleBeforePrint = () => {
+      setActiveTab("preview");
+      document.body.classList.add("printing-client-document");
+    };
+    const handleAfterPrint = () => {
+      document.body.classList.remove("printing-client-document");
+    };
+
+    window.addEventListener("beforeprint", handleBeforePrint);
+    window.addEventListener("afterprint", handleAfterPrint);
+
+    return () => {
+      window.removeEventListener("beforeprint", handleBeforePrint);
+      window.removeEventListener("afterprint", handleAfterPrint);
+      document.body.classList.remove("printing-client-document");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, onClose]);
+
+  if (!open || !mounted) return null;
 
   // Active document data reflecting current mode (ESTIMATE vs INVOICE)
   const isInvoice = docType === "INVOICE";
@@ -81,11 +113,22 @@ export default function ClientDocumentModal({
   };
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    const cleanDocNumber = docNumber.replace(/[^a-zA-Z0-9-_]/g, "_");
+    const cleanClientName = (currentDoc.client.name || "Client").replace(/[^a-zA-Z0-9-_]/g, "_");
+    document.title = `${docType}_${cleanDocNumber}_${cleanClientName}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+    window.addEventListener("afterprint", restoreTitle);
+
     if (activeTab !== "preview") {
       setActiveTab("preview");
       setTimeout(() => {
         window.print();
-      }, 150);
+      }, 200);
     } else {
       window.print();
     }
@@ -96,64 +139,15 @@ export default function ClientDocumentModal({
     whatsappMessage
   );
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto">
-      {/* Print-specific style block to cleanly print ONLY the document container */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            margin: 12mm;
-            size: portrait;
-          }
-          html, body {
-            background: #ffffff !important;
-            color: #000000 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: auto !important;
-            overflow: visible !important;
-          }
-          body * {
-            visibility: hidden !important;
-          }
-          .fixed,
-          .overflow-y-auto,
-          .overflow-hidden {
-            position: static !important;
-            overflow: visible !important;
-            background: transparent !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-          }
-          #printable-client-document,
-          #printable-client-document * {
-            visibility: visible !important;
-          }
-          #printable-client-document {
-            position: relative !important;
-            display: block !important;
-            left: auto !important;
-            top: auto !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-            background: #ffffff !important;
-            color: #1a1a1a !important;
-            page-break-inside: auto !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      <div className="relative w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl bg-[#FAF8F5] border border-[#E8E1D8] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+  return createPortal(
+    <div
+      id="client-document-portal-root"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-6 overflow-y-auto modal-backdrop-container"
+    >
+      <div className="relative w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl bg-[#FAF8F5] border border-[#E8E1D8] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 modal-card-container">
         {/* ==========================================
             Modal Control Header (Screen Only)
         ========================================== */}
@@ -203,7 +197,7 @@ export default function ClientDocumentModal({
                 }`}
                 title="Show itemized line prices"
               >
-                Itemized Breakdown
+                Manager View
               </button>
             </div>
 
@@ -303,7 +297,7 @@ export default function ClientDocumentModal({
         {/* ==========================================
             Scrollable Content Area
         ========================================== */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 modal-scroll-area">
           {activeTab === "preview" ? (
             /* ==========================================
                 Live Branded Printable Document Container
@@ -313,7 +307,7 @@ export default function ClientDocumentModal({
               className="mx-auto max-w-3xl rounded-2xl bg-white p-8 sm:p-10 border border-[#E8E1D8] shadow-sm text-[#29241F]"
             >
               {/* Document Letterhead */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-[#E8E1D8] pb-6">
+              <div className="print-avoid-break flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-[#E8E1D8] pb-6">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">✨</span>
@@ -347,7 +341,7 @@ export default function ClientDocumentModal({
                 <div className="sm:text-right">
                   <div className="inline-block rounded-xl bg-[#FAF8F5] border border-[#E8E1D8] px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#9A6C37]">
-                      {isInvoice ? "TAX INVOICE" : "ESTIMATE / QUOTE"}
+                      {isInvoice ? "TAX INVOICE" : "Proposal / QUOTE"}
                     </p>
                     <p className="mt-1 text-base font-black font-mono text-[#29241F]">
                       {docNumber}
@@ -365,7 +359,7 @@ export default function ClientDocumentModal({
               </div>
 
               {/* Client & Event Meta Row */}
-              <div className="grid sm:grid-cols-2 gap-6 border-b border-[#E8E1D8] py-6">
+              <div className="print-avoid-break grid sm:grid-cols-2 gap-6 border-b border-[#E8E1D8] py-6">
                 {/* Billed To */}
                 <div className="rounded-xl bg-[#FAF8F5] p-4 border border-[#E8E1D8]">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#9A6C37]">
@@ -477,7 +471,7 @@ export default function ClientDocumentModal({
 
               {/* Catering Package Details (If included) */}
               {currentDoc.catering && currentDoc.catering.included && (
-                <div className="py-6 border-b border-[#E8E1D8]">
+                <div className="print-avoid-break py-6 border-b border-[#E8E1D8]">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
                       Catering & Culinary Experience
@@ -525,7 +519,7 @@ export default function ClientDocumentModal({
               )}
 
               {/* Financial Calculation Summary (Shows Final Estimate Amount) */}
-              <div className="py-6 flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#E8E1D8]">
+              <div className="print-avoid-break py-6 flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#E8E1D8]">
                 {/* Payment Instructions / Notes */}
                 <div className="max-w-sm text-xs text-[#756D64] space-y-2">
                   <p className="font-bold uppercase tracking-wider text-[#9A6C37]">
@@ -623,7 +617,7 @@ export default function ClientDocumentModal({
               </div>
 
               {/* Document Signoff Footer */}
-              <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#756D64]">
+              <div className="print-avoid-break pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#756D64]">
                 <p>Authorized Signature · {currentDoc.company.name}</p>
                 <p className="text-[11px] text-gray-400">
                   Generated automatically by EventOps Management System
@@ -717,6 +711,7 @@ export default function ClientDocumentModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -37,7 +37,10 @@ export default function ManagerLayout({
   useEffect(() => {
     if (!loading) {
       if (!token) {
-        router.push("/login");
+        const fullPath = typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : "/manager";
+        router.push(`/login?redirect=${encodeURIComponent(fullPath)}`);
         return;
       }
       const role = (user?.role || "").toLowerCase();
@@ -61,12 +64,14 @@ export default function ManagerLayout({
     router.replace("/login");
   };
 
-  if (loading) {
+  if (loading || !token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#9A7B4F] border-t-transparent" />
-          <p className="text-sm font-medium text-gray-500">Loading Manager Portal...</p>
+          <p className="text-sm font-medium text-gray-500">
+            {loading ? "Loading Manager Portal..." : "Redirecting to login..."}
+          </p>
         </div>
       </div>
     );

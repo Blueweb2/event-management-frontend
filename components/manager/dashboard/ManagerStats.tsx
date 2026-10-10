@@ -12,6 +12,7 @@ import {
 
 import ManagerStatCard from "./ManagerStatCard";
 import { api } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-storage";
 
 export default function ManagerStats() {
   const [counts, setCounts] = useState({
@@ -30,12 +31,18 @@ export default function ManagerStats() {
 
     async function fetchStats() {
       try {
+        const token = getAuthToken();
+        if (!token) {
+          if (isMounted) setCounts((prev) => ({ ...prev, loaded: true }));
+          return;
+        }
+
         const [eventsRes, staffRes, assignmentsRes, estimatesRes, analyticsRes] = await Promise.allSettled([
-          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/events"),
-          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/users/staff"),
-          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments"),
-          api<{ success: boolean; data?: any[] }>("/estimates"),
-          api<{ success: boolean; data?: { totalStaffHours?: number; totalRevenue?: number } }>("/reports/analytics"),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/events", { token }),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/users/staff", { token }),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments", { token }),
+          api<{ success: boolean; data?: any[] }>("/estimates", { token }),
+          api<{ success: boolean; data?: { totalStaffHours?: number; totalRevenue?: number } }>("/reports/analytics", { token }),
         ]);
 
         let eventCount = 0;

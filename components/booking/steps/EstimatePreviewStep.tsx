@@ -1271,14 +1271,14 @@ export default function EstimatePreviewStep({
 
           <h3 className="mt-4 text-lg font-semibold text-[var(--sage-dark)]">
             {estimate
-              ? "Estimate Created"
-              : "Estimate Ready"}
+              ? "Proposal Created"
+              : "Proposal Ready"}
           </h3>
 
           <p className="mt-1 text-sm text-[var(--taupe)]">
             {estimate
-              ? `Estimate #${estimate.estimateNumber} has been saved successfully.`
-              : "Review the pricing breakdown above, then generate and save the estimate."}
+              ? `Proposal #${estimate.estimateNumber} has been saved successfully.`
+              : "Review the pricing breakdown above, then generate and save the proposal."}
           </p>
         </div>
 

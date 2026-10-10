@@ -136,3 +136,111 @@ a {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ===================================================
+   Print Media Styles for Client Document Export & PDF
+   =================================================== */
+@media print {
+  @page {
+    size: portrait;
+    margin: 10mm;
+  }
+
+  /* When printing client document modal, hide the entire background application */
+  body:has(#client-document-portal-root) > *:not(#client-document-portal-root),
+  body.printing-client-document > *:not(#client-document-portal-root) {
+    display: none !important;
+  }
+
+  body:has(#client-document-portal-root),
+  body.printing-client-document {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #client-document-portal-root {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  #client-document-portal-root * {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  /* Reset all modal containers so they don't clip or add margins/padding */
+  #client-document-portal-root .modal-backdrop-container,
+  #client-document-portal-root .modal-card-container,
+  #client-document-portal-root .modal-scroll-area {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide modal chrome (header, tabs, close button, screen actions) */
+  #client-document-portal-root .no-print,
+  .no-print {
+    display: none !important;
+  }
+
+  /* The actual printable document starts right at page 1 */
+  #printable-client-document {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #1a1a1a !important;
+    break-before: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  /* Prevent table rows and cohesive sections from breaking across pages */
+  #printable-client-document table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #printable-client-document thead {
+    display: table-header-group !important;
+  }
+
+  #printable-client-document tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  #printable-client-document .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}

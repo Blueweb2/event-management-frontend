@@ -5,6 +5,7 @@ import {
   patch,
   ApiResponse,
 } from "./api";
+import { getAuthToken } from "./auth-storage";
 
 import type {
   Staff,
@@ -231,7 +232,7 @@ export async function uploadMyAvatarImage(file: File, token?: string): Promise<s
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const activeToken = token || (typeof window !== "undefined" ? getAuthToken() : null);
   const response = await fetch(`${API_URL}/users/me/avatar`, {
     method: "POST",
     body: formData,
@@ -257,7 +258,7 @@ export async function uploadStaffAvatarImage(
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const activeToken = token || (typeof window !== "undefined" ? getAuthToken() : null);
   const response = await fetch(`${API_URL}/users/staff/${staffId}/avatar`, {
     method: "POST",
     body: formData,
@@ -279,7 +280,7 @@ export async function uploadGeneralStaffAvatar(file: File, token?: string): Prom
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const activeToken = token || (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+  const activeToken = token || (typeof window !== "undefined" ? getAuthToken() : null);
   const response = await fetch(`${API_URL}/users/staff/upload-avatar`, {
     method: "POST",
     body: formData,

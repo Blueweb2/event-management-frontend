@@ -38,7 +38,7 @@ export default function ServicesItemsStep({
   updateServices,
 }: ServicesItemsStepProps) {
   const [services, setServices] = useState<Service[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -163,11 +163,23 @@ export default function ServicesItemsStep({
     }));
   }, [allDisplayItems]);
 
+  // Automatically select the first dynamic category tab as default
+  useEffect(() => {
+    if (categories.length > 0) {
+      const isCurrentValid = categories.some(
+        (c) => c.id.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      if (!isCurrentValid) {
+        setSelectedCategory(categories[0].id);
+      }
+    }
+  }, [categories, selectedCategory]);
+
   // Filtered visual cards according to active category and search keyword
   const filteredItems = useMemo(() => {
     return allDisplayItems.filter((item) => {
-      // Category filter
-      if (selectedCategory !== "all") {
+      // Category filter (defaults to first dynamic category)
+      if (selectedCategory && selectedCategory !== "all") {
         const itemCat = item.category.toLowerCase();
         const filterCat = selectedCategory.toLowerCase();
         if (itemCat !== filterCat && !itemCat.includes(filterCat)) {
@@ -343,9 +355,17 @@ export default function ServicesItemsStep({
                 <div>
                   <h3 className="text-base font-black text-[#29241f] flex items-center gap-2">
                     <span>
-                      {selectedCategory === "all"
-                        ? "All Available Designs & Services"
-                        : `${selectedCategory.toUpperCase()} COLLECTION`}
+                      {(() => {
+                        const activeCat = categories.find(
+                          (c) => c.id.toLowerCase() === selectedCategory.toLowerCase()
+                        );
+                        if (activeCat) {
+                          return `${activeCat.name.toUpperCase()} COLLECTION`;
+                        }
+                        return selectedCategory
+                          ? `${selectedCategory.toUpperCase()} COLLECTION`
+                          : "SERVICES COLLECTION";
+                      })()}
                     </span>
                     <span className="rounded-full bg-[#9A7B4F]/15 px-2.5 py-0.5 text-[10px] font-extrabold text-[#9A7B4F]">
                       {filteredItems.length} {filteredItems.length === 1 ? "Option" : "Options"}
@@ -374,7 +394,9 @@ export default function ServicesItemsStep({
                     type="button"
                     onClick={() => {
                       setSearchQuery("");
-                      setSelectedCategory("all");
+                      if (categories.length > 0) {
+                        setSelectedCategory(categories[0].id);
+                      }
                     }}
                     className="mt-2 rounded-xl bg-[#29241f] px-4 py-2 text-xs font-bold text-white hover:bg-black transition"
                   >

@@ -133,26 +133,26 @@ export function generateWhatsAppMessage(
 ): string {
   const isInvoice = doc.documentType === "INVOICE";
   const docHeader = isInvoice
-    ? `✨ *TAX INVOICE: ${doc.documentNumber}*`
-    : `🎉 *EVENT ESTIMATE & QUOTATION: ${doc.documentNumber}*`;
+    ? ` *TAX INVOICE: ${doc.documentNumber}*`
+    : ` *EVENT Proposal & QUOTATION: ${doc.documentNumber}*`;
 
   const dateFormatted = doc.date ? doc.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
   const eventDateFormatted = doc.event.date ? doc.event.date.slice(0, 10) : "";
 
   let message = `${docHeader}\n`;
-  message += `🏢 *${doc.company.name}*\n`;
+  message += ` *${doc.company.name}*\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  message += `👤 *Client:* ${doc.client.name}\n`;
-  if (doc.client.phone) message += `📞 *Phone:* ${doc.client.phone}\n`;
-  message += `🎪 *Event:* ${doc.event.name} (${doc.event.type})\n`;
-  message += `📅 *Date:* ${eventDateFormatted} ${doc.event.time ? `at ${doc.event.time}` : ""}\n`;
-  message += `👥 *Guests:* ${doc.event.guests} Attendees\n`;
-  message += `📍 *Venue:* ${doc.event.location}\n\n`;
+  message += ` *Client:* ${doc.client.name}\n`;
+  if (doc.client.phone) message += ` *Phone:* ${doc.client.phone}\n`;
+  message += ` *Event:* ${doc.event.name} (${doc.event.type})\n`;
+  message += ` *Date:* ${eventDateFormatted} ${doc.event.time ? `at ${doc.event.time}` : ""}\n`;
+  message += ` *Guests:* ${doc.event.guests} Attendees\n`;
+  message += ` *Venue:* ${doc.event.location}\n\n`;
 
   // Services Scope
   if (doc.services && doc.services.length > 0) {
-    message += `📋 *INCLUDED SERVICES & PRODUCTION:*\n`;
+    message += ` *INCLUDED SERVICES & PRODUCTION:*\n`;
     doc.services.forEach((item) => {
       const qtyStr = item.quantity > 1 ? ` (${item.quantity} ${item.unitLabel || "units"})` : "";
       if (showItemizedPrices) {
@@ -166,7 +166,7 @@ export function generateWhatsAppMessage(
 
   // Catering
   if (doc.catering && doc.catering.included) {
-    message += `🍽️ *CATERING & FOOD MENU:*\n`;
+    message += ` *CATERING & FOOD MENU:*\n`;
     if (showItemizedPrices) {
       const rateText = doc.catering.ratePerGuest
         ? `${doc.catering.guestCount} guests × ${formatINR(doc.catering.ratePerGuest, doc.currency)}`
@@ -186,24 +186,24 @@ export function generateWhatsAppMessage(
 
   message += `━━━━━━━━━━━━━━━━━━━━━\n`;
   if (showItemizedPrices) {
-    message += `💰 *Subtotal:* ${formatINR(doc.subtotal, doc.currency)}\n`;
+    message += ` *Subtotal:* ${formatINR(doc.subtotal, doc.currency)}\n`;
     if (doc.discount > 0) {
-      message += `🎁 *Discount:* -${formatINR(doc.discount, doc.currency)}\n`;
+      message += ` *Discount:* -${formatINR(doc.discount, doc.currency)}\n`;
     }
     if (doc.gstAmount > 0) {
-      message += `🏛️ *GST (${doc.gstRate || 18}%):* +${formatINR(doc.gstAmount, doc.currency)}\n`;
+      message += ` *GST (${doc.gstRate || 18}%):* +${formatINR(doc.gstAmount, doc.currency)}\n`;
     }
     if (doc.additionalCharges > 0) {
-      message += `➕ *Additional Charges:* +${formatINR(doc.additionalCharges, doc.currency)}\n`;
+      message += ` *Additional Charges:* +${formatINR(doc.additionalCharges, doc.currency)}\n`;
     }
   }
 
-  message += `⭐ *FINAL ESTIMATE AMOUNT: ${formatINR(doc.total, doc.currency)}*\n`;
-  message += `📌 *Status:* ${doc.status.toUpperCase()}\n`;
+  message += ` *FINAL ESTIMATE AMOUNT: ${formatINR(doc.total, doc.currency)}*\n`;
+  message += ` *Status:* ${doc.status.toUpperCase()}\n`;
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
   if (isInvoice) {
-    message += `💳 *PAYMENT INSTRUCTIONS:*\n`;
+    message += ` *PAYMENT INSTRUCTIONS:*\n`;
     if (doc.company.upiId) message += `• UPI ID: \`${doc.company.upiId}\`\n`;
     if (doc.company.bankDetails) {
       message += `• Bank: ${doc.company.bankDetails.bankName}\n`;
@@ -211,11 +211,11 @@ export function generateWhatsAppMessage(
     }
     message += `\n`;
   } else {
-    message += `⏳ *Quote Validity:* 15 Days from ${dateFormatted}\n\n`;
+    message += ` *Quote Validity:* 15 Days from ${dateFormatted}\n\n`;
   }
 
   message += `Thank you for choosing *${doc.company.name}*!\n`;
-  message += `📞 *Contact:* ${doc.company.phone} | ✉️ ${doc.company.email}`;
+  message += ` *Contact:* ${doc.company.phone} |  ${doc.company.email}`;
 
   return message;
 }
