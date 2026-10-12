@@ -28,6 +28,7 @@ import {
   type ClientDocumentData,
   defaultCompanyDetails,
 } from "@/lib/document-formatter";
+import { formatTime24to12 } from "@/lib/time-utils";
 import { useAssignments } from "@/hooks/useAssignments";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaff } from "@/hooks/useStaff";
@@ -440,7 +441,7 @@ export default function ManagerEventDetailsPage() {
           name: event.eventName,
           type: event.eventType,
           date: event.eventDate,
-          time: event.eventTime,
+          time: formatTime24to12(event.eventTime) || event.eventTime,
           guests: event.guests,
           location: event.location,
           description: event.description || event.notes,
@@ -597,7 +598,9 @@ export default function ManagerEventDetailsPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Time:</span>
-                <span className="font-bold text-[#252525]">{event.eventTime}</span>
+                <span className="font-bold text-[#252525]">
+                  {formatTime24to12(event.eventTime) || event.eventTime}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Guests:</span>

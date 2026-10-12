@@ -1,6 +1,7 @@
 /**
  * Client Document & WhatsApp Message Formatting Utilities
  */
+import { formatTime24to12 } from "./time-utils";
 
 export interface DocumentLineItem {
   id: string;
@@ -146,7 +147,7 @@ export function generateWhatsAppMessage(
   message += ` *Client:* ${doc.client.name}\n`;
   if (doc.client.phone) message += ` *Phone:* ${doc.client.phone}\n`;
   message += ` *Event:* ${doc.event.name} (${doc.event.type})\n`;
-  message += ` *Date:* ${eventDateFormatted} ${doc.event.time ? `at ${doc.event.time}` : ""}\n`;
+  message += ` *Date:* ${eventDateFormatted} ${doc.event.time ? `at ${formatTime24to12(doc.event.time)}` : ""}\n`;
   message += ` *Guests:* ${doc.event.guests} Attendees\n`;
   message += ` *Venue:* ${doc.event.location}\n\n`;
 

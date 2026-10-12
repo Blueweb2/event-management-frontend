@@ -28,6 +28,7 @@ import {
 } from "@/lib/estimates.api";
 import EstimateExportActions from "@/components/estimates/EstimateExportActions";
 import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
+import { formatTime24to12 } from "@/lib/time-utils";
 import {
   type ClientDocumentData,
   defaultCompanyDetails,
@@ -102,7 +103,7 @@ function buildDocumentDataFromEstimate(est: Estimate): ClientDocumentData {
       name: est.eventName,
       type: est.eventType,
       date: est.eventDate,
-      time: est.eventTime,
+      time: formatTime24to12(est.eventTime) || est.eventTime,
       guests: est.guests,
       location: est.location,
       description: est.description,
@@ -867,7 +868,7 @@ export default function EventEstimatesTab({
                   {selectedEstimate.eventType} · {selectedEstimate.guests} guests
                 </p>
                 <p className="mt-1 text-xs text-[#756d64]">
-                  {formatDate(selectedEstimate.eventDate)} at {selectedEstimate.eventTime}
+                  {formatDate(selectedEstimate.eventDate)} at {formatTime24to12(selectedEstimate.eventTime) || selectedEstimate.eventTime}
                 </p>
                 <p className="mt-0.5 text-xs text-[#756d64]">
                   {selectedEstimate.location}

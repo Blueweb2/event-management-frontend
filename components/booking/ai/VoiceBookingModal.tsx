@@ -14,16 +14,17 @@ import {
   Users,
   MapPin,
   Phone,
-  Mail,
   FileText,
-  Clock,
   Layers,
-  HelpCircle,
   ArrowRight,
+  AlertCircle,
+  AlertTriangle,
+  Globe,
 } from "lucide-react";
 
-import { useVoiceBooking } from "@/hooks/useVoiceBooking";
+import { useVoiceBooking, type VoiceLanguage } from "@/hooks/useVoiceBooking";
 import type { ExtractedBookingFields, ParseBookingResult } from "@/lib/ai-booking-parser";
+import { formatTime24to12, formatTime12to24 } from "@/lib/time-utils";
 
 interface VoiceBookingModalProps {
   isOpen: boolean;
@@ -31,25 +32,50 @@ interface VoiceBookingModalProps {
   onApply: (data: ExtractedBookingFields) => void;
 }
 
-const SAMPLE_PROMPTS = [
-  "Book a luxury wedding for Rahul and Priya on 25th November at Grand Palace, Bangalore. Around 350 guests from 6 PM. Client phone 9876543210, email rahul@gmail.com. We need stage lighting, floral decor, and photography.",
-  "Corporate annual conference for TechNova Corp on December 15th at Leela Palace. 200 attendees from 9 AM. Contact person Amit Sharma, phone 9811223344. Needs sound system and LED wall.",
-  "Birthday celebration for Aarav turning 10 on October 28th at Palm Gardens. 80 guests at 5 PM. Client Priya Patel, phone 9898765432. Include buffet catering and DJ.",
-];
+const PROMPTS_BY_LANG: Record<VoiceLanguage, Array<{ label: string; text: string }>> = {
+  "en-IN": [
+    {
+      label: "Luxury Wedding (English)",
+      text: "Book a luxury wedding for Rahul and Priya on 25th November 2026 at Grand Palace, Bangalore. Around 350 guests from 6 PM. Client phone 9876543210, email rahul@gmail.com. We need stage lighting, floral decor, photography, and buffet catering.",
+    },
+    {
+      label: "Annual Conference (English)",
+      text: "Corporate annual conference for TechNova Corp on December 15th 2026 at Leela Palace. 200 attendees from 9 AM. Contact person Amit Sharma, phone 9811223344. Needs sound system and LED wall.",
+    },
+    {
+      label: "Manglish Mixed Request",
+      text: "Rahul and Priya wedding on 25 November 2026 at Grand Palace, Bangalore. Around 350 perkk vaikittu 6 manikku. Contact phone 9876543210, email rahul@gmail.com. Need stage lighting, floral decoration, photography and buffet catering.",
+    },
+  ],
+  "ml-IN": [
+    {
+      label: "കല്യാണം (Malayalam Wedding)",
+      text: "2026 നവംബർ 25-ന് ബാംഗ്ലൂർ ഗ്രാൻഡ് പാലസിൽ വെച്ച് രാഹുലിന്റെയും പ്രിയയുടെയും കല്യാണം. വൈകുന്നേരം 6 മണി മുതൽ ഏകദേശം 350 ആളുകൾ. ക്ലയന്റ് ഫോൺ 9876543210, ഇമെയിൽ rahul@gmail.com. സ്റ്റേജ് ലൈറ്റിംഗ്, ഫ്ലോറൽ ഡെക്കറേഷൻ, ഫോട്ടോഗ്രാഫി, ബുഫെ കാറ്ററിംഗ് വേണം.",
+    },
+    {
+      label: "സമ്മേളനം (Malayalam Conference)",
+      text: "2026 ഡിസംബർ 15-ന് ലീല പാലസിൽ വെച്ച് വാർഷിക സമ്മേളനം. രാവിലെ 9 മണിക്ക് 200 പേർ പങ്കെടുക്കും. ബന്ധപ്പെടേണ്ട വ്യക്തി ജോൺ, ഫോൺ 9845012345, ഇമെയിൽ john@corp.com. സൗണ്ട് സിസ്റ്റം വേണം.",
+    },
+    {
+      label: "പിറന്നാൾ ആഘോഷം (Malayalam Birthday)",
+      text: "2027 ജനുവരി 5-ന് കമ്മ്യൂണിറ്റി ഹാളിൽ വെച്ച് പിറന്നാൾ ആഘോഷം. വൈകുന്നേരം 4 മണിക്ക് അമ്പത് ആളുകൾ. ക്ലയന്റ് ആരവ്.",
+    },
+  ],
+};
 
 export default function VoiceBookingModal({
   isOpen,
   onClose,
   onApply,
 }: VoiceBookingModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted] = useState<boolean>(() => typeof window !== "undefined");
   const [isParsing, setIsParsing] = useState(false);
   const [parseResult, setParseResult] = useState<ParseBookingResult | null>(null);
-  const [manualText, setManualText] = useState("");
-  const [activeTab, setActiveTab] = useState<"voice" | "text">("voice");
 
   const {
     isSupported,
+    language,
+    setLanguage,
     isListening,
     transcript,
     setTranscript,
@@ -59,17 +85,6 @@ export default function VoiceBookingModal({
     stopListening,
     resetTranscript,
   } = useVoiceBooking();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Update manualText if speech transcript changes
-  useEffect(() => {
-    if (transcript) {
-      setManualText(transcript);
-    }
-  }, [transcript]);
 
   // Escape key handler
   useEffect(() => {
@@ -83,11 +98,11 @@ export default function VoiceBookingModal({
 
   if (!isOpen || !mounted) return null;
 
-  const currentText = (transcript + (interimTranscript ? " " + interimTranscript : "")).trim() || manualText;
+  const currentDisplay = (transcript + (interimTranscript ? " " + interimTranscript : "")).trim();
 
   const handleParse = async (textToParse?: string) => {
-    const raw = textToParse || currentText;
-    if (!raw.trim()) return;
+    const raw = (textToParse !== undefined ? textToParse : transcript).trim();
+    if (!raw) return;
 
     if (isListening) {
       stopListening();
@@ -104,6 +119,9 @@ export default function VoiceBookingModal({
       });
 
       const json: ParseBookingResult = await response.json();
+      if (json.data?.eventTime) {
+        json.data.eventTime = formatTime24to12(json.data.eventTime);
+      }
       setParseResult(json);
     } catch (err) {
       console.error("Failed to parse booking note:", err);
@@ -114,22 +132,38 @@ export default function VoiceBookingModal({
 
   const handleApply = () => {
     if (parseResult?.data) {
-      onApply(parseResult.data);
+      const dataToApply = { ...parseResult.data };
+      if (dataToApply.eventTime) {
+        dataToApply.eventTime =
+          formatTime12to24(dataToApply.eventTime) || dataToApply.eventTime;
+      }
+      onApply(dataToApply);
       onClose();
     }
   };
 
   const handleUsePrompt = (prompt: string) => {
     resetTranscript();
-    setManualText(prompt);
     setTranscript(prompt);
     handleParse(prompt);
   };
 
   const handleResetAll = () => {
     resetTranscript();
-    setManualText("");
     setParseResult(null);
+  };
+
+  const updatePreviewField = (field: keyof ExtractedBookingFields, val: string) => {
+    setParseResult((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          [field]: val,
+        },
+      };
+    });
   };
 
   return createPortal(
@@ -156,7 +190,7 @@ export default function VoiceBookingModal({
                 </span>
               </div>
               <p className="text-xs text-[#756D64]">
-                Speak or paste event notes to fill the proposal in seconds.
+                Speak or paste event notes in English or മലയാളം to fill proposals.
               </p>
             </div>
           </div>
@@ -173,6 +207,19 @@ export default function VoiceBookingModal({
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Unsupported Browser Alert Notice */}
+          {!isSupported && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 flex items-start gap-2.5">
+              <AlertCircle size={16} className="text-amber-700 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold">Live voice recording is not supported in this browser</p>
+                <p className="text-[11px] text-amber-800">
+                  You can type or paste customer inquiry messages directly in the text box below to auto-fill.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Main Voice Control Center */}
           <div className="rounded-3xl border border-[#E8E1D8] bg-white p-5 sm:p-6 text-center space-y-4 shadow-xs relative overflow-hidden">
             {/* Animated Wave Background while listening */}
@@ -180,10 +227,43 @@ export default function VoiceBookingModal({
               <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-amber-500/10 to-amber-500/5 animate-pulse pointer-events-none" />
             )}
 
-            {/* Giant Microphone Button */}
+            {/* Language Selector */}
+            <div className="flex items-center justify-center gap-2 relative z-10">
+              <span className="text-xs font-bold text-[#756D64] flex items-center gap-1.5">
+                <Globe size={13} className="text-[#9A6C37]" />
+                Language:
+              </span>
+              <div className="inline-flex rounded-2xl bg-[#F0ECE4] p-1 border border-[#E8E1D8]">
+                <button
+                  type="button"
+                  onClick={() => setLanguage("en-IN")}
+                  className={`rounded-xl px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                    language === "en-IN"
+                      ? "bg-white text-[#29241F] shadow-xs"
+                      : "text-[#756D64] hover:text-[#29241F]"
+                  }`}
+                >
+                  English (en-IN)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage("ml-IN")}
+                  className={`rounded-xl px-3 py-1 text-xs font-bold transition cursor-pointer ${
+                    language === "ml-IN"
+                      ? "bg-white text-[#9A6C37] shadow-xs"
+                      : "text-[#756D64] hover:text-[#29241F]"
+                  }`}
+                >
+                  മലയാളം (ml-IN)
+                </button>
+              </div>
+            </div>
+
+            {/* Microphone Button */}
             <div className="flex justify-center">
               <button
                 type="button"
+                disabled={!isSupported}
                 onClick={() => {
                   if (isListening) {
                     stopListening();
@@ -191,12 +271,20 @@ export default function VoiceBookingModal({
                     startListening();
                   }
                 }}
-                className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300 shadow-xl cursor-pointer ${
-                  isListening
-                    ? "bg-red-500 text-white ring-8 ring-red-100 scale-105 animate-pulse"
-                    : "bg-gradient-to-br from-[#29241F] to-[#403932] text-white hover:scale-105 active:scale-95 hover:shadow-2xl"
+                className={`relative flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300 shadow-xl ${
+                  !isSupported
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-60"
+                    : isListening
+                    ? "bg-red-500 text-white ring-8 ring-red-100 scale-105 animate-pulse cursor-pointer"
+                    : "bg-gradient-to-br from-[#29241F] to-[#403932] text-white hover:scale-105 active:scale-95 hover:shadow-2xl cursor-pointer"
                 }`}
-                title={isListening ? "Click to stop listening" : "Click to speak"}
+                title={
+                  !isSupported
+                    ? "Speech recognition not supported in this browser"
+                    : isListening
+                    ? "Click to stop listening"
+                    : `Click to speak (${language === "ml-IN" ? "മലയാളം" : "English"})`
+                }
               >
                 {isListening ? (
                   <MicOff size={32} className="animate-bounce" />
@@ -216,21 +304,31 @@ export default function VoiceBookingModal({
             <div>
               <p className="text-sm font-bold text-[#29241F]">
                 {isListening
-                  ? "Listening to your voice..."
+                  ? language === "ml-IN"
+                    ? "നിങ്ങളുടെ ശബ്ദം കേൾക്കുന്നു..."
+                    : "Listening to your voice..."
                   : isParsing
-                  ? "AI is extracting event details..."
-                  : parseResult
+                  ? "വിവരങ്ങൾ പരിശോധിക്കുന്നു..."
+                  : parseResult?.success
                   ? "Event details extracted successfully!"
-                  : "Tap the microphone and describe your event"}
+                  : parseResult && !parseResult.success
+                  ? "No event details recognized"
+                  : isSupported
+                  ? language === "ml-IN"
+                    ? "മൈക്രോഫോൺ അമർത്തി മലയാളത്തിലോ ഇംഗ്ലീഷിലോ പറയുക"
+                    : "Tap the microphone and describe your event"
+                  : "Type or paste your event details below"}
               </p>
               <p className="text-xs text-[#756D64] mt-0.5">
                 {isListening
-                  ? "Speak naturally about the event name, date, guests, location, and client info"
-                  : "Or type/paste a WhatsApp message or client inquiry below"}
+                  ? language === "ml-IN"
+                    ? "തീയതി, വേദി, സമയം, അതിഥികളുടെ എണ്ണം, ഫോൺ നമ്പർ എന്നിവ പറയുക"
+                    : "Speak naturally about the event name, date, guests, location, and client info"
+                  : "Supports English, മലയാളം, and Manglish WhatsApp/voice messages"}
               </p>
             </div>
 
-            {/* Speech error notice (if any) */}
+            {/* Speech error notice */}
             {speechError && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
                 {speechError}
@@ -240,16 +338,17 @@ export default function VoiceBookingModal({
             {/* Live Voice Transcript or Textarea */}
             <div className="relative text-left">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-[#9A6C37] mb-1.5">
-                Spoken / Pasted Transcript:
+                Transcript / Inquiry Text ({language === "ml-IN" ? "മലയാളം / English" : "English"}):
               </label>
               <textarea
                 rows={3}
-                value={currentText}
-                onChange={(e) => {
-                  setManualText(e.target.value);
-                  setTranscript(e.target.value);
-                }}
-                placeholder="e.g. Wedding for Rahul and Priya on 25th Nov with 350 guests at Grand Palace, client phone 9876543210..."
+                value={currentDisplay}
+                onChange={(e) => setTranscript(e.target.value)}
+                placeholder={
+                  language === "ml-IN"
+                    ? "ഉദാ: 2026 നവംബർ 25-ന് ബാംഗ്ലൂർ ഗ്രാൻഡ് പാലസിൽ വെച്ച് രാഹുലിന്റെ കല്യാണം, 350 പേർ, വൈകുന്നേരം 6 മണി, ഫോൺ 9876543210..."
+                    : "e.g. Wedding for Rahul and Priya on 25th Nov 2026 with 350 guests at Grand Palace, client phone 9876543210..."
+                }
                 className="w-full rounded-2xl border border-[#E8E1D8] bg-[#FAF8F5] p-3 text-xs text-[#29241F] outline-none focus:border-[#B8894B] focus:bg-white transition resize-none leading-relaxed"
               />
 
@@ -274,10 +373,10 @@ export default function VoiceBookingModal({
 
               <button
                 type="button"
-                disabled={!currentText.trim() || isParsing}
+                disabled={!transcript.trim() || isParsing}
                 onClick={() => handleParse()}
                 className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition shadow-sm cursor-pointer ${
-                  !currentText.trim() || isParsing
+                  !transcript.trim() || isParsing
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-[#9A6C37] to-[#B8894B] text-white hover:brightness-105 active:scale-95"
                 }`}
@@ -285,7 +384,7 @@ export default function VoiceBookingModal({
                 {isParsing ? (
                   <>
                     <RefreshCw size={14} className="animate-spin" />
-                    <span>Analyzing with AI...</span>
+                    <span>Analyzing Details...</span>
                   </>
                 ) : (
                   <>
@@ -301,20 +400,25 @@ export default function VoiceBookingModal({
           {!parseResult && !isParsing && (
             <div className="space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#756D64]">
-                ✨ Or Click a Quick Sample Scenario to Test:
+                ✨ Or Click a Sample Scenario to Test ({language === "ml-IN" ? "മലയാളം" : "English"}):
               </p>
               <div className="grid gap-2">
-                {SAMPLE_PROMPTS.map((prompt, idx) => (
+                {PROMPTS_BY_LANG[language].map((promptItem, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => handleUsePrompt(prompt)}
+                    onClick={() => handleUsePrompt(promptItem.text)}
                     className="text-left rounded-2xl border border-[#E8E1D8] bg-white p-3 text-xs text-[#29241F] hover:border-[#B8894B] hover:bg-[#FAF8F5] transition shadow-2xs group flex items-start gap-2.5 cursor-pointer"
                   >
                     <span className="shrink-0 text-sm">💡</span>
-                    <span className="flex-1 leading-relaxed text-[#756D64] group-hover:text-[#29241F]">
-                      &quot;{prompt}&quot;
-                    </span>
+                    <div className="flex-1 space-y-0.5">
+                      <span className="text-[10px] font-bold text-[#9A6C37] uppercase tracking-wider block">
+                        {promptItem.label}
+                      </span>
+                      <span className="leading-relaxed text-[#756D64] group-hover:text-[#29241F] block">
+                        &quot;{promptItem.text}&quot;
+                      </span>
+                    </div>
                     <ArrowRight
                       size={14}
                       className="shrink-0 text-[#B8894B] opacity-0 group-hover:opacity-100 transition mt-0.5"
@@ -325,113 +429,203 @@ export default function VoiceBookingModal({
             </div>
           )}
 
-          {/* Extracted Fields Preview Box */}
-          {parseResult && parseResult.data && (
-            <div className="rounded-3xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-4 animate-in fade-in slide-in-from-bottom-2">
-              <div className="flex items-center justify-between border-b border-emerald-200/80 pb-3">
+          {/* Extracted Fields Preview Box (Editable to keep uncertain fields flexible) */}
+          {parseResult && (
+            <div
+              className={`rounded-3xl border p-5 space-y-4 animate-in fade-in slide-in-from-bottom-2 ${
+                parseResult.success
+                  ? "border-emerald-200 bg-emerald-50/50"
+                  : "border-amber-200 bg-amber-50/50"
+              }`}
+            >
+              <div className="flex items-center justify-between border-b border-[#E8E1D8]/60 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                    <Check size={16} />
+                  <div
+                    className={`flex h-7 w-7 items-center justify-center rounded-lg text-white ${
+                      parseResult.success ? "bg-emerald-600" : "bg-amber-600"
+                    }`}
+                  >
+                    {parseResult.success ? <Check size={16} /> : <AlertTriangle size={16} />}
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-emerald-950">
-                      AI Detected {parseResult.detectedFields.length} Fields
+                    <h3 className="text-xs font-bold text-[#29241F]">
+                      {parseResult.success
+                        ? `Detected ${parseResult.detectedFields.length} Fields (Editable in preview)`
+                        : "No Recognizable Booking Details Found"}
                     </h3>
-                    <p className="text-[11px] text-emerald-700">
-                      Powered by {parseResult.source === "llm" ? "Gemini AI" : "EventOps Smart NLP"} · Ready to populate form
+                    <p className="text-[11px] text-[#756D64]">
+                      {parseResult.success
+                        ? "EventOps Smart Bilingual Parser (English / മലയാളം)"
+                        : "Try mentioning date, guest count, or venue"}
                     </p>
                   </div>
                 </div>
 
-                <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                <span
+                  className={`rounded-full border text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wider ${
+                    parseResult.success
+                      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                      : "bg-amber-100 text-amber-800 border-amber-200"
+                  }`}
+                >
                   {(parseResult.confidence * 100).toFixed(0)}% Confidence
                 </span>
               </div>
 
-              {/* Grid of Extracted Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                {/* Event Name */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <FileText size={11} className="text-[#9A6C37]" /> Event Name
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.eventName || "—"}
-                  </p>
-                </div>
-
-                {/* Event Type */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles size={11} className="text-[#9A6C37]" /> Event Type
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.eventType || "—"}
-                  </p>
-                </div>
-
-                {/* Date & Time */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <Calendar size={11} className="text-[#9A6C37]" /> Date & Time
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.eventDate || "—"}{" "}
-                    {parseResult.data.eventTime ? `· ${parseResult.data.eventTime}` : ""}
-                  </p>
-                </div>
-
-                {/* Guest Count */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <Users size={11} className="text-[#9A6C37]" /> Guests
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.guests ? `${parseResult.data.guests} Guests` : "—"}
-                  </p>
-                </div>
-
-                {/* Location */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <MapPin size={11} className="text-[#9A6C37]" /> Location / Venue
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.location || "—"}
-                  </p>
-                </div>
-
-                {/* Client Contact */}
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8] shadow-2xs">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
-                    <Phone size={11} className="text-[#9A6C37]" /> Client Info
-                  </span>
-                  <p className="mt-1 font-bold text-[#29241F]">
-                    {parseResult.data.name || "Client"}
-                  </p>
-                  <p className="text-[11px] text-[#756D64] mt-0.5">
-                    {parseResult.data.phone || "No phone"} · {parseResult.data.email || "No email"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Matched Services Tags */}
-              {parseResult.data.requestedServices && parseResult.data.requestedServices.length > 0 && (
-                <div className="rounded-xl bg-white p-3 border border-[#E8E1D8]">
-                  <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1 mb-1.5">
-                    <Layers size={11} className="text-[#9A6C37]" /> Requested Services Deliverables:
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {parseResult.data.requestedServices.map((svc, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className="rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-1 text-[11px] font-semibold"
-                      >
-                        ✓ {svc}
+              {parseResult.success ? (
+                <>
+                  {/* Grid of Extracted Info (Directly editable inputs for uncertain fields) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {/* Event Name */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                        <FileText size={11} className="text-[#9A6C37]" /> Event Name
                       </span>
-                    ))}
+                      <input
+                        type="text"
+                        value={parseResult.data.eventName || ""}
+                        onChange={(e) => updatePreviewField("eventName", e.target.value)}
+                        placeholder="e.g. Rahul & Priya Wedding"
+                        className="mt-1 w-full font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                      />
+                    </div>
+
+                    {/* Event Type */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                        <Sparkles size={11} className="text-[#9A6C37]" /> Event Type
+                      </span>
+                      <input
+                        type="text"
+                        value={parseResult.data.eventType || ""}
+                        onChange={(e) => updatePreviewField("eventType", e.target.value)}
+                        placeholder="e.g. Wedding, Conference"
+                        className="mt-1 w-full font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                      />
+                    </div>
+
+                    {/* Date & Time */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                          <Calendar size={11} className="text-[#9A6C37]" /> Date & Time
+                        </span>
+                        {parseResult.data.eventTime && (
+                          <span className="text-[10px] font-extrabold text-[#9A6C37] bg-[#B8894B]/10 px-2 py-0.5 rounded-full">
+                            {formatTime24to12(parseResult.data.eventTime)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={parseResult.data.eventDate || ""}
+                          onChange={(e) => updatePreviewField("eventDate", e.target.value)}
+                          placeholder="YYYY-MM-DD"
+                          className="w-1/2 font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                        />
+                        <span className="text-[#756D64]">·</span>
+                        <input
+                          type="text"
+                          value={parseResult.data.eventTime || ""}
+                          onChange={(e) => updatePreviewField("eventTime", e.target.value)}
+                          placeholder="e.g. 6:00 PM"
+                          title="Enter time in 12-hour (e.g. 6:00 PM) or 24-hour format"
+                          className="w-1/2 font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Guest Count */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                        <Users size={11} className="text-[#9A6C37]" /> Guests
+                      </span>
+                      <input
+                        type="text"
+                        value={parseResult.data.guests || ""}
+                        onChange={(e) => updatePreviewField("guests", e.target.value)}
+                        placeholder="e.g. 350"
+                        className="mt-1 w-full font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                        <MapPin size={11} className="text-[#9A6C37]" /> Location / Venue
+                      </span>
+                      <input
+                        type="text"
+                        value={parseResult.data.location || ""}
+                        onChange={(e) => updatePreviewField("location", e.target.value)}
+                        placeholder="e.g. Grand Palace, Bangalore"
+                        className="mt-1 w-full font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                      />
+                    </div>
+
+                    {/* Client Contact */}
+                    <div className="rounded-xl bg-white p-2.5 border border-[#E8E1D8] shadow-2xs">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1">
+                        <Phone size={11} className="text-[#9A6C37]" /> Client Info
+                      </span>
+                      <input
+                        type="text"
+                        value={parseResult.data.name || ""}
+                        onChange={(e) => updatePreviewField("name", e.target.value)}
+                        placeholder="Client name"
+                        className="mt-1 w-full font-bold text-xs text-[#29241F] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                      />
+                      <div className="mt-1 flex gap-2">
+                        <input
+                          type="text"
+                          value={parseResult.data.phone || ""}
+                          onChange={(e) => updatePreviewField("phone", e.target.value)}
+                          placeholder="Phone (10-digit)"
+                          className="w-1/2 text-[11px] text-[#756D64] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                        />
+                        <input
+                          type="text"
+                          value={parseResult.data.email || ""}
+                          onChange={(e) => updatePreviewField("email", e.target.value)}
+                          placeholder="Email"
+                          className="w-1/2 text-[11px] text-[#756D64] bg-transparent border-b border-[#E8E1D8]/60 focus:border-[#B8894B] outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Matched Services Tags */}
+                  {parseResult.data.requestedServices && parseResult.data.requestedServices.length > 0 && (
+                    <div className="rounded-xl bg-white p-3 border border-[#E8E1D8]">
+                      <span className="text-[10px] font-bold text-[#756D64] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                        <Layers size={11} className="text-[#9A6C37]" /> Requested Services Deliverables:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {parseResult.data.requestedServices.map((svc, sIdx) => (
+                          <span
+                            key={sIdx}
+                            className="rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-1 text-[11px] font-semibold"
+                          >
+                            ✓ {svc}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Missing Fields Notice */}
+                  {parseResult.missingFields && parseResult.missingFields.length > 0 && (
+                    <div className="rounded-xl bg-white/70 p-3 border border-[#E8E1D8] text-[11px] text-[#756D64]">
+                      <span className="font-bold text-[#29241F]">Not mentioned in inquiry: </span>
+                      {parseResult.missingFields.join(", ")} (you can edit them above or in the proposal steps).
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-amber-800">
+                  We could not detect standard event details like a date, guest count, or venue. Please rephrase or type additional details.
+                </p>
               )}
             </div>
           )}
@@ -442,17 +636,17 @@ export default function VoiceBookingModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-[#E8E1D8] bg-white px-4 py-2 text-xs font-semibold text-[#756D64] hover:bg-[#FAF8F5] transition cursor-pointer"
+            className="rounded-xl border border-[#E8E1D8] bg-white px-4 py-2 text-xs font-semibold text-[#756D64] hover:bg-[#F0ECE4] transition cursor-pointer"
           >
             Cancel
           </button>
 
           <button
             type="button"
-            disabled={!parseResult?.data}
+            disabled={!parseResult?.success}
             onClick={handleApply}
             className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition shadow-sm cursor-pointer ${
-              !parseResult?.data
+              !parseResult?.success
                 ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                 : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
             }`}

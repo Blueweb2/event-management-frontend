@@ -43,6 +43,7 @@ import { createAssignment, updateAssignmentChecklist } from "@/lib/assignment.ap
 import { useAuth } from "@/hooks/useAuth";
 import ManageChecklistModal from "@/components/manager/duties/ManageChecklistModal";
 import type { Duty } from "@/components/manager/duties/constants";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventServiceStaffingMatrixProps {
   eventId: string;
@@ -259,7 +260,7 @@ export default function EventServiceStaffingMatrix({
               </span>
               <span className="flex items-center gap-1">
                 <Clock size={13} className="text-amber-400" />
-                {data.event.eventTime}
+                {formatTime24to12(data.event.eventTime)}
               </span>
               <span className="flex items-center gap-1">
                 <Users size={13} className="text-amber-400" />

@@ -19,6 +19,7 @@ import {
   updateEvent,
 } from "@/lib/event.api";
 import { useAuth } from "@/hooks/useAuth";
+import { formatTime24to12, formatTime12to24 } from "@/lib/time-utils";
 
 interface EditEventModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export default function EditEventModal({
       setEventDate(
         event.eventDate ? new Date(event.eventDate).toISOString().slice(0, 10) : ""
       );
-      setEventTime(event.eventTime || "");
+      setEventTime(event.eventTime ? formatTime24to12(event.eventTime) : "");
       setGuests(event.guests || 0);
       setLocation(event.location || "");
       setStatus(event.status || "Upcoming");
@@ -99,7 +100,7 @@ export default function EditEventModal({
           eventName: eventName.trim(),
           eventType: eventType.trim(),
           eventDate,
-          eventTime: eventTime.trim(),
+          eventTime: formatTime12to24(eventTime) || eventTime.trim(),
           guests: Number(guests) || 0,
           location: location.trim(),
           status,
@@ -238,7 +239,7 @@ export default function EditEventModal({
                   type="text"
                   value={eventTime}
                   onChange={(e) => setEventTime(e.target.value)}
-                  placeholder="e.g. 10:00 AM - 04:00 PM"
+                  placeholder="e.g. 6:00 PM or 10:00 AM - 04:00 PM"
                   className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                 />
               </div>

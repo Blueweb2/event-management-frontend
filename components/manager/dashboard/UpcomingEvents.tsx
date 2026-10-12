@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, Clock3, MapPin, Plus } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-storage";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventItem {
   _id: string;
@@ -178,7 +179,7 @@ export default function UpcomingEvents() {
                       {event.eventTime && (
                         <span className="flex items-center gap-1">
                           <Clock3 size={12} />
-                          {event.eventTime}
+                          {formatTime24to12(event.eventTime)}
                         </span>
                       )}
                     </div>

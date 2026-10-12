@@ -26,6 +26,7 @@ import {
   convertEstimateToBooking,
   type Estimate,
 } from "@/lib/estimates.api";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 import {
   getEvents,
@@ -513,7 +514,7 @@ export default function EventLifecycleBoard() {
                             <div className="flex items-center gap-1">
                               <Calendar size={12} className="shrink-0 text-gray-400" />
                               <span>{card.date.slice(0, 10)}</span>
-                              {card.time && <span>• {card.time}</span>}
+                              {card.time && <span>• {formatTime24to12(card.time)}</span>}
                             </div>
                           )}
 

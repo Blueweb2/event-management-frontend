@@ -4,7 +4,6 @@ import {
   MapPin,
   Users,
   Sparkles,
-  FileText,
   Plus,
   Minus,
 } from "lucide-react";
@@ -12,6 +11,11 @@ import {
 import Input from "@/components/ui/Input";
 import { eventTypeOptions } from "../constants";
 import type { BookingFormData } from "../types";
+import {
+  parse12HourComponents,
+  build24HourFrom12,
+  formatTime24to12,
+} from "@/lib/time-utils";
 
 interface EventDetailsStepProps {
   formData: BookingFormData;
@@ -25,6 +29,41 @@ export default function EventDetailsStep({
   formData,
   updateField,
 }: EventDetailsStepProps) {
+  const { hour: timeHour, minute: timeMinute, ampm: timeAmpm } =
+    parse12HourComponents(formData.eventTime);
+
+  const standardMinutes = [
+    "00", "05", "10", "15", "20", "25",
+    "30", "35", "40", "45", "50", "55",
+  ];
+  const minuteOptions =
+    timeMinute && !standardMinutes.includes(timeMinute)
+      ? [...standardMinutes, timeMinute].sort(
+          (a, b) => parseInt(a, 10) - parseInt(b, 10),
+        )
+      : standardMinutes;
+
+  const handleHourChange = (newHour: string) => {
+    if (!newHour) {
+      updateField("eventTime", "");
+      return;
+    }
+    const min = timeMinute || "00";
+    const ampm = timeAmpm || "PM";
+    updateField("eventTime", build24HourFrom12(newHour, min, ampm));
+  };
+
+  const handleMinuteChange = (newMin: string) => {
+    const hr = timeHour || "6";
+    const ampm = timeAmpm || "PM";
+    updateField("eventTime", build24HourFrom12(hr, newMin, ampm));
+  };
+
+  const handleAmpmChange = (newAmpm: "AM" | "PM") => {
+    const hr = timeHour || "6";
+    const min = timeMinute || "00";
+    updateField("eventTime", build24HourFrom12(hr, min, newAmpm));
+  };
   return (
     <div className="rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-8 shadow-xs">
       {/* Step Header */}
@@ -111,20 +150,101 @@ export default function EventDetailsStep({
             required
           />
 
-          <Input
-            id="eventTime"
-            label="Event Time"
-            type="time"
-            value={formData.eventTime}
-            onChange={(event) =>
-              updateField(
-                "eventTime",
-                event.target.value,
-              )
-            }
-            leftIcon={<Clock3 size={18} />}
-            required
-          />
+          {/* 12-Hour Event Time Input with AM/PM selector */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="eventTimeHour"
+                className="text-xs sm:text-sm font-semibold text-[#29241f] flex items-center gap-1"
+              >
+                Event Time
+                <span className="text-[#b8894b]">*</span>
+              </label>
+              {formData.eventTime && (
+                <span className="text-[11px] font-bold text-[#9A6C37] bg-[#B8894B]/15 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Clock3 size={11} />
+                  {formatTime24to12(formData.eventTime)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-2xl border border-[#e8e1d8] bg-white p-1.5 shadow-2xs focus-within:border-[#b8894b] focus-within:ring-2 focus-within:ring-[#b8894b]/20 transition-all">
+              <div className="flex items-center justify-center pl-2 pr-1 text-[#756d64]">
+                <Clock3 size={18} />
+              </div>
+
+              {/* Hour Dropdown (1-12) */}
+              <div className="flex-1 min-w-[70px]">
+                <select
+                  id="eventTimeHour"
+                  value={timeHour}
+                  onChange={(e) => handleHourChange(e.target.value)}
+                  className="w-full rounded-xl bg-[#fcfaf7] px-2.5 py-2 text-xs sm:text-sm font-bold text-[#29241f] border border-[#eee7dc] focus:bg-white focus:outline-none transition cursor-pointer"
+                >
+                  <option value="">Hour</option>
+                  {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <span className="text-sm font-bold text-[#756d64]">:</span>
+
+              {/* Minute Dropdown */}
+              <div className="flex-1 min-w-[70px]">
+                <select
+                  id="eventTimeMinute"
+                  value={timeMinute}
+                  onChange={(e) => handleMinuteChange(e.target.value)}
+                  disabled={!timeHour}
+                  className="w-full rounded-xl bg-[#fcfaf7] px-2.5 py-2 text-xs sm:text-sm font-bold text-[#29241f] border border-[#eee7dc] focus:bg-white focus:outline-none transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {minuteOptions.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* AM / PM Segmented Toggle */}
+              <div className="inline-flex rounded-xl bg-[#f0ece4] p-1 border border-[#e8e1d8] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleAmpmChange("AM")}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                    timeAmpm === "AM" && formData.eventTime
+                      ? "bg-white text-[#29241f] shadow-xs"
+                      : "text-[#756d64] hover:text-[#29241f]"
+                  }`}
+                >
+                  AM
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAmpmChange("PM")}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                    timeAmpm === "PM" && formData.eventTime
+                      ? "bg-[#b8894b] text-white shadow-xs"
+                      : "text-[#756d64] hover:text-[#29241f]"
+                  }`}
+                >
+                  PM
+                </button>
+              </div>
+            </div>
+
+            {/* Hidden input for form submission and selector compatibility */}
+            <input
+              type="hidden"
+              id="eventTime"
+              name="eventTime"
+              value={formData.eventTime}
+              required
+            />
+          </div>
         </div>
 
         {/* Guests */}

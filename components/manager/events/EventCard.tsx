@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Event } from "@/lib/event.api";
 import { Edit, Trash2, ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity } from "lucide-react";
 import EventStatusBadge from "./EventStatusBadge";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventCardProps {
   event: Event;
@@ -205,7 +206,7 @@ export default function EventCard({
 
           <InfoRow
             icon={<ClockIcon />}
-            value={event.eventTime || "Schedule TBA"}
+            value={event.eventTime ? formatTime24to12(event.eventTime) : "Schedule TBA"}
           />
 
           <InfoRow

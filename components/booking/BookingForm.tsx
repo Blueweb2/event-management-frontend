@@ -17,6 +17,7 @@ import { createEstimate, type Estimate } from "@/lib/estimates.api";
 import { getServices } from "@/lib/services.api";
 import VoiceBookingModal from "./ai/VoiceBookingModal";
 import type { ExtractedBookingFields } from "@/lib/ai-booking-parser";
+import { formatTime12to24 } from "@/lib/time-utils";
 
 // ==========================================
 // DRAFT STORAGE CONSTANTS (7 DAYS EXPIRY)
@@ -139,14 +140,16 @@ export default function BookingForm() {
         (draft.formData.foodMenu?.items && draft.formData.foodMenu.items.length > 0);
 
       if (hasContent) {
-        setFormData(draft.formData);
-        if (draft.currentStep && draft.currentStep >= 1 && draft.currentStep <= 5) {
-          setCurrentStep(draft.currentStep);
-        }
-        const daysLeft = Math.max(1, Math.ceil((DRAFT_EXPIRY_MS - age) / (24 * 60 * 60 * 1000)));
-        setDraftRestoredInfo({
-          savedAt: draft.savedAt,
-          daysLeft,
+        queueMicrotask(() => {
+          setFormData(draft.formData);
+          if (draft.currentStep && draft.currentStep >= 1 && draft.currentStep <= 5) {
+            setCurrentStep(draft.currentStep);
+          }
+          const daysLeft = Math.max(1, Math.ceil((DRAFT_EXPIRY_MS - age) / (24 * 60 * 60 * 1000)));
+          setDraftRestoredInfo({
+            savedAt: draft.savedAt,
+            daysLeft,
+          });
         });
       }
     } catch (err) {
@@ -201,7 +204,9 @@ export default function BookingForm() {
         eventName: data.eventName || prev.eventName,
         eventType: data.eventType || prev.eventType,
         eventDate: data.eventDate || prev.eventDate,
-        eventTime: data.eventTime || prev.eventTime,
+        eventTime: data.eventTime
+          ? formatTime12to24(data.eventTime) || data.eventTime
+          : prev.eventTime,
         guests: data.guests || prev.guests,
         location: data.location || prev.location,
         description: data.description || prev.description,

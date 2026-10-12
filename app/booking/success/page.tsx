@@ -15,6 +15,7 @@ import {
   FileText,
   Sparkles,
 } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 // ==========================================
 // Types
@@ -140,7 +141,7 @@ function SuccessContent() {
       ? [{ icon: CalendarDays, label: "Date", value: formattedDate }]
       : []),
     ...(eventTime
-      ? [{ icon: Clock, label: "Time", value: eventTime }]
+      ? [{ icon: Clock, label: "Time", value: formatTime24to12(eventTime) }]
       : []),
     ...(guests
       ? [{ icon: Users, label: "Guests", value: `${guests} guests` }]

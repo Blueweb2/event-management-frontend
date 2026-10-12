@@ -26,6 +26,7 @@ import {
   type ClientDocumentData,
   defaultCompanyDetails,
 } from "@/lib/document-formatter";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 type EstimatePreviewStepProps = {
   formData: BookingFormData;
@@ -212,7 +213,7 @@ export default function EstimatePreviewStep({
       name: formData.eventName.trim() || "Untitled Event",
       type: formData.eventType.trim() || "Celebration",
       date: formData.eventDate || new Date().toISOString().slice(0, 10),
-      time: formData.eventTime || "",
+      time: formatTime24to12(formData.eventTime) || formData.eventTime || "",
       guests: Number(formData.guests || 100),
       location: formData.location.trim() || "Client Designated Venue",
       description: formData.description?.trim() || "",
@@ -506,7 +507,7 @@ export default function EstimatePreviewStep({
           `Event: ${formData.eventName}`,
           `Event Type: ${formData.eventType}`,
           `Date: ${formData.eventDate}`,
-          `Time: ${formData.eventTime}`,
+          `Time: ${formatTime24to12(formData.eventTime) || formData.eventTime}`,
           `Guests: ${formData.guests}`,
           `Venue: ${formData.location}`,
           "",
@@ -724,7 +725,7 @@ export default function EstimatePreviewStep({
                 </p>
 
                 <p className="mt-0.5 text-xs font-medium text-gray-900">
-                  {formData.eventTime ||
+                  {formatTime24to12(formData.eventTime) ||
                     "Not specified"}
                 </p>
               </div>

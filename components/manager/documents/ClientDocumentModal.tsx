@@ -29,6 +29,7 @@ import {
   createWhatsAppUrl,
   defaultCompanyDetails,
 } from "@/lib/document-formatter";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface ClientDocumentModalProps {
   open: boolean;
@@ -396,7 +397,7 @@ export default function ClientDocumentModal({
                     <Calendar size={13} className="text-[#9A6C37] shrink-0" />
                     <span>
                       {currentDoc.event.date ? currentDoc.event.date.slice(0, 10) : "TBD"}{" "}
-                      {currentDoc.event.time ? `· ${currentDoc.event.time}` : ""}
+                      {currentDoc.event.time ? `· ${formatTime24to12(currentDoc.event.time)}` : ""}
                     </span>
                   </p>
                   <p className="text-xs text-[#756D64] flex items-center gap-1.5 mt-0.5">
