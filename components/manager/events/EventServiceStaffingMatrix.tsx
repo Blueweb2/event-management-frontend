@@ -483,7 +483,7 @@ export default function EventServiceStaffingMatrix({
                                 </span>
 
                                 <span className="rounded-md bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-700">
-                                  {duty.startTime} - {duty.endTime}
+                                  {formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}
                                 </span>
                               </div>
                             </div>
@@ -777,6 +777,11 @@ export default function EventServiceStaffingMatrix({
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
                       Start Time *
+                      {startTime && (
+                        <span className="ml-2 font-normal text-[#9a6c37]">
+                          ({formatTime24to12(startTime)})
+                        </span>
+                      )}
                     </label>
                     <input
                       type="time"
@@ -790,6 +795,11 @@ export default function EventServiceStaffingMatrix({
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
                       End Time *
+                      {endTime && (
+                        <span className="ml-2 font-normal text-[#9a6c37]">
+                          ({formatTime24to12(endTime)})
+                        </span>
+                      )}
                     </label>
                     <input
                       type="time"

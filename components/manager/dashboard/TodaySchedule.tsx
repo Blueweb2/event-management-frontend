@@ -8,6 +8,7 @@ import {
   MapPin,
   Users,
 } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface ScheduleItem {
   id: string;
@@ -97,7 +98,7 @@ export default function TodaySchedule() {
               {/* Timeline */}
               <div className="flex w-16 shrink-0 flex-col items-center">
                 <span className="text-xs font-semibold text-[#1F1F1F]">
-                  {item.time}
+                  {formatTime24to12(item.time)}
                 </span>
 
                 <div className="mt-2 flex flex-1 flex-col items-center">

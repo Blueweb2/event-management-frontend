@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckSquare, Clock, AlertTriangle, PlayCircle, CheckCircle2, Lock } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventTaskItem {
   dutyId: string;
@@ -90,13 +91,8 @@ export default function EventTaskProgressCard({
 
   const formatTime = (dateStr?: string) => {
     if (!dateStr) return "--:--";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "--:--";
-    return d.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const formatted = formatTime24to12(dateStr);
+    return formatted || "--:--";
   };
 
   const getStatusBadge = (status: string, wasOverdue?: boolean) => {

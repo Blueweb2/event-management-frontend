@@ -38,6 +38,7 @@ import {
   type PaymentMethod,
 } from "@/components/manager/expenses/constants";
 import { useAuth } from "@/hooks/useAuth";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventProfitabilityCardProps {
   eventId: string;
@@ -490,7 +491,7 @@ export default function EventProfitabilityCard({
                     </div>
 
                     <p className="mt-0.5 text-[11px] text-gray-400">
-                      {duty.startTime && duty.endTime ? `${duty.startTime} - ${duty.endTime} · ` : ""}
+                      {duty.startTime && duty.endTime ? `${formatTime24to12(duty.startTime)} - ${formatTime24to12(duty.endTime)} · ` : ""}
                       {duty.hours > 0 ? `${duty.hours} hrs` : ""}
                       {duty.hourlyRate > 0 ? ` @ ₹${duty.hourlyRate}/hr` : ""}
                     </p>

@@ -43,7 +43,7 @@ import {
 } from "@/lib/assignment.api";
 import { pauseStaffShift, resumeStaffShift } from "@/lib/attendance.api";
 import type { Assignment } from "@/types/assignment";
-import { formatTime24to12 } from "@/lib/duty-mapper";
+import { formatTime24to12 } from "@/lib/time-utils";
 import { ListSkeleton } from "@/components/common/SkeletonLoaders";
 import RichEmptyState from "@/components/common/RichEmptyState";
 import ErrorMessage from "@/components/common/ErrorMessage";
@@ -663,7 +663,7 @@ export default function StaffDutiesPage() {
                   ) : isCheckedIn && dutyRecord?.checkIn ? (
                     <div className="space-y-0.5">
                       <p className="text-xs text-gray-600 font-semibold">
-                        Checked in at {new Date(dutyRecord.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        Checked in at {formatTime24to12(dutyRecord.checkIn)}
                       </p>
                       {isPaused ? (
                         <p className="text-[11px] font-bold text-amber-700">

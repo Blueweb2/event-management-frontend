@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertCircle, AlertTriangle, Calendar, Clock, Loader2, X } from "lucide-react";
 import type { Assignment } from "@/types/assignment";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface DeclineShiftModalProps {
   duty: Assignment | null;
@@ -108,7 +109,7 @@ export default function DeclineShiftModal({
               <span>•</span>
               <span className="inline-flex items-center gap-1">
                 <Clock size={13} className="text-[#9a6c37]" />
-                {duty.startTime} - {duty.endTime}
+                {formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}
               </span>
             </div>
           </div>

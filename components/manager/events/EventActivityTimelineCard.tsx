@@ -1,6 +1,7 @@
 "use client";
 
 import { Activity, Clock, User, CheckCircle2, AlertCircle, PlayCircle, PauseCircle, CheckSquare } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface ActivityItem {
   _id?: string;
@@ -50,13 +51,12 @@ export default function EventActivityTimelineCard({
 
   const formatDateTime = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleString("en-US", {
+    if (isNaN(date.getTime())) return "";
+    const datePart = date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
     });
+    return `${datePart}, ${formatTime24to12(date)}`;
   };
 
   return (

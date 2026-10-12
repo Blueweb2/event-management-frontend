@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CalendarDays, MapPin, ChevronDown, ChevronUp, Activity, CheckCircle2 } from "lucide-react";
 import type { Assignment } from "@/types/assignment";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 export default function StaffUpcomingEvents({
   assignments,
@@ -220,7 +221,7 @@ export default function StaffUpcomingEvents({
                           </p>
                         )}
                         <p>
-                          <strong className="text-gray-900">Time:</strong> {item.startTime} - {item.endTime}
+                          <strong className="text-gray-900">Time:</strong> {formatTime24to12(item.startTime)} - {formatTime24to12(item.endTime)}
                         </p>
                       </div>
                     )}

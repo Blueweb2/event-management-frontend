@@ -1,5 +1,6 @@
 import { CalendarDays, Clock3, MapPin, UserCheck, Shield } from "lucide-react";
 import type { StaffEvent } from "../constants";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface StaffEventsListProps {
   events: StaffEvent[];
@@ -34,7 +35,7 @@ export default function StaffEventsList({ events }: StaffEventsListProps) {
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock3 size={13} className="text-[#9a6c37]" />
-                  {evt.time}
+                  {formatTime24to12(evt.time)}
                 </span>
                 <span className="flex items-center gap-1">
                   <MapPin size={13} className="text-[#9a6c37]" />

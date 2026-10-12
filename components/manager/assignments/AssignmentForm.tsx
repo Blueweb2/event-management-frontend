@@ -13,6 +13,7 @@ import type {
   CreateAssignmentPayload,
   UpdateAssignmentPayload,
 } from "@/types/assignment";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface AssignmentFormProps {
   assignment?: Assignment | null;
@@ -399,6 +400,11 @@ export default function AssignmentForm({
             className="mb-1.5 block text-xs font-medium text-gray-700"
           >
             Start Time
+            {form.startTime && (
+              <span className="ml-2 font-normal text-[#9A7B4F]">
+                ({formatTime24to12(form.startTime)})
+              </span>
+            )}
           </label>
 
           <div className="relative">
@@ -429,6 +435,11 @@ export default function AssignmentForm({
             className="mb-1.5 block text-xs font-medium text-gray-700"
           >
             End Time
+            {form.endTime && (
+              <span className="ml-2 font-normal text-[#9A7B4F]">
+                ({formatTime24to12(form.endTime)})
+              </span>
+            )}
           </label>
 
           <div className="relative">

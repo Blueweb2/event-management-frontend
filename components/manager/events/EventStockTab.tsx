@@ -40,6 +40,7 @@ import {
 import type { EventStock, StockItem, EventStockStatus } from "@/types/stock";
 import { getStaff } from "@/lib/staff.api";
 import { useAuth } from "@/hooks/useAuth";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface EventStockTabProps {
   eventId: string;
@@ -721,7 +722,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
                           <div>{stock.takenQuantity}</div>
                           {stock.takenAt && (
                             <div className="text-[10px] text-gray-400 font-normal">
-                              {new Date(stock.takenAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {formatTime24to12(stock.takenAt)}
                             </div>
                           )}
                         </td>
@@ -784,7 +785,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
                                   <span>
                                     {isOverdue ? "Overdue: " : "Due: "}
                                     {new Date(stock.expectedReturnAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
-                                    {new Date(stock.expectedReturnAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    {formatTime24to12(stock.expectedReturnAt)}
                                   </span>
                                 </div>
                               ) : null}

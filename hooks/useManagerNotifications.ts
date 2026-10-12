@@ -6,6 +6,7 @@ import { getExpenses } from "@/lib/expense.api";
 import { getEstimates } from "@/lib/estimates.api";
 import { getAssignments } from "@/lib/assignment.api";
 import { useAuth } from "@/hooks/useAuth";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 export type NotificationCategory = "ACTION" | "EVENT" | "FINANCE" | "ESTIMATE" | "STAFF";
 
@@ -107,7 +108,7 @@ export function useManagerNotifications() {
           if (diffHours >= -12 && diffHours <= 72) {
             const isToday = eventDate.toDateString() === now.toDateString();
             const timingText = isToday
-              ? `Today at ${evt.eventTime || "scheduled time"}`
+              ? `Today at ${formatTime24to12(evt.eventTime) || "scheduled time"}`
               : `in ${Math.max(1, Math.round(diffHours / 24))} days`;
 
             items.push({

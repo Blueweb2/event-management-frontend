@@ -161,44 +161,44 @@ function ManagerEventsContent() {
           <EventsHeader />
 
           {/* View Mode Toggle */}
-          <div className="inline-flex rounded-xl bg-gray-200/70 p-1">
+          <div className="flex w-full sm:w-auto items-center overflow-x-auto no-scrollbar rounded-xl bg-gray-200/70 p-1 gap-1">
             <button
               type="button"
               onClick={() => handleTabChange("list")}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "list"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <ListFilter size={15} />
-              Events List
+              <span>Events List</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("pipeline")}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "pipeline"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <Kanban size={15} />
-              Pipeline
+              <span>Pipeline</span>
             </button>
 
             <button
               type="button"
               onClick={() => handleTabChange("estimates")}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
                 viewMode === "estimates"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
               <FileText size={15} />
-              Proposals & Estimates
+              <span>Proposals & Estimates</span>
             </button>
           </div>
         </div>

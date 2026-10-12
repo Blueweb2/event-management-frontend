@@ -23,6 +23,7 @@ import StaffDetails from "./StaffDetails";
 import StaffActions from "./StaffActions";
 import { getAssignments } from "@/lib/assignment.api";
 import { uploadStaffAvatarImage, getStaffAvatarUrl } from "@/lib/staff.api";
+import { formatTime24to12 } from "@/lib/time-utils";
 import { calculateHoursFromTime } from "@/lib/duty-mapper";
 import type { Assignment } from "@/types/assignment";
 
@@ -395,7 +396,7 @@ export default function StaffProfile({
                           <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
                             {duty.dutyDate?.slice(0, 10)}
                             <div className="text-[10px] text-gray-400 font-normal">
-                              {duty.startTime} - {duty.endTime}
+                              {formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}
                             </div>
                           </td>
                           <td className="px-4 py-3">

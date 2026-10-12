@@ -10,6 +10,8 @@ import {
 import {
   formatTime24to12,
   formatTime12to24,
+  formatTimeRange12,
+  formatDateTime12,
   parse12HourComponents,
   build24HourFrom12,
 } from "./time-utils.ts";
@@ -417,5 +419,66 @@ test("Scenario 15: 12-Hour Component Parsing and Round-Trip Building for Form Co
   assert.equal(c4.minute, "15");
   assert.equal(c4.ampm, "AM");
   assert.equal(build24HourFrom12(c4.hour, c4.minute, c4.ampm), "09:15");
+});
+
+test("Scenario 16: Consistent 12-Hour Display Format Requirement Examples", () => {
+  // Required examples from specification:
+  // 9:00 AM, 12:00 PM, 3:30 PM, 6:00 PM, 11:45 PM, 12:00 AM
+  assert.equal(formatTime24to12("09:00"), "9:00 AM");
+  assert.equal(formatTime24to12("9:00"), "9:00 AM");
+  assert.equal(formatTime24to12("12:00"), "12:00 PM");
+  assert.equal(formatTime24to12("15:30"), "3:30 PM");
+  assert.equal(formatTime24to12("18:00"), "6:00 PM");
+  assert.equal(formatTime24to12("23:45"), "11:45 PM");
+  assert.equal(formatTime24to12("00:00"), "12:00 AM");
+  assert.equal(formatTime24to12("0:00"), "12:00 AM");
+
+  // Already 12-hour formatted values should normalize to clean single-digit hour
+  assert.equal(formatTime24to12("09:00 AM"), "9:00 AM");
+  assert.equal(formatTime24to12("12:00 PM"), "12:00 PM");
+  assert.equal(formatTime24to12("03:30 PM"), "3:30 PM");
+  assert.equal(formatTime24to12("06:00 PM"), "6:00 PM");
+
+  // Conversion back to storage format
+  assert.equal(formatTime12to24("9:00 AM"), "09:00");
+  assert.equal(formatTime12to24("12:00 PM"), "12:00");
+  assert.equal(formatTime12to24("3:30 PM"), "15:30");
+  assert.equal(formatTime12to24("6:00 PM"), "18:00");
+  assert.equal(formatTime12to24("11:45 PM"), "23:45");
+  assert.equal(formatTime12to24("12:00 AM"), "00:00");
+});
+
+test("Scenario 17: Time Range Formatting (formatTimeRange12)", () => {
+  assert.equal(formatTimeRange12("09:00", "17:00"), "9:00 AM – 5:00 PM");
+  assert.equal(formatTimeRange12("18:00", "23:45"), "6:00 PM – 11:45 PM");
+  assert.equal(formatTimeRange12("00:00", "12:00"), "12:00 AM – 12:00 PM");
+  assert.equal(formatTimeRange12("10:00", ""), "10:00 AM");
+  assert.equal(formatTimeRange12("", "14:00"), "2:00 PM");
+  assert.equal(formatTimeRange12("", ""), "");
+});
+
+test("Scenario 18: Timestamp and ISO Date Formatting (formatDateTime12 & formatTime24to12)", () => {
+  // ISO timestamps with time
+  const isoUtc = "2026-10-12T14:30:00.000Z";
+  const dateObj = new Date(isoUtc);
+  const formatted = formatTime24to12(isoUtc);
+  assert.ok(formatted.endsWith("AM") || formatted.endsWith("PM"));
+
+  // Date object
+  assert.equal(formatTime24to12(dateObj), formatted);
+
+  // Pure date strings like "2026-10-12" shouldn't format as midnight times accidentally
+  assert.equal(formatTime24to12("2026-10-12"), "");
+
+  // Invalid date / missing input should return empty string without NaN or Invalid Date
+  assert.equal(formatTime24to12(null), "");
+  assert.equal(formatTime24to12(undefined), "");
+  assert.equal(formatTime24to12("invalid-time"), "");
+
+  // formatDateTime12 handles valid and invalid inputs gracefully
+  assert.equal(formatDateTime12(""), "");
+  assert.equal(formatDateTime12(null), "");
+  assert.equal(formatDateTime12("not-a-date"), "");
+  assert.ok(formatDateTime12(isoUtc).includes("2026"));
 });
 

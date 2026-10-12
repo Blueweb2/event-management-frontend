@@ -32,6 +32,7 @@ import {
 } from "@/lib/attendance.api";
 import type { Assignment } from "@/types/assignment";
 import type { Attendance, AttendanceStatus } from "@/types/attendance";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 const localToday = () => {
   const date = new Date();
@@ -45,11 +46,7 @@ const formatDate = (value: string) =>
   );
 
 const formatTime = (value: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("en-IN", { timeStyle: "short" }).format(
-        new Date(value)
-      )
-    : "--";
+  value ? formatTime24to12(value) || "--" : "--";
 
 export default function ManagerAttendancePage() {
   const { token } = useAuth();
@@ -202,9 +199,9 @@ export default function ManagerAttendancePage() {
         `"${staff.replace(/"/g, '""')}"`,
         `"${assignment.dutyTitle.replace(/"/g, '""')}"`,
         `"${event.replace(/"/g, '""')}"`,
-        `"${assignment.startTime} - ${assignment.endTime}"`,
-        `"${record?.checkIn ? new Date(record.checkIn).toLocaleTimeString() : "--"}"`,
-        `"${record?.checkOut ? new Date(record.checkOut).toLocaleTimeString() : "--"}"`,
+        `"${assignment.startTime && assignment.endTime ? `${formatTime24to12(assignment.startTime)} - ${formatTime24to12(assignment.endTime)}` : "--"}"`,
+        `"${record?.checkIn ? formatTime24to12(record.checkIn) : "--"}"`,
+        `"${record?.checkOut ? formatTime24to12(record.checkOut) : "--"}"`,
         `"${record?.status || "UNRECORDED"}"`,
         `"${(record?.notes || "").replace(/"/g, '""')}"`,
         `"${markedBy}"`,
@@ -493,7 +490,7 @@ function AttendanceRow({
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
             <span className="flex items-center gap-1">
               <Clock3 size={13} className="text-[#9A7B4F]" />
-              {assignment.startTime} - {assignment.endTime}
+              {formatTime24to12(assignment.startTime)} - {formatTime24to12(assignment.endTime)}
             </span>
 
             <span className="flex items-center gap-1">
@@ -757,6 +754,11 @@ function EditAttendanceModal({
             <div>
               <label className="block text-xs font-semibold text-gray-700">
                 Check-In Time
+                {checkInTime && (
+                  <span className="ml-2 font-normal text-[#9A7B4F]">
+                    ({formatTime24to12(checkInTime)})
+                  </span>
+                )}
               </label>
               <input
                 type="time"
@@ -769,6 +771,11 @@ function EditAttendanceModal({
             <div>
               <label className="block text-xs font-semibold text-gray-700">
                 Check-Out Time
+                {checkOutTime && (
+                  <span className="ml-2 font-normal text-[#9A7B4F]">
+                    ({formatTime24to12(checkOutTime)})
+                  </span>
+                )}
               </label>
               <input
                 type="time"

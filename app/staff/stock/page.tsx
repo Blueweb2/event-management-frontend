@@ -28,6 +28,7 @@ import {
   returnStock,
 } from "@/lib/stock.api";
 import type { StockItem, EventStock } from "@/types/stock";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 const CATEGORIES: { label: string; value: string }[] = [
   { label: "All Items", value: "ALL" },
@@ -802,7 +803,7 @@ export default function StaffStockPage() {
                               <span className="font-semibold text-gray-500">Collected:</span>
                               <span className="font-bold text-gray-800">
                                 {new Date(stock.takenAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
-                                {new Date(stock.takenAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                {formatTime24to12(stock.takenAt)}
                               </span>
                             </div>
                           )}

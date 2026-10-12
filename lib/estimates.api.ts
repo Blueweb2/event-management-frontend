@@ -128,6 +128,10 @@ export type Estimate = {
   rejectedAt?: string | null;
   expiresAt?: string | null;
 
+  convertedToEvent?: boolean;
+  convertedEventId?: string | null;
+  convertedBookingId?: string | null;
+
   createdAt: string;
   updatedAt: string;
 };

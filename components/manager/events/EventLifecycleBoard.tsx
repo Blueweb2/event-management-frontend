@@ -238,8 +238,73 @@ export default function EventLifecycleBoard() {
   // Group Items into Pipeline Columns
   // ==========================================
 
+  const isEstimateConverted = useCallback(
+    (est: Estimate): boolean => {
+      if (est.convertedToEvent || est.convertedEventId) return true;
+
+      const estDateStr = est.eventDate
+        ? new Date(est.eventDate).toISOString().slice(0, 10)
+        : "";
+      const estNameNorm = est.eventName ? est.eventName.trim().toLowerCase() : "";
+      const estClientEmail = est.client?.email?.trim().toLowerCase();
+      const estClientPhone = est.client?.phone?.trim();
+
+      return events.some((evt) => {
+        if (est.convertedBookingId) {
+          const bId =
+            typeof evt.booking === "object" && evt.booking
+              ? evt.booking._id
+              : evt.booking;
+          if (bId === est.convertedBookingId) return true;
+        }
+
+        const evtDateStr = evt.eventDate
+          ? new Date(evt.eventDate).toISOString().slice(0, 10)
+          : "";
+        const evtNameNorm = evt.eventName ? evt.eventName.trim().toLowerCase() : "";
+
+        if (
+          estNameNorm &&
+          evtNameNorm &&
+          estNameNorm === evtNameNorm &&
+          estDateStr &&
+          evtDateStr &&
+          estDateStr === evtDateStr
+        ) {
+          return true;
+        }
+
+        const evtClientEmail =
+          typeof evt.client === "object" && evt.client
+            ? evt.client.email?.trim().toLowerCase()
+            : "";
+        const evtClientPhone =
+          typeof evt.client === "object" && evt.client
+            ? evt.client.phone?.trim()
+            : "";
+
+        if (
+          estDateStr &&
+          evtDateStr &&
+          estDateStr === evtDateStr &&
+          ((estClientEmail && evtClientEmail && estClientEmail === evtClientEmail) ||
+            (estClientPhone && evtClientPhone && estClientPhone === evtClientPhone))
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+    },
+    [events]
+  );
+
   const draftSentCards: PipelineCardItem[] = estimates
-    .filter((est) => ["DRAFT", "SENT", "VIEWED"].includes(est.status))
+    .filter(
+      (est) =>
+        ["DRAFT", "SENT", "VIEWED"].includes(est.status) &&
+        !isEstimateConverted(est)
+    )
     .map((est) => ({
       id: est._id,
       type: "ESTIMATE",
@@ -258,7 +323,7 @@ export default function EventLifecycleBoard() {
     }));
 
   const acceptedCards: PipelineCardItem[] = estimates
-    .filter((est) => est.status === "ACCEPTED")
+    .filter((est) => est.status === "ACCEPTED" && !isEstimateConverted(est))
     .map((est) => ({
       id: est._id,
       type: "ESTIMATE",
@@ -537,25 +602,42 @@ export default function EventLifecycleBoard() {
                         <div className="mt-4 border-t border-gray-100 pt-3">
                           {/* Column 1: Draft / Sent Estimate Actions */}
                           {col.id === "draft_sent" && (
-                            <div className="flex items-center gap-2">
-                              {card.status === "DRAFT" && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                {card.status === "DRAFT" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateEstimateStatus(card.id, "SENT")}
+                                    disabled={isProcessing}
+                                    className="flex-1 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                                  >
+                                    {isProcessing ? "Updating..." : "Mark Sent"}
+                                  </button>
+                                )}
+
                                 <button
                                   type="button"
-                                  onClick={() => handleUpdateEstimateStatus(card.id, "SENT")}
+                                  onClick={() => handleUpdateEstimateStatus(card.id, "ACCEPTED")}
                                   disabled={isProcessing}
-                                  className="flex-1 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                                  className="flex-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                 >
-                                  {isProcessing ? "Updating..." : "Mark Sent"}
+                                  {isProcessing ? "Updating..." : "Accept"}
                                 </button>
-                              )}
+                              </div>
 
                               <button
                                 type="button"
-                                onClick={() => handleUpdateEstimateStatus(card.id, "ACCEPTED")}
+                                onClick={() => handleConvertEstimate(card.id)}
                                 disabled={isProcessing}
-                                className="flex-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50"
                               >
-                                {isProcessing ? "Updating..." : "Accept"}
+                                {isProcessing ? (
+                                  <RefreshCw size={12} className="animate-spin" />
+                                ) : (
+                                  <Sparkles size={12} />
+                                )}
+                                <span>Convert to Event</span>
+                                <ArrowRight size={12} />
                               </button>
                             </div>
                           )}

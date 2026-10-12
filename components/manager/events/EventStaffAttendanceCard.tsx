@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Clock, User, PauseCircle, PlayCircle, CheckCircle2, History, AlertCircle } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface Session {
   type: "CLOCK_IN" | "PAUSE" | "RESUME" | "CLOCK_OUT";
@@ -125,13 +126,8 @@ export default function EventStaffAttendanceCard({
 
   const formatTime12h = (dateStr: string | null) => {
     if (!dateStr) return "--:--";
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "--:--";
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const formatted = formatTime24to12(dateStr);
+    return formatted || "--:--";
   };
 
   const activeCount = normalizedData.filter((item) => item.status === "ACTIVE").length;

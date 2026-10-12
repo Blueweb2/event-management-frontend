@@ -21,6 +21,7 @@ import {
   setAvailability,
 } from "@/lib/availability.api";
 import type { Availability, AvailabilityStatus } from "@/types/availability";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 const localToday = () => {
   const date = new Date();
@@ -211,6 +212,11 @@ export default function StaffAvailabilityPage() {
                 <div>
                   <label className="block text-xs font-semibold text-[#403a34]">
                     Start Time
+                    {startTime && (
+                      <span className="ml-2 font-normal text-[#a7773f]">
+                        ({formatTime24to12(startTime)})
+                      </span>
+                    )}
                   </label>
                   <input
                     type="time"
@@ -222,6 +228,11 @@ export default function StaffAvailabilityPage() {
                 <div>
                   <label className="block text-xs font-semibold text-[#403a34]">
                     End Time
+                    {endTime && (
+                      <span className="ml-2 font-normal text-[#a7773f]">
+                        ({formatTime24to12(endTime)})
+                      </span>
+                    )}
                   </label>
                   <input
                     type="time"
@@ -339,7 +350,7 @@ export default function StaffAvailabilityPage() {
                             <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-600">
                               <Clock3 size={13} className="text-[#a7773f]" />
                               <span>
-                                {item.startTime} - {item.endTime}
+                                {formatTime24to12(item.startTime)} - {formatTime24to12(item.endTime)}
                               </span>
                             </div>
                           )}

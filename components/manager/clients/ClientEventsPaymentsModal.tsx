@@ -30,6 +30,7 @@ import {
   type RecordPaymentPayload,
 } from "@/lib/client.api";
 import { useAuth } from "@/hooks/useAuth";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface ClientEventsPaymentsModalProps {
   isOpen: boolean;
@@ -774,7 +775,7 @@ export default function ClientEventsPaymentsModal({
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock size={13} className="text-[#a7773f]" />
-                              {event.eventTime}
+                              {formatTime24to12(event.eventTime)}
                             </span>
                             <span className="flex items-center gap-1">
                               <MapPin size={13} className="text-[#a7773f]" />

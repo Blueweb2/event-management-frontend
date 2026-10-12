@@ -19,6 +19,7 @@ import { getAssignments } from "@/lib/assignment.api";
 import { checkIn, checkOut, getAttendance } from "@/lib/attendance.api";
 import type { Assignment } from "@/types/assignment";
 import type { Attendance } from "@/types/attendance";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 const dateLabel = (value: string) =>
   new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(
@@ -26,11 +27,7 @@ const dateLabel = (value: string) =>
   );
 
 const timeLabel = (value: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("en-IN", { timeStyle: "short" }).format(
-        new Date(value)
-      )
-    : "--";
+  value ? formatTime24to12(value) || "--" : "--";
 
 const isToday = (value: string) => {
   const today = new Date();
@@ -330,7 +327,7 @@ export default function StaffAttendancePage() {
                             </span>
                             <span className="flex items-center gap-1.5">
                               <Clock3 size={14} className="text-[#a7773f]" />
-                              {assignment.startTime} - {assignment.endTime}
+                              {formatTime24to12(assignment.startTime)} - {formatTime24to12(assignment.endTime)}
                             </span>
                             <span className="flex items-center gap-1.5">
                               <MapPin size={14} className="text-[#a7773f]" />

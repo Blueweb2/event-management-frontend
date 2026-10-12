@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Package, ShieldCheck, AlertCircle, ArrowRight, RotateCcw } from "lucide-react";
 import { getMyAssignedStock } from "@/lib/stock.api";
 import type { EventStock } from "@/types/stock";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 export default function StaffStockWidget() {
   const [stocks, setStocks] = useState<EventStock[]>([]);
@@ -98,9 +99,9 @@ export default function StaffStockWidget() {
               {inPossession.find((s) => s.expectedReturnAt) && (
                 <span className="text-[10px] text-indigo-600 font-semibold block mt-0.5">
                   Next scheduled return:{" "}
-                  {new Date(
+                  {formatTime24to12(
                     inPossession.find((s) => s.expectedReturnAt)!.expectedReturnAt!
-                  ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  )}
                 </span>
               )}
             </div>

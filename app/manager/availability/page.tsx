@@ -28,6 +28,7 @@ import {
   getAvailability,
   setAvailability,
 } from "@/lib/availability.api";
+import { formatTime24to12 } from "@/lib/time-utils";
 import type { Availability, AvailabilityStatus } from "@/types/availability";
 
 const localToday = () => {
@@ -199,7 +200,7 @@ export default function ManagerAvailabilityPage() {
         `"${(staffObj?.name || "Staff").replace(/"/g, '""')}"`,
         `"${(staffObj?.department || "General").replace(/"/g, '""')}"`,
         `"${item.status}"`,
-        `"${item.startTime && item.endTime ? `${item.startTime} - ${item.endTime}` : "N/A"}"`,
+        `"${item.startTime && item.endTime ? `${formatTime24to12(item.startTime)} - ${formatTime24to12(item.endTime)}` : "N/A"}"`,
         `"${(item.notes || "").replace(/"/g, '""')}"`,
       ];
     });
@@ -403,7 +404,7 @@ export default function ManagerAvailabilityPage() {
                     <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-600 font-medium">
                       <Clock3 size={13} className="text-[#9A7B4F]" />
                       <span>
-                        {item.startTime} - {item.endTime}
+                        {formatTime24to12(item.startTime)} - {formatTime24to12(item.endTime)}
                       </span>
                     </div>
                   )}
@@ -674,6 +675,11 @@ function AddAvailabilityModal({
               <div>
                 <label className="block text-xs font-semibold text-gray-700">
                   Start Time
+                  {startTime && (
+                    <span className="ml-2 font-normal text-[#9A7B4F]">
+                      ({formatTime24to12(startTime)})
+                    </span>
+                  )}
                 </label>
                 <input
                   type="time"
@@ -686,6 +692,11 @@ function AddAvailabilityModal({
               <div>
                 <label className="block text-xs font-semibold text-gray-700">
                   End Time
+                  {endTime && (
+                    <span className="ml-2 font-normal text-[#9A7B4F]">
+                      ({formatTime24to12(endTime)})
+                    </span>
+                  )}
                 </label>
                 <input
                   type="time"

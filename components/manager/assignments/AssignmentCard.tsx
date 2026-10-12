@@ -16,6 +16,7 @@ import type {
   AssignmentEvent,
   AssignmentStaff,
 } from "@/types/assignment";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 interface AssignmentCardProps {
   assignment: Assignment;
@@ -71,21 +72,7 @@ export default function AssignmentCard({
   };
 
   const formatTime = (time: string) => {
-    if (!time) {
-      return "";
-    }
-
-    const [hours, minutes] = time.split(":");
-    const hour = Number(hours);
-
-    if (Number.isNaN(hour)) {
-      return time;
-    }
-
-    const suffix = hour >= 12 ? "PM" : "AM";
-    const formattedHour = hour % 12 || 12;
-
-    return `${formattedHour}:${minutes || "00"} ${suffix}`;
+    return formatTime24to12(time);
   };
 
   return (

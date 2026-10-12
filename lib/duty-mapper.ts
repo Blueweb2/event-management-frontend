@@ -1,34 +1,8 @@
 import type { Assignment } from "@/types/assignment";
 import type { Duty } from "@/components/manager/duties/constants";
+import { formatTime24to12 } from "@/lib/time-utils";
+export { formatTime24to12 };
 
-/**
- * Converts a 24-hour time string ("09:00", "14:30", "21:15") to 12-hour AM/PM format ("09:00 AM", "02:30 PM").
- */
-export function formatTime24to12(timeStr?: string): string {
-  if (!timeStr) return "";
-  const trimmed = timeStr.trim();
-
-  if (/am|pm/i.test(trimmed)) {
-    return trimmed;
-  }
-
-  const parts = trimmed.split(":");
-  if (parts.length < 2) return trimmed;
-
-  let hour = parseInt(parts[0], 10);
-  const minute = parseInt(parts[1], 10);
-
-  if (Number.isNaN(hour) || Number.isNaN(minute)) return trimmed;
-
-  const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12;
-  if (hour === 0) hour = 12;
-
-  const formattedHour = hour < 10 ? `0${hour}` : `${hour}`;
-  const formattedMinute = minute < 10 ? `0${minute}` : `${minute}`;
-
-  return `${formattedHour}:${formattedMinute} ${ampm}`;
-}
 
 /**
  * Accurately calculates shift duration in hours from 24h or 12h time strings.

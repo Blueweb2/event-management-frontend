@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock3, MoreHorizontal } from "lucide-react";
+import { formatTime24to12 } from "@/lib/time-utils";
 
 export interface ScheduleEventData {
   id: string;
@@ -72,7 +73,7 @@ export default function ScheduleEvent({
             />
 
             <span className="text-xs text-gray-500">
-              {event.startTime} – {event.endTime}
+              {formatTime24to12(event.startTime)} – {formatTime24to12(event.endTime)}
             </span>
           </div>
 

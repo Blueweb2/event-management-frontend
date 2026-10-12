@@ -382,7 +382,7 @@ export default function HeroActiveShiftWidget({
                 <span className="text-emerald-700 font-medium">Active so far: {formatTimer(elapsedSeconds)}</span>
               ) : (
                 checkInTime && (
-                  <span>Started: {checkInTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span>Started: {formatTime24to12(checkInTime)}</span>
                 )
               )}
               {totalPauseMins > 0 && (
