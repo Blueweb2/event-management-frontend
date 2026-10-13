@@ -173,165 +173,183 @@ export default function EditEventModal({
                 {error}
               </div>
             )}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-bold text-gray-700">
-                Event Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  required
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                  placeholder="e.g. Grand Wedding Reception"
-                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-                />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-gray-700">
+                  Event Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    type="text"
+                    required
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="e.g. Grand Wedding Reception"
+                    className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700">
+                  Event Type
+                </label>
+                <div className="relative mt-1.5">
+                  <select
+                    value={eventType}
+                    onChange={(e) => setEventType(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                  >
+                    <option value="Wedding">Wedding</option>
+                    <option value="Reception">Reception</option>
+                    <option value="Birthday Party">Birthday Party</option>
+                    <option value="Corporate Event">Corporate Event</option>
+                    <option value="Anniversary">Anniversary</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Social Gathering">Social Gathering</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
               </div>
             </div>
 
+
+            {/* Row 2: Date & Time */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full min-w-0">
+              {/* Event Date */}
+              <div className="w-full min-w-0">
+                <label className="block text-sm font-bold text-gray-700">
+                  Event Date <span className="text-red-500">*</span>
+                </label>
+
+                <div className="relative mt-1.5 w-full min-w-0">
+                  <input
+                    type="date"
+                    required
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="block w-full min-w-0 max-w-full box-border appearance-none rounded-xl border border-gray-300 bg-white px-3 py-3 text-base text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                    style={{
+                      width: "100%",
+                      minWidth: 0,
+                      maxWidth: "100%",
+                      WebkitAppearance: "none",
+                      fontSize: "16px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Event Time */}
+              <div className="w-full min-w-0">
+                <label className="block text-sm font-bold text-gray-700">
+                  Event Time
+                </label>
+
+                <div className="relative mt-1.5 w-full min-w-0">
+                  <input
+                    type="text"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    placeholder="e.g. 6:00 PM"
+                    className="block w-full min-w-0 max-w-full box-border rounded-xl border border-gray-300 bg-white px-3 py-3 text-base text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                    style={{
+                      width: "100%",
+                      minWidth: 0,
+                      maxWidth: "100%",
+                      fontSize: "16px",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 3: Guests & Location */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-xs font-bold text-gray-700">
+                  Guest Count
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    type="number"
+                    min="1"
+                    value={guests}
+                    onChange={(e) => setGuests(Number(e.target.value) || 0)}
+                    placeholder="e.g. 250"
+                    className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700">
+                  Location / Venue
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Royal Palace Ballroom, Mumbai"
+                    className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 4: Status */}
             <div>
               <label className="block text-xs font-bold text-gray-700">
-                Event Type
+                Event Status
               </label>
               <div className="relative mt-1.5">
                 <select
-                  value={eventType}
-                  onChange={(e) => setEventType(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as EventStatus)}
+                  className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                 >
-                  <option value="Wedding">Wedding</option>
-                  <option value="Reception">Reception</option>
-                  <option value="Birthday Party">Birthday Party</option>
-                  <option value="Corporate Event">Corporate Event</option>
-                  <option value="Anniversary">Anniversary</option>
-                  <option value="Conference">Conference</option>
-                  <option value="Social Gathering">Social Gathering</option>
-                  <option value="Other">Other</option>
+                  <option value="Upcoming">Upcoming (Scheduled)</option>
+                  <option value="Ongoing">Ongoing (In Progress)</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Invoiced" disabled={!isEligibleForPaid}>
+                    Invoiced {!isEligibleForPaid ? "(Requires In-Progress or Completed)" : ""}
+                  </option>
+                  <option value="Settled" disabled={!isEligibleForPaid}>
+                    Settled {!isEligibleForPaid ? "(Requires In-Progress or Completed)" : ""}
+                  </option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
               </div>
             </div>
-          </div>
 
-          {/* Row 2: Date & Time */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Row 5: Description */}
             <div>
               <label className="block text-xs font-bold text-gray-700">
-                Event Date <span className="text-red-500">*</span>
+                Description / Program Overview
               </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="date"
-                  required
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-                />
-              </div>
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Event program details or special requirements..."
+                className="mt-1.5 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+              />
             </div>
 
+            {/* Row 6: Internal Notes */}
             <div>
               <label className="block text-xs font-bold text-gray-700">
-                Event Time
+                Internal Notes
               </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  value={eventTime}
-                  onChange={(e) => setEventTime(e.target.value)}
-                  placeholder="e.g. 6:00 PM or 10:00 AM - 04:00 PM"
-                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-                />
-              </div>
+              <textarea
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Internal reminders, logistics notes, vendor remarks..."
+                className="mt-1.5 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
+              />
             </div>
-          </div>
-
-          {/* Row 3: Guests & Location */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-bold text-gray-700">
-                Guest Count
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="number"
-                  min="1"
-                  value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value) || 0)}
-                  placeholder="e.g. 250"
-                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-700">
-                Location / Venue
-              </label>
-              <div className="relative mt-1.5">
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Royal Palace Ballroom, Mumbai"
-                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Row 4: Status */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700">
-              Event Status
-            </label>
-            <div className="relative mt-1.5">
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as EventStatus)}
-                className="w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-900 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-              >
-                <option value="Upcoming">Upcoming (Scheduled)</option>
-                <option value="Ongoing">Ongoing (In Progress)</option>
-                <option value="Completed">Completed</option>
-                <option value="Invoiced" disabled={!isEligibleForPaid}>
-                  Invoiced {!isEligibleForPaid ? "(Requires In-Progress or Completed)" : ""}
-                </option>
-                <option value="Settled" disabled={!isEligibleForPaid}>
-                  Settled {!isEligibleForPaid ? "(Requires In-Progress or Completed)" : ""}
-                </option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 5: Description */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700">
-              Description / Program Overview
-            </label>
-            <textarea
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Event program details or special requirements..."
-              className="mt-1.5 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-            />
-          </div>
-
-          {/* Row 6: Internal Notes */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700">
-              Internal Notes
-            </label>
-            <textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Internal reminders, logistics notes, vendor remarks..."
-              className="mt-1.5 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
-            />
-          </div>
 
           </div>
 
