@@ -1,5 +1,4 @@
 import {
-  CalendarDays,
   Clock3,
   MapPin,
   Users,
@@ -9,6 +8,7 @@ import {
 } from "lucide-react";
 
 import Input from "@/components/ui/Input";
+import DatePicker from "@/components/common/DatePicker";
 import { eventTypeOptions } from "../constants";
 import type { BookingFormData } from "../types";
 import {
@@ -135,18 +135,13 @@ export default function EventDetailsStep({
 
         {/* Date & Time */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input
+          <DatePicker
             id="eventDate"
             label="Event Date"
-            type="date"
             value={formData.eventDate}
-            onChange={(event) =>
-              updateField(
-                "eventDate",
-                event.target.value,
-              )
+            onChange={(selectedDate) =>
+              updateField("eventDate", selectedDate)
             }
-            leftIcon={<CalendarDays size={18} />}
             required
           />
 

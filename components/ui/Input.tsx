@@ -43,7 +43,7 @@ export default function Input({
   const isDark = variant === "dark";
 
   return (
-    <div className={`w-full ${containerClassName}`}>
+    <div className={`w-full min-w-0 ${containerClassName}`}>
       {label && (
         <label
           htmlFor={inputId}
@@ -65,7 +65,7 @@ export default function Input({
         </label>
       )}
 
-      <div className="relative">
+      <div className="relative min-w-0">
         {leftIcon && (
           <div
             className={`pointer-events-none absolute left-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center ${
@@ -81,6 +81,7 @@ export default function Input({
           className={`
             h-11
             w-full
+            min-w-0
             rounded-xl
             border
             px-3.5
