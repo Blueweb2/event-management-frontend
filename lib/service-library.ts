@@ -275,6 +275,14 @@ export const PRESET_SERVICE_LIBRARY: LibraryImageItem[] = [
     tags: ["heritage", "palace", "royal", "courtyard", "fort"],
     source: "preset",
   },
+  {
+    id: "equipment-1",
+    url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop&q=80",
+    title: "Event Equipment & Rental Setup",
+    category: "equipment",
+    tags: ["equipment", "rental", "chairs", "furniture", "sound", "lighting", "stages", "crockery"],
+    source: "preset",
+  },
 ];
 
 export const SERVICE_LIBRARY_CATEGORIES = [

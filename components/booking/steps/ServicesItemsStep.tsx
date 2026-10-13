@@ -14,8 +14,10 @@ import {
 
 import type { BookingFormData, ServiceItem } from "../types";
 import { getServices, getServiceImageUrl } from "@/lib/services.api";
+import { getRentableStockItems } from "@/lib/stock.api";
 import { getFallbackServiceImage } from "@/lib/service-library";
 import type { PricingType, Service } from "@/types/service";
+import type { StockItem } from "@/types/stock";
 
 import ServiceCategoryTabs, {
   type ServiceCategoryMeta,
@@ -38,6 +40,7 @@ export default function ServicesItemsStep({
   updateServices,
 }: ServicesItemsStepProps) {
   const [services, setServices] = useState<Service[]>([]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,24 +52,28 @@ export default function ServicesItemsStep({
 
   const guestCount = Math.max(1, Number(formData.guests) || 1);
 
-  // Load backend active services
+  // Load backend active services and rentable equipment
   useEffect(() => {
-    const loadServices = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         setError("");
-        const data = await getServices();
-        setServices(data || []);
+        const [servicesData, rentableData] = await Promise.all([
+          getServices(),
+          getRentableStockItems().catch(() => []),
+        ]);
+        setServices(servicesData || []);
+        setStockItems(rentableData || []);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load services."
+          err instanceof Error ? err.message : "Failed to load services and equipment."
         );
       } finally {
         setLoading(false);
       }
     };
 
-    void loadServices();
+    void loadData();
   }, []);
 
   // Flatten all services & options into visual display items
@@ -143,8 +150,40 @@ export default function ServicesItemsStep({
       }
     });
 
+    // Add rentable stock equipment items for rental
+    stockItems.forEach((stock) => {
+      if (stock.isRentable === false) return;
+      const uniqueKey = stock._id;
+      const isSelected = formData.services.some(
+        (s) => s.serviceId === stock._id && !s.optionId
+      );
+      const currentItem = formData.services.find(
+        (s) => s.serviceId === stock._id && !s.optionId
+      );
+      const rentalRate = Number(stock.rentalPrice || stock.unitPrice || 0);
+
+      items.push({
+        uniqueKey,
+        serviceId: stock._id,
+        optionId: undefined,
+        category: "Equipment & Rentals",
+        parentServiceName: "Equipment Rental",
+        title: stock.name,
+        description:
+          stock.description ||
+          `Available in stock: ${stock.availableQuantity} ${stock.unit || "units"} (Rental per ${stock.unit || "unit"})`,
+        imageUrl: getFallbackServiceImage("equipment"),
+        price: rentalRate,
+        pricingType: "PER_UNIT",
+        unitLabel: stock.unit || "unit",
+        isSelected,
+        selectedQuantity: currentItem ? Number(currentItem.quantity) : 1,
+        guestCount,
+      });
+    });
+
     return items;
-  }, [services, formData.services, guestCount]);
+  }, [services, stockItems, formData.services, guestCount]);
 
   // Compute category tabs metadata dynamically
   const categories = useMemo<ServiceCategoryMeta[]>(() => {

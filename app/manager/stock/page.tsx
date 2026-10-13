@@ -28,7 +28,6 @@ import {
   createStockItem,
   updateStockItem,
   addStock,
-  adjustInventory,
   deleteStockItem,
   getManagerStockSummary,
   getStockTransactions,
@@ -73,15 +72,15 @@ export default function ManagerStockPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [lowStockFilter, setLowStockFilter] = useState(false);
+  const [rentableFilter, setRentableFilter] = useState(false);
 
   // Modals
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<StockItem | null>(null);
+  const [editData, setEditData] = useState<Partial<StockItem>>({});
   const [restockItem, setRestockItem] = useState<StockItem | null>(null);
   const [restockQty, setRestockQty] = useState(10);
   const [restockNotes, setRestockNotes] = useState("");
-
-  const [adjustItem, setAdjustItem] = useState<StockItem | null>(null);
-  const [adjustData, setAdjustData] = useState({ newTotal: 0, newAvailable: 0, reason: "" });
 
   const [verifyAllocation, setVerifyAllocation] = useState<EventStockAllocation | null>(null);
   const [verifyNotes, setVerifyNotes] = useState("");
@@ -96,6 +95,8 @@ export default function ManagerStockPage() {
     minStockLevel: 10,
     unit: "pcs",
     unitPrice: 0,
+    rentalPrice: 0,
+    isRentable: true,
     location: "Central Warehouse",
     description: "",
   });
@@ -116,6 +117,7 @@ export default function ManagerStockPage() {
           search,
           category: categoryFilter !== "ALL" ? categoryFilter : undefined,
           lowStock: lowStockFilter ? true : undefined,
+          isRentable: rentableFilter ? true : undefined,
         }),
         getManagerStockSummary(token),
         getStockTransactions(token, { limit: 50 }),
@@ -129,7 +131,7 @@ export default function ManagerStockPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, search, categoryFilter, lowStockFilter]);
+  }, [token, search, categoryFilter, lowStockFilter, rentableFilter]);
 
   useEffect(() => {
     void loadData();
@@ -150,12 +152,27 @@ export default function ManagerStockPage() {
         minStockLevel: 10,
         unit: "pcs",
         unitPrice: 0,
+        rentalPrice: 0,
+        isRentable: true,
         location: "Central Warehouse",
         description: "",
       });
       void loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create item");
+    }
+  };
+
+  const handleEditItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !editItem) return;
+    try {
+      await updateStockItem(editItem._id, editData, token);
+      showToast(`Stock item "${editItem.name}" updated successfully`);
+      setEditItem(null);
+      void loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update item");
     }
   };
 
@@ -170,20 +187,6 @@ export default function ManagerStockPage() {
       void loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to restock");
-    }
-  };
-
-  const handleAdjust = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !adjustItem) return;
-    try {
-      await adjustInventory(adjustItem._id, adjustData, token);
-      showToast(`Inventory adjusted for ${adjustItem.name}`);
-      setAdjustItem(null);
-      setAdjustData({ newTotal: 0, newAvailable: 0, reason: "" });
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to adjust inventory");
     }
   };
 
@@ -432,6 +435,19 @@ export default function ManagerStockPage() {
                 <AlertTriangle size={14} />
                 <span>Low Stock Only</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setRentableFilter(!rentableFilter)}
+                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
+                  rentableFilter
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <PackageCheck size={14} />
+                <span>For Rent Only</span>
+              </button>
             </div>
           </div>
 
@@ -454,6 +470,7 @@ export default function ManagerStockPage() {
                     <tr>
                       <th className="px-4 py-3">Item / Category</th>
                       <th className="px-4 py-3 text-center">Available</th>
+                      <th className="px-4 py-3 text-center">Rental Rate</th>
                       <th className="px-4 py-3 text-center">Reserved</th>
                       <th className="px-4 py-3 text-center">In Use</th>
                       <th className="px-4 py-3 text-center">Damaged / Lost</th>
@@ -489,6 +506,21 @@ export default function ManagerStockPage() {
                             </span>
                           </td>
 
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            {item.isRentable !== false ? (
+                              <div className="inline-flex flex-col items-center">
+                                <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg text-xs">
+                                  ₹{item.rentalPrice || 0} / {item.unit || "unit"}
+                                </span>
+                                <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">Rentable</span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                                Internal Only
+                              </span>
+                            )}
+                          </td>
+
                           <td className="px-4 py-3.5 text-center font-bold text-amber-700">
                             {item.reservedQuantity} {item.unit}
                           </td>
@@ -512,26 +544,32 @@ export default function ManagerStockPage() {
                               <button
                                 type="button"
                                 onClick={() => {
+                                  setEditItem(item);
+                                  setEditData({
+                                    name: item.name,
+                                    category: item.category,
+                                    minStockLevel: item.minStockLevel,
+                                    unit: item.unit,
+                                    unitPrice: item.unitPrice,
+                                    rentalPrice: item.rentalPrice || 0,
+                                    isRentable: item.isRentable !== false,
+                                    location: item.location,
+                                    description: item.description || "",
+                                  });
+                                }}
+                                className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
                                   setRestockItem(item);
                                   setRestockQty(10);
                                 }}
                                 className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
                               >
                                 + Restock
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setAdjustItem(item);
-                                  setAdjustData({
-                                    newTotal: item.totalQuantity,
-                                    newAvailable: item.availableQuantity,
-                                    reason: "",
-                                  });
-                                }}
-                                className="rounded-lg bg-stone-100 px-2 py-1 text-[11px] font-bold text-stone-700 hover:bg-stone-200 transition cursor-pointer"
-                              >
-                                Adjust
                               </button>
                               <button
                                 type="button"
@@ -869,6 +907,34 @@ export default function ManagerStockPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-700">Rental Rate (₹ per {newItem.unit || "unit"})</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newItem.rentalPrice}
+                    onChange={(e) => setNewItem({ ...newItem, rentalPrice: Number(e.target.value) })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                    placeholder="e.g. 150"
+                  />
+                  <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-4">
+                  <input
+                    type="checkbox"
+                    id="isRentableCreate"
+                    checked={newItem.isRentable}
+                    onChange={(e) => setNewItem({ ...newItem, isRentable: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="isRentableCreate" className="text-xs font-bold text-gray-700 cursor-pointer">
+                    Available for Client Rental
+                  </label>
+                </div>
+              </div>
+
               <div>
                 <label className="font-bold text-gray-700">Storage Location</label>
                 <input
@@ -877,6 +943,17 @@ export default function ManagerStockPage() {
                   value={newItem.location}
                   onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
                   className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700">Description / Specs</label>
+                <textarea
+                  rows={2}
+                  placeholder="Optional details or specifications for rental"
+                  value={newItem.description}
+                  onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
@@ -893,6 +970,153 @@ export default function ManagerStockPage() {
                   className="rounded-xl bg-[#29241f] px-5 py-2 text-xs font-extrabold text-white hover:bg-black"
                 >
                   Create Item
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: EDIT STOCK ITEM */}
+      {/* ========================================================================= */}
+      {editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-black text-[#29241f]">Edit Item: {editItem.name}</h3>
+              <button
+                type="button"
+                onClick={() => setEditItem(null)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditItem} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-bold text-gray-700">Item Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editData.name || ""}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-700">Category *</label>
+                  <select
+                    value={editData.category || "Crockery"}
+                    onChange={(e) => setEditData({ ...editData, category: e.target.value as StockCategory })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700">Unit of Measure</label>
+                  <input
+                    type="text"
+                    value={editData.unit || "pcs"}
+                    onChange={(e) => setEditData({ ...editData, unit: e.target.value })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-700">Min Alert Level</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editData.minStockLevel ?? 10}
+                    onChange={(e) => setEditData({ ...editData, minStockLevel: Number(e.target.value) })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700">Internal Unit Cost (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editData.unitPrice ?? 0}
+                    onChange={(e) => setEditData({ ...editData, unitPrice: Number(e.target.value) })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-gray-700">Rental Rate (₹ per {editData.unit || "unit"})</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editData.rentalPrice ?? 0}
+                    onChange={(e) => setEditData({ ...editData, rentalPrice: Number(e.target.value) })}
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                  />
+                  <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-4">
+                  <input
+                    type="checkbox"
+                    id="isRentableEdit"
+                    checked={editData.isRentable !== false}
+                    onChange={(e) => setEditData({ ...editData, isRentable: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="isRentableEdit" className="text-xs font-bold text-gray-700 cursor-pointer">
+                    Available for Client Rental
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700">Storage Location</label>
+                <input
+                  type="text"
+                  value={editData.location || ""}
+                  onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700">Description / Specs</label>
+                <textarea
+                  rows={2}
+                  value={editData.description || ""}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 font-medium outline-none focus:border-[#9a6c37]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setEditItem(null)}
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#29241f] px-5 py-2 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

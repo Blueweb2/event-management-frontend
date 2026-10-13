@@ -12,6 +12,7 @@ import {
   Music,
   Video,
   Flower2,
+  Package,
 } from "lucide-react";
 
 import type { ElementType } from "react";
@@ -43,6 +44,9 @@ const CATEGORY_ICON_MAP: Record<string, ElementType> = {
   entertainment: Music,
   staff: Users,
   venue: Warehouse,
+  equipment: Package,
+  "equipment & rentals": Package,
+  rentals: Package,
   other: Wrench,
 };
 
@@ -110,6 +114,14 @@ export const getCategoryIcon = (category: string): ElementType => {
     normalized.includes("resort")
   ) {
     return Warehouse;
+  }
+
+  if (
+    normalized.includes("equip") ||
+    normalized.includes("rent") ||
+    normalized.includes("stock")
+  ) {
+    return Package;
   }
 
   return Wrench;

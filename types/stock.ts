@@ -59,6 +59,8 @@ export interface StockItem {
   minStockLevel: number;
   unit: string;
   unitPrice: number;
+  rentalPrice?: number;
+  isRentable?: boolean;
   location: string;
   description?: string;
   createdBy?: { _id: string; name: string; email: string };

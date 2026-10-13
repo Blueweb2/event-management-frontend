@@ -13,11 +13,11 @@ import type {
 // ==========================================
 
 export async function getStockItems(
-  firstArg?: string | { search?: string; category?: string; lowStock?: boolean; page?: number; limit?: number },
-  secondArg?: string | { search?: string; category?: string; lowStock?: boolean; page?: number; limit?: number }
+  firstArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number },
+  secondArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number }
 ): Promise<{ data: StockItem[]; pagination: { total: number; page: number; totalPages: number } }> {
   let token: string | undefined;
-  let params: { search?: string; category?: string; lowStock?: boolean; page?: number; limit?: number } | undefined;
+  let params: { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number } | undefined;
 
   if (typeof firstArg === "string") {
     token = firstArg;
@@ -33,6 +33,8 @@ export async function getStockItems(
   if (params?.search) query.set("search", params.search);
   if (params?.category) query.set("category", params.category);
   if (params?.lowStock !== undefined) query.set("lowStock", String(params.lowStock));
+  if (params?.isRentable !== undefined) query.set("isRentable", String(params.isRentable));
+  if (params?.rentable !== undefined) query.set("rentable", String(params.rentable));
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
 
@@ -41,6 +43,20 @@ export async function getStockItems(
     endpoint,
     { method: "GET", token }
   );
+}
+
+export async function getRentableStockItems(
+  params?: { search?: string; category?: string }
+): Promise<StockItem[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.category) query.set("category", params.category);
+
+  const endpoint = `/stock/rentable${query.toString() ? `?${query.toString()}` : ""}`;
+  const res = await api<{ success?: boolean; data: StockItem[] }>(endpoint, {
+    method: "GET",
+  });
+  return res.data || [];
 }
 
 export async function getStockItemById(
