@@ -9,7 +9,7 @@ import {
 
 import Input from "@/components/ui/Input";
 import DatePicker from "@/components/common/DatePicker";
-import { eventTypeOptions } from "../constants";
+import EventTypeSelect from "./EventTypeSelect";
 import type { BookingFormData } from "../types";
 import {
   parse12HourComponents,
@@ -94,44 +94,12 @@ export default function EventDetailsStep({
         />
 
         {/* Event Type */}
-        <div>
-          <label
-            htmlFor="eventType"
-            className="mb-1.5 block text-xs sm:text-sm font-semibold text-[#29241f]"
-          >
-            Event Type
-            <span className="ml-1 text-[#b8894b]">*</span>
-          </label>
-
-          <select
-            id="eventType"
-            value={formData.eventType}
-            onChange={(event) =>
-              updateField(
-                "eventType",
-                event.target.value,
-              )
-            }
-            required
-            className="h-12 w-full rounded-2xl border border-[#d8cfc4] bg-white px-3.5 text-sm font-medium text-[#29241f] outline-none transition-all duration-200 focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/20 shadow-2xs cursor-pointer"
-          >
-            <option value="">Select event type</option>
-            {eventTypeOptions.map((eventType) => {
-              const value = eventType
-                .toLowerCase()
-                .replace(/\s+/g, "-");
-
-              return (
-                <option
-                  key={eventType}
-                  value={value}
-                >
-                  {eventType}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+        <EventTypeSelect
+          id="eventType"
+          value={formData.eventType}
+          onChange={(val) => updateField("eventType", val)}
+          required
+        />
 
         {/* Date & Time */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
