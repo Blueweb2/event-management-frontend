@@ -75,6 +75,11 @@ export default function ManagerEventDetailsPage() {
 
   const [assignmentError, setAssignmentError] = useState("");
 
+  const isEventClosed = useMemo(() => {
+    const s = (event?.status || "").toUpperCase();
+    return s === "COMPLETED" || s === "CANCELLED" || s === "SETTLED" || s === "REJECTED";
+  }, [event?.status]);
+
   const {
     assignments,
     loading: assignmentsLoading,
@@ -754,81 +759,87 @@ export default function ManagerEventDetailsPage() {
             </div>
           )}
 
-          <form onSubmit={handleAssignStaff} className="mt-5 space-y-4">
-            <div>
-              <label htmlFor="event-assignment-staff" className="mb-1.5 block text-xs font-medium text-gray-700">
-                Staff member
-              </label>
-              <select
-                id="event-assignment-staff"
-                value={assignmentForm.staff}
-                onChange={(formEvent) => handleAssignmentChange("staff", formEvent.target.value)}
-                disabled={staffLoading || assignmentsLoading}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-[#252525] outline-none focus:border-[#B89563] focus:ring-2 focus:ring-[#B89563]/10"
+          {isEventClosed ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs font-semibold text-amber-900 flex items-center gap-2">
+              <span>This event is currently {event?.status}. New staff duty assignments are closed for completed or cancelled events.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleAssignStaff} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="event-assignment-staff" className="mb-1.5 block text-xs font-medium text-gray-700">
+                  Staff member
+                </label>
+                <select
+                  id="event-assignment-staff"
+                  value={assignmentForm.staff}
+                  onChange={(formEvent) => handleAssignmentChange("staff", formEvent.target.value)}
+                  disabled={staffLoading || assignmentsLoading}
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-[#252525] outline-none focus:border-[#B89563] focus:ring-2 focus:ring-[#B89563]/10"
+                >
+                  <option value="">{staffLoading ? "Loading staff..." : "Select a staff member"}</option>
+                  {staff.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name} · {member.department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input
+                  aria-label="Duty title"
+                  value={assignmentForm.dutyTitle}
+                  onChange={(formEvent) => handleAssignmentChange("dutyTitle", formEvent.target.value)}
+                  placeholder="Duty title"
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+                <input
+                  aria-label="Role"
+                  value={assignmentForm.role}
+                  onChange={(formEvent) => handleAssignmentChange("role", formEvent.target.value)}
+                  placeholder="Role (optional)"
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+                <input
+                  aria-label="Duty date"
+                  type="date"
+                  value={assignmentForm.dutyDate || event?.eventDate.slice(0, 10) || ""}
+                  onChange={(formEvent) => handleAssignmentChange("dutyDate", formEvent.target.value)}
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+                <input
+                  aria-label="Start time"
+                  type="time"
+                  value={assignmentForm.startTime || event?.eventTime || ""}
+                  onChange={(formEvent) => handleAssignmentChange("startTime", formEvent.target.value)}
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+                <input
+                  aria-label="End time"
+                  type="time"
+                  value={assignmentForm.endTime}
+                  onChange={(formEvent) => handleAssignmentChange("endTime", formEvent.target.value)}
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+                <input
+                  aria-label="Assignment notes"
+                  value={assignmentForm.notes}
+                  onChange={(formEvent) => handleAssignmentChange("notes", formEvent.target.value)}
+                  placeholder="Notes (optional)"
+                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={assignmentsLoading || staffLoading}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="">{staffLoading ? "Loading staff..." : "Select a staff member"}</option>
-                {staff.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name} · {member.department}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <input
-                aria-label="Duty title"
-                value={assignmentForm.dutyTitle}
-                onChange={(formEvent) => handleAssignmentChange("dutyTitle", formEvent.target.value)}
-                placeholder="Duty title"
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-              <input
-                aria-label="Role"
-                value={assignmentForm.role}
-                onChange={(formEvent) => handleAssignmentChange("role", formEvent.target.value)}
-                placeholder="Role (optional)"
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-              <input
-                aria-label="Duty date"
-                type="date"
-                value={assignmentForm.dutyDate || event?.eventDate.slice(0, 10) || ""}
-                onChange={(formEvent) => handleAssignmentChange("dutyDate", formEvent.target.value)}
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-              <input
-                aria-label="Start time"
-                type="time"
-                value={assignmentForm.startTime || event?.eventTime || ""}
-                onChange={(formEvent) => handleAssignmentChange("startTime", formEvent.target.value)}
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-              <input
-                aria-label="End time"
-                type="time"
-                value={assignmentForm.endTime}
-                onChange={(formEvent) => handleAssignmentChange("endTime", formEvent.target.value)}
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-              <input
-                aria-label="Assignment notes"
-                value={assignmentForm.notes}
-                onChange={(formEvent) => handleAssignmentChange("notes", formEvent.target.value)}
-                placeholder="Notes (optional)"
-                className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={assignmentsLoading || staffLoading}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {assignmentsLoading && <Loader2 size={16} className="animate-spin" />}
-              {assignmentsLoading ? "Assigning..." : "Assign Staff Member"}
-            </button>
-          </form>
+                {assignmentsLoading && <Loader2 size={16} className="animate-spin" />}
+                {assignmentsLoading ? "Assigning..." : "Assign Staff Member"}
+              </button>
+            </form>
+          )}
 
           {assignmentsLoading && assignments.length === 0 && (
             <p className="mt-5 text-sm text-gray-500">

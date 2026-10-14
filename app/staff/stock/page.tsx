@@ -666,8 +666,8 @@ export default function StaffStockPage() {
                   </div>
                 ) : (
                   heldStocks.map((stock) => {
-                    const event = typeof stock.eventId === "object" ? stock.eventId : (stock as any).event;
-                    const item = typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem;
+                    const event = (stock.eventId && typeof stock.eventId === "object" ? stock.eventId : (stock as any).event) || null;
+                    const item = (stock.stockItemId && typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem) || null;
                     const holdQty = stock.reservedQuantity || stock.requiredQuantity;
 
                     return (
@@ -767,8 +767,8 @@ export default function StaffStockPage() {
                   </div>
                 ) : (
                   custodyStocks.map((stock) => {
-                    const event = typeof stock.eventId === "object" ? stock.eventId : (stock as any).event;
-                    const item = typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem;
+                    const event = (stock.eventId && typeof stock.eventId === "object" ? stock.eventId : (stock as any).event) || null;
+                    const item = (stock.stockItemId && typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem) || null;
 
                     return (
                       <div
@@ -854,8 +854,8 @@ export default function StaffStockPage() {
                   </div>
                 ) : (
                   historyStocks.map((stock) => {
-                    const event = typeof stock.eventId === "object" ? stock.eventId : (stock as any).event;
-                    const item = typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem;
+                    const event = (stock.eventId && typeof stock.eventId === "object" ? stock.eventId : (stock as any).event) || null;
+                    const item = (stock.stockItemId && typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem) || null;
                     const isPending = stock.status === "RETURN_PENDING";
                     const isDiscrepancy = stock.status === "DISCREPANCY";
                     const isVerified = stock.status === "VERIFIED" || stock.status === "CLOSED" || stock.status === "RETURNED";
@@ -1101,18 +1101,29 @@ export default function StaffStockPage() {
               </button>
             </div>
 
-            <div className="mt-4 rounded-2xl bg-[#faf8f5] p-4 text-xs border border-[#e8e1d8]">
-              <div className="font-bold text-[#252525] text-sm">
-                {typeof takeModalStock.stockItemId === "object" ? takeModalStock.stockItemId.name : "Stock Item"}
-              </div>
-              <div className="mt-1 flex justify-between text-gray-500">
-                <span>Reserved on Hold:</span>
-                <span className="font-black text-[#9a6c37] text-sm">
-                  {takeModalStock.reservedQuantity || takeModalStock.requiredQuantity}{" "}
-                  {typeof takeModalStock.stockItemId === "object" ? takeModalStock.stockItemId.unit : "units"}
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const item =
+                typeof takeModalStock.stockItemId === "object" && takeModalStock.stockItemId !== null
+                  ? takeModalStock.stockItemId
+                  : typeof (takeModalStock as any).stockItem === "object" && (takeModalStock as any).stockItem !== null
+                  ? (takeModalStock as any).stockItem
+                  : null;
+
+              return (
+                <div className="mt-4 rounded-2xl bg-[#faf8f5] p-4 text-xs border border-[#e8e1d8]">
+                  <div className="font-bold text-[#252525] text-sm">
+                    {item?.name || "Stock Item"}
+                  </div>
+                  <div className="mt-1 flex justify-between text-gray-500">
+                    <span>Reserved on Hold:</span>
+                    <span className="font-black text-[#9a6c37] text-sm">
+                      {takeModalStock.reservedQuantity || takeModalStock.requiredQuantity}{" "}
+                      {item?.unit || "units"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
 
             <form onSubmit={handleTakeSubmit} className="mt-4 space-y-4">
               <div>
@@ -1195,18 +1206,29 @@ export default function StaffStockPage() {
             </div>
 
             {/* Reference */}
-            <div className="mt-4 flex items-center justify-between rounded-2xl bg-gray-50 p-4 border border-gray-100">
-              <div>
-                <span className="text-[11px] font-bold text-gray-400 uppercase">Item to Return</span>
-                <div className="font-extrabold text-[#252525] text-sm">
-                  {typeof returnModalStock.stockItemId === "object" ? returnModalStock.stockItemId.name : "Item"}
+            {(() => {
+              const item =
+                typeof returnModalStock.stockItemId === "object" && returnModalStock.stockItemId !== null
+                  ? returnModalStock.stockItemId
+                  : typeof (returnModalStock as any).stockItem === "object" && (returnModalStock as any).stockItem !== null
+                  ? (returnModalStock as any).stockItem
+                  : null;
+
+              return (
+                <div className="mt-4 flex items-center justify-between rounded-2xl bg-gray-50 p-4 border border-gray-100">
+                  <div>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase">Item to Return</span>
+                    <div className="font-extrabold text-[#252525] text-sm">
+                      {item?.name || "Item"}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase">Total Taken</span>
+                    <div className="font-black text-indigo-600 text-base">{returnModalStock.takenQuantity} {item?.unit || "units"}</div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[11px] font-bold text-gray-400 uppercase">Total Taken</span>
-                <div className="font-black text-indigo-600 text-base">{returnModalStock.takenQuantity} units</div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Live Balanced Reconciliation Indicator */}
             <div

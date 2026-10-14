@@ -46,7 +46,15 @@ export default function StaffStockWidget() {
   const toCollect = stocks.filter((s) => s.status === "PLANNED" || s.status === "RESERVED" || s.status === "READY_FOR_COLLECTION");
 
   // Distinct events count
-  const distinctEventIds = new Set(stocks.map((s) => (typeof s.eventId === "object" ? s.eventId._id : s.eventId)));
+  const distinctEventIds = new Set(
+    stocks
+      .map((s) => {
+        const ev = s.eventId || (s as any).event;
+        if (!ev) return null;
+        return typeof ev === "object" && ev !== null ? ev._id : ev;
+      })
+      .filter(Boolean)
+  );
 
   if (stocks.length === 0) {
     return null; // Don't clutter staff dashboard if they don't have stock assigned

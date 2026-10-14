@@ -263,7 +263,7 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setCreateModalOpen(true)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black active:scale-95 cursor-pointer"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black active:scale-95 cursor-pointer w-full sm:w-auto"
         >
           <Plus size={16} />
           <span>New Stock Item</span>
@@ -282,34 +282,34 @@ export default function ManagerStockPage() {
 
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs">
+        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-3.5 sm:p-4 shadow-xs">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#9a6c37]/10 text-[#9a6c37]">
             <Package size={18} />
           </div>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Catalog</p>
-          <p className="mt-0.5 text-2xl font-black text-[#29241f]">{summary?.totalItems ?? items.length}</p>
+          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Catalog</p>
+          <p className="mt-0.5 text-xl sm:text-2xl font-black text-[#29241f]">{summary?.totalItems ?? items.length}</p>
         </div>
 
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs">
+        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-3.5 sm:p-4 shadow-xs">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
             <Clock size={18} />
           </div>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-gray-400">Active Allocations</p>
-          <p className="mt-0.5 text-2xl font-black text-blue-900">{summary?.activeAllocationsCount ?? 0}</p>
+          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400">Active Allocations</p>
+          <p className="mt-0.5 text-xl sm:text-2xl font-black text-blue-900">{summary?.activeAllocationsCount ?? 0}</p>
         </div>
 
         <div
           onClick={() => setActiveTab("returns")}
-          className="cursor-pointer rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-xs transition hover:bg-amber-50"
+          className="cursor-pointer rounded-2xl border border-amber-200 bg-amber-50/50 p-3.5 sm:p-4 shadow-xs transition hover:bg-amber-50"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
             <RotateCcw size={18} />
           </div>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-amber-900">Returns Pending</p>
-          <div className="flex items-center gap-2">
-            <p className="mt-0.5 text-2xl font-black text-amber-900">{summary?.pendingReturnsCount ?? 0}</p>
+          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-900">Returns Pending</p>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <p className="mt-0.5 text-xl sm:text-2xl font-black text-amber-900">{summary?.pendingReturnsCount ?? 0}</p>
             {(summary?.pendingReturnsCount ?? 0) > 0 && (
-              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-white animate-pulse">
+              <span className="rounded-full bg-amber-500 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black text-white animate-pulse">
                 Verify
               </span>
             )}
@@ -321,22 +321,22 @@ export default function ManagerStockPage() {
             setLowStockFilter(true);
             setActiveTab("inventory");
           }}
-          className="cursor-pointer rounded-2xl border border-rose-200 bg-rose-50/40 p-4 shadow-xs transition hover:bg-rose-50"
+          className="cursor-pointer rounded-2xl border border-rose-200 bg-rose-50/40 p-3.5 sm:p-4 shadow-xs transition hover:bg-rose-50"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
             <AlertTriangle size={18} />
           </div>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-wider text-rose-900">Low Stock Alerts</p>
-          <p className="mt-0.5 text-2xl font-black text-rose-900">{summary?.lowStockCount ?? 0}</p>
+          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-900">Low Stock Alerts</p>
+          <p className="mt-0.5 text-xl sm:text-2xl font-black text-rose-900">{summary?.lowStockCount ?? 0}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-2 overflow-x-auto">
+      <div className="flex border-b border-gray-200 gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => setActiveTab("inventory")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "inventory"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
@@ -349,7 +349,7 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("allocations")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "allocations"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
@@ -362,7 +362,7 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("returns")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "returns"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
@@ -380,7 +380,7 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
             activeTab === "history"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
@@ -397,7 +397,7 @@ export default function ManagerStockPage() {
       {activeTab === "inventory" && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-[#e8e1d8] bg-white p-3.5 shadow-xs">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between rounded-2xl border border-[#e8e1d8] bg-white p-3 sm:p-3.5 shadow-xs">
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -409,11 +409,11 @@ export default function ManagerStockPage() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+                className="col-span-2 sm:col-span-1 h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
               >
                 <option value="ALL">All Categories</option>
                 {CATEGORIES.map((c) => (
@@ -426,32 +426,32 @@ export default function ManagerStockPage() {
               <button
                 type="button"
                 onClick={() => setLowStockFilter(!lowStockFilter)}
-                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
+                className={`flex h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
                   lowStockFilter
                     ? "border-rose-300 bg-rose-50 text-rose-800"
                     : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <AlertTriangle size={14} />
-                <span>Low Stock Only</span>
+                <span>Low Stock</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setRentableFilter(!rentableFilter)}
-                className={`flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
+                className={`flex h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
                   rentableFilter
                     ? "border-emerald-300 bg-emerald-50 text-emerald-800"
                     : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <PackageCheck size={14} />
-                <span>For Rent Only</span>
+                <span>For Rent</span>
               </button>
             </div>
           </div>
 
-          {/* Table of Items */}
+          {/* Items Display (Mobile Cards + Desktop Table) */}
           {loading ? (
             <div className="flex h-48 items-center justify-center rounded-2xl border border-gray-200 bg-white">
               <Loader2 size={24} className="animate-spin text-[#9a6c37]" />
@@ -463,131 +463,293 @@ export default function ManagerStockPage() {
               <p className="text-xs text-gray-500">Create a new item or adjust search filters.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[#e8e1d8] bg-white shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-gray-700">
-                  <thead className="bg-[#f9f7f2] border-b border-[#e8e1d8] text-[10px] font-black uppercase tracking-wider text-gray-500">
-                    <tr>
-                      <th className="px-4 py-3">Item / Category</th>
-                      <th className="px-4 py-3 text-center">Available</th>
-                      <th className="px-4 py-3 text-center">Rental Rate</th>
-                      <th className="px-4 py-3 text-center">Reserved</th>
-                      <th className="px-4 py-3 text-center">In Use</th>
-                      <th className="px-4 py-3 text-center">Damaged / Lost</th>
-                      <th className="px-4 py-3 text-center">Total</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {items.map((item) => {
-                      const isLow = item.availableQuantity <= (item.minStockLevel || 10);
-                      return (
-                        <tr key={item._id} className="hover:bg-[#fdfcfb] transition">
-                          <td className="px-4 py-3.5 min-w-[180px]">
-                            <p className="font-extrabold text-[#29241f] text-sm">{item.name}</p>
-                            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
-                              <span className="rounded-md bg-stone-100 px-1.5 py-0.2 font-semibold text-stone-700">
-                                {item.category}
-                              </span>
-                              <span>·</span>
+            <>
+              {/* MOBILE CARDS VIEW (md:hidden) */}
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:hidden">
+                {items.map((item) => {
+                  const isLow = item.availableQuantity <= (item.minStockLevel || 10);
+                  return (
+                    <div
+                      key={`mobile-${item._id}`}
+                      className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs space-y-3 transition hover:border-[#9a6c37]/30"
+                    >
+                      {/* Top Header Row */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-extrabold text-[#29241f] text-sm sm:text-base leading-snug">
+                            {item.name}
+                          </h3>
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+                            <span className="rounded-md bg-stone-100 px-2 py-0.5 font-bold text-stone-700">
+                              {item.category}
+                            </span>
+                            <span className="flex items-center gap-1 text-gray-400">
+                              <MapPin size={11} />
                               <span>{item.location || "Warehouse"}</span>
-                            </div>
-                          </td>
+                            </span>
+                          </div>
+                        </div>
 
-                          <td className="px-4 py-3.5 text-center">
+                        {/* Rental Status Badge */}
+                        <div className="shrink-0 text-right">
+                          {item.isRentable !== false ? (
+                            <div className="inline-flex flex-col items-end">
+                              <span className="font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px]">
+                                ₹{item.rentalPrice || 0}/{item.unit || "unit"}
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-600 mt-0.5">For Rent</span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                              Internal Only
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quantities & Inventory Grid */}
+                      <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#faf8f5] p-2.5 text-xs">
+                        {/* Available Quantity */}
+                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Available</p>
+                          <div className="flex items-baseline gap-1 mt-0.5">
                             <span
-                              className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-black ${
-                                isLow
-                                  ? "bg-rose-100 text-rose-800 border border-rose-200 animate-pulse"
-                                  : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              className={`text-base font-black ${
+                                isLow ? "text-rose-700 animate-pulse" : "text-emerald-700"
                               }`}
                             >
-                              {item.availableQuantity} {item.unit}
+                              {item.availableQuantity}
                             </span>
-                          </td>
+                            <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
+                          </div>
+                          {isLow && (
+                            <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.2">
+                              <AlertTriangle size={9} /> Low Stock
+                            </span>
+                          )}
+                        </div>
 
-                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                            {item.isRentable !== false ? (
-                              <div className="inline-flex flex-col items-center">
-                                <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg text-xs">
-                                  ₹{item.rentalPrice || 0} / {item.unit || "unit"}
-                                </span>
-                                <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">Rentable</span>
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
-                                Internal Only
-                              </span>
-                            )}
-                          </td>
+                        {/* Total Quantity */}
+                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Stock</p>
+                          <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-base font-black text-gray-900">{item.totalQuantity}</span>
+                            <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5">Min: {item.minStockLevel || 10}</p>
+                        </div>
 
-                          <td className="px-4 py-3.5 text-center font-bold text-amber-700">
-                            {item.reservedQuantity} {item.unit}
-                          </td>
+                        {/* Reserved */}
+                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Reserved</p>
+                          <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-sm font-black text-amber-800">{item.reservedQuantity || 0}</span>
+                            <span className="text-[10px] font-semibold text-gray-500">{item.unit}</span>
+                          </div>
+                        </div>
 
-                          <td className="px-4 py-3.5 text-center font-bold text-blue-700">
-                            {item.inUseQuantity} {item.unit}
-                          </td>
+                        {/* In Use */}
+                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">In Use</p>
+                          <div className="flex items-baseline gap-1 mt-0.5">
+                            <span className="text-sm font-black text-blue-800">{item.inUseQuantity || 0}</span>
+                            <span className="text-[10px] font-semibold text-gray-500">{item.unit}</span>
+                          </div>
+                        </div>
 
-                          <td className="px-4 py-3.5 text-center text-[11px]">
-                            <span className="text-amber-700 font-bold">{item.damagedQuantity || 0} dmg</span>
-                            <span className="text-gray-300 mx-1">/</span>
-                            <span className="text-rose-700 font-bold">{item.lostQuantity || 0} lost</span>
-                          </td>
+                        {/* Damaged / Lost Banner (if any) */}
+                        {((item.damagedQuantity || 0) > 0 || (item.lostQuantity || 0) > 0) && (
+                          <div className="col-span-2 flex items-center justify-between rounded-lg bg-rose-50/70 border border-rose-200/80 px-2.5 py-1 text-[11px] font-bold text-rose-800">
+                            <span>{item.damagedQuantity || 0} damaged</span>
+                            <span>·</span>
+                            <span>{item.lostQuantity || 0} lost</span>
+                          </div>
+                        )}
+                      </div>
 
-                          <td className="px-4 py-3.5 text-center font-black text-gray-900">
-                            {item.totalQuantity} {item.unit}
-                          </td>
+                      {/* Optional Description */}
+                      {item.description && (
+                        <p className="text-[11px] text-gray-500 line-clamp-2 italic bg-[#faf8f5] px-2.5 py-1.5 rounded-xl border border-gray-100">
+                          {item.description}
+                        </p>
+                      )}
 
-                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditItem(item);
-                                  setEditData({
-                                    name: item.name,
-                                    category: item.category,
-                                    minStockLevel: item.minStockLevel,
-                                    unit: item.unit,
-                                    unitPrice: item.unitPrice,
-                                    rentalPrice: item.rentalPrice || 0,
-                                    isRentable: item.isRentable !== false,
-                                    location: item.location,
-                                    description: item.description || "",
-                                  });
-                                }}
-                                className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setRestockItem(item);
-                                  setRestockQty(10);
-                                }}
-                                className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
-                              >
-                                + Restock
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(item._id, item.name)}
-                                className="rounded-lg p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                title="Delete Item"
-                              >
-                                <X size={15} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      {/* Actions Row */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditItem(item);
+                            setEditData({
+                              name: item.name,
+                              category: item.category,
+                              minStockLevel: item.minStockLevel,
+                              unit: item.unit,
+                              unitPrice: item.unitPrice,
+                              rentalPrice: item.rentalPrice || 0,
+                              isRentable: item.isRentable !== false,
+                              location: item.location,
+                              description: item.description || "",
+                            });
+                          }}
+                          className="flex-1 min-h-10 rounded-xl bg-amber-50 px-3 text-xs font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRestockItem(item);
+                            setRestockQty(10);
+                          }}
+                          className="flex-1 min-h-10 rounded-xl bg-emerald-700 px-3 text-xs font-extrabold text-white hover:bg-emerald-800 shadow-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Plus size={14} />
+                          <span>Restock</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item._id, item.name)}
+                          className="min-h-10 w-10 shrink-0 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition active:scale-95 flex items-center justify-center cursor-pointer"
+                          title="Delete Item"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+
+              {/* DESKTOP TABLE VIEW (hidden md:block) */}
+              <div className="hidden md:block overflow-hidden rounded-2xl border border-[#e8e1d8] bg-white shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-gray-700">
+                    <thead className="bg-[#f9f7f2] border-b border-[#e8e1d8] text-[10px] font-black uppercase tracking-wider text-gray-500">
+                      <tr>
+                        <th className="px-4 py-3">Item / Category</th>
+                        <th className="px-4 py-3 text-center">Available</th>
+                        <th className="px-4 py-3 text-center">Rental Rate</th>
+                        <th className="px-4 py-3 text-center">Reserved</th>
+                        <th className="px-4 py-3 text-center">In Use</th>
+                        <th className="px-4 py-3 text-center">Damaged / Lost</th>
+                        <th className="px-4 py-3 text-center">Total</th>
+                        <th className="px-4 py-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {items.map((item) => {
+                        const isLow = item.availableQuantity <= (item.minStockLevel || 10);
+                        return (
+                          <tr key={item._id} className="hover:bg-[#fdfcfb] transition">
+                            <td className="px-4 py-3.5 min-w-[180px]">
+                              <p className="font-extrabold text-[#29241f] text-sm">{item.name}</p>
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
+                                <span className="rounded-md bg-stone-100 px-1.5 py-0.2 font-semibold text-stone-700">
+                                  {item.category}
+                                </span>
+                                <span>·</span>
+                                <span>{item.location || "Warehouse"}</span>
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center">
+                              <span
+                                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-black ${
+                                  isLow
+                                    ? "bg-rose-100 text-rose-800 border border-rose-200 animate-pulse"
+                                    : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                }`}
+                              >
+                                {item.availableQuantity} {item.unit}
+                              </span>
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                              {item.isRentable !== false ? (
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg text-xs">
+                                    ₹{item.rentalPrice || 0} / {item.unit || "unit"}
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">Rentable</span>
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                                  Internal Only
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center font-bold text-amber-700">
+                              {item.reservedQuantity} {item.unit}
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center font-bold text-blue-700">
+                              {item.inUseQuantity} {item.unit}
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center text-[11px]">
+                              <span className="text-amber-700 font-bold">{item.damagedQuantity || 0} dmg</span>
+                              <span className="text-gray-300 mx-1">/</span>
+                              <span className="text-rose-700 font-bold">{item.lostQuantity || 0} lost</span>
+                            </td>
+
+                            <td className="px-4 py-3.5 text-center font-black text-gray-900">
+                              {item.totalQuantity} {item.unit}
+                            </td>
+
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditItem(item);
+                                    setEditData({
+                                      name: item.name,
+                                      category: item.category,
+                                      minStockLevel: item.minStockLevel,
+                                      unit: item.unit,
+                                      unitPrice: item.unitPrice,
+                                      rentalPrice: item.rentalPrice || 0,
+                                      isRentable: item.isRentable !== false,
+                                      location: item.location,
+                                      description: item.description || "",
+                                    });
+                                  }}
+                                  className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRestockItem(item);
+                                    setRestockQty(10);
+                                  }}
+                                  className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
+                                >
+                                  + Restock
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(item._id, item.name)}
+                                  className="rounded-lg p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                  title="Delete Item"
+                                >
+                                  <X size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -597,7 +759,7 @@ export default function ManagerStockPage() {
       {/* ========================================================================= */}
       {activeTab === "allocations" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs">
             <h2 className="text-base font-extrabold text-[#29241f]">Active Event Stock Allocations</h2>
             <p className="text-xs text-gray-500">Live equipment reserved and handed over to staff for upcoming and ongoing events.</p>
 
@@ -614,8 +776,8 @@ export default function ManagerStockPage() {
                       key={alloc._id}
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl border border-gray-100 bg-[#fdfcfb] hover:border-[#9a6c37]/30 transition"
                     >
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-extrabold text-sm text-[#29241f]">{alloc.stockItem?.name || "Equipment"}</span>
                           <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-700">
                             Qty: {alloc.takenQuantity || alloc.requiredQuantity} {alloc.stockItem?.unit}
@@ -676,22 +838,22 @@ export default function ManagerStockPage() {
                   return (
                     <div
                       key={alloc._id}
-                      className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm space-y-3"
+                      className="rounded-2xl border border-amber-200 bg-white p-4 sm:p-5 shadow-sm space-y-3"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 border-b border-gray-100 pb-3">
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-base font-black text-[#29241f]">{alloc.stockItem?.name}</h3>
                             <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black text-amber-800 uppercase">
                               {alloc.status}
                             </span>
                           </div>
                           <p className="text-xs text-[#9a6c37] font-semibold mt-0.5">
-                            Event: {ev?.eventName} · Staff: {alloc.assignedStaff?.name} ({alloc.assignedStaff?.phone || "No phone"})
+                            Event: {ev?.eventName || "General Hold"} · Staff: {alloc.assignedStaff?.name || "Staff"} ({alloc.assignedStaff?.phone || "No phone"})
                           </p>
                         </div>
 
-                        <div className="text-xs text-right text-gray-400">
+                        <div className="text-xs text-left sm:text-right text-gray-400">
                           Submitted: {alloc.returnedAt ? new Date(alloc.returnedAt).toLocaleString() : "Recently"}
                         </div>
                       </div>
@@ -738,14 +900,14 @@ export default function ManagerStockPage() {
                       )}
 
                       {/* Actions */}
-                      <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2">
                         <button
                           type="button"
                           onClick={() => {
                             setDiscrepancyAllocation(alloc);
                             setDiscrepancyNotes("");
                           }}
-                          className="rounded-xl border border-rose-200 bg-white px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                          className="w-full sm:w-auto rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer text-center"
                         >
                           Report Discrepancy
                         </button>
@@ -755,7 +917,7 @@ export default function ManagerStockPage() {
                             setVerifyAllocation(alloc);
                             setVerifyNotes("");
                           }}
-                          className="rounded-xl bg-emerald-700 px-5 py-2 text-xs font-extrabold text-white hover:bg-emerald-800 transition active:scale-95 cursor-pointer"
+                          className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 transition active:scale-95 cursor-pointer text-center"
                         >
                           Verify & Restock ({alloc.returnedQuantity} {alloc.stockItem?.unit})
                         </button>
@@ -774,7 +936,7 @@ export default function ManagerStockPage() {
       {/* ========================================================================= */}
       {activeTab === "history" && (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs">
             <h2 className="text-base font-extrabold text-[#29241f]">Immutable Stock Audit Trail</h2>
             <p className="text-xs text-gray-500">Chronological history of all stock additions, event reservations, staff takings, returns, and damages.</p>
 
@@ -785,10 +947,10 @@ export default function ManagerStockPage() {
                 transactions.map((tx) => (
                   <div
                     key={tx._id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-xl border border-gray-100 bg-[#fdfcfb] text-xs"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-3.5 rounded-xl border border-gray-100 bg-[#fdfcfb] text-xs"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase ${
+                    <div className="flex items-start sm:items-center gap-3">
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase shrink-0 ${
                         tx.type === "CREATED" || tx.type === "ADDED" ? "bg-emerald-100 text-emerald-800" :
                         tx.type === "TAKEN" ? "bg-blue-100 text-blue-800" :
                         tx.type === "RETURNED" || tx.type === "VERIFIED" ? "bg-teal-100 text-teal-800" :
@@ -805,7 +967,7 @@ export default function ManagerStockPage() {
                       </div>
                     </div>
 
-                    <div className="text-right text-[11px] text-gray-400 shrink-0">
+                    <div className="text-left sm:text-right text-[11px] text-gray-400 shrink-0 border-t border-gray-100 sm:border-0 pt-1.5 sm:pt-0">
                       <p className="font-bold text-gray-700">By: {tx.performedBy?.name || "System"}</p>
                       <p>{new Date(tx.createdAt).toLocaleString()}</p>
                     </div>
@@ -821,11 +983,11 @@ export default function ManagerStockPage() {
       {/* MODAL: CREATE STOCK ITEM */}
       {/* ========================================================================= */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-base font-black text-[#29241f]">Create Master Stock Item</h3>
-              <button type="button" onClick={() => setCreateModalOpen(false)} className="text-gray-400 hover:text-gray-700">
+              <button type="button" onClick={() => setCreateModalOpen(false)} className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -839,17 +1001,17 @@ export default function ManagerStockPage() {
                   placeholder="e.g. Dinner Plate, Wine Glass, Banquet Table"
                   value={newItem.name}
                   onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Category *</label>
                   <select
                     value={newItem.category}
                     onChange={(e) => setNewItem({ ...newItem, category: e.target.value as StockCategory })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -866,12 +1028,12 @@ export default function ManagerStockPage() {
                     placeholder="pcs, sets, boxes"
                     value={newItem.unit}
                     onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Total Quantity *</label>
                   <input
@@ -880,7 +1042,7 @@ export default function ManagerStockPage() {
                     required
                     value={newItem.totalQuantity}
                     onChange={(e) => setNewItem({ ...newItem, totalQuantity: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
@@ -891,7 +1053,7 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.minStockLevel}
                     onChange={(e) => setNewItem({ ...newItem, minStockLevel: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
@@ -902,12 +1064,12 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.unitPrice}
                     onChange={(e) => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Rental Rate (₹ per {newItem.unit || "unit"})</label>
                   <input
@@ -915,13 +1077,13 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.rentalPrice}
                     onChange={(e) => setNewItem({ ...newItem, rentalPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
                     placeholder="e.g. 150"
                   />
                   <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-4">
+                <div className="flex items-center gap-2 pt-1 sm:pt-4">
                   <input
                     type="checkbox"
                     id="isRentableCreate"
@@ -942,7 +1104,7 @@ export default function ManagerStockPage() {
                   placeholder="Warehouse A - Shelf 3"
                   value={newItem.location}
                   onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
@@ -953,21 +1115,21 @@ export default function ManagerStockPage() {
                   placeholder="Optional details or specifications for rental"
                   value={newItem.description}
                   onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#29241f] px-5 py-2 text-xs font-extrabold text-white hover:bg-black"
+                  className="w-full sm:w-auto rounded-xl bg-[#29241f] px-5 py-2.5 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
                 >
                   Create Item
                 </button>
@@ -981,8 +1143,8 @@ export default function ManagerStockPage() {
       {/* MODAL: EDIT STOCK ITEM */}
       {/* ========================================================================= */}
       {editItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-base font-black text-[#29241f]">Edit Item: {editItem.name}</h3>
               <button
@@ -1002,17 +1164,17 @@ export default function ManagerStockPage() {
                   required
                   value={editData.name || ""}
                   onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Category *</label>
                   <select
                     value={editData.category || "Crockery"}
                     onChange={(e) => setEditData({ ...editData, category: e.target.value as StockCategory })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -1028,12 +1190,12 @@ export default function ManagerStockPage() {
                     type="text"
                     value={editData.unit || "pcs"}
                     onChange={(e) => setEditData({ ...editData, unit: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Min Alert Level</label>
                   <input
@@ -1041,7 +1203,7 @@ export default function ManagerStockPage() {
                     min="0"
                     value={editData.minStockLevel ?? 10}
                     onChange={(e) => setEditData({ ...editData, minStockLevel: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
@@ -1052,12 +1214,12 @@ export default function ManagerStockPage() {
                     min="0"
                     value={editData.unitPrice ?? 0}
                     onChange={(e) => setEditData({ ...editData, unitPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-gray-700">Rental Rate (₹ per {editData.unit || "unit"})</label>
                   <input
@@ -1065,12 +1227,12 @@ export default function ManagerStockPage() {
                     min="0"
                     value={editData.rentalPrice ?? 0}
                     onChange={(e) => setEditData({ ...editData, rentalPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
                   />
                   <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-4">
+                <div className="flex items-center gap-2 pt-1 sm:pt-4">
                   <input
                     type="checkbox"
                     id="isRentableEdit"
@@ -1090,7 +1252,7 @@ export default function ManagerStockPage() {
                   type="text"
                   value={editData.location || ""}
                   onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
@@ -1100,21 +1262,21 @@ export default function ManagerStockPage() {
                   rows={2}
                   value={editData.description || ""}
                   onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setEditItem(null)}
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#29241f] px-5 py-2 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
+                  className="w-full sm:w-auto rounded-xl bg-[#29241f] px-5 py-2.5 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
                 >
                   Save Changes
                 </button>
@@ -1128,9 +1290,18 @@ export default function ManagerStockPage() {
       {/* MODAL: RESTOCK ITEM */}
       {/* ========================================================================= */}
       {restockItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-black text-[#29241f]">Restock: {restockItem.name}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-black text-[#29241f]">Restock: {restockItem.name}</h3>
+              <button
+                type="button"
+                onClick={() => setRestockItem(null)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p className="text-xs text-gray-500">Current available: {restockItem.availableQuantity} {restockItem.unit}</p>
 
             <form onSubmit={handleRestock} className="space-y-3.5 text-xs">
@@ -1142,7 +1313,7 @@ export default function ManagerStockPage() {
                   required
                   value={restockQty}
                   onChange={(e) => setRestockQty(Number(e.target.value))}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-black text-emerald-800 outline-none focus:border-emerald-600"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-black text-emerald-800 outline-none focus:border-emerald-600"
                 />
               </div>
 
@@ -1153,21 +1324,21 @@ export default function ManagerStockPage() {
                   placeholder="Purchased new batch / vendor receipt"
                   value={restockNotes}
                   onChange={(e) => setRestockNotes(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 font-medium outline-none"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setRestockItem(null)}
-                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-700 px-5 py-2 text-xs font-extrabold text-white hover:bg-emerald-800"
+                  className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 cursor-pointer"
                 >
                   Confirm Restock
                 </button>
@@ -1181,9 +1352,18 @@ export default function ManagerStockPage() {
       {/* MODAL: VERIFY RETURN */}
       {/* ========================================================================= */}
       {verifyAllocation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-black text-[#29241f]">Confirm Return Verification</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-black text-[#29241f]">Confirm Return Verification</h3>
+              <button
+                type="button"
+                onClick={() => setVerifyAllocation(null)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p className="text-xs text-gray-600">
               Verifying return of <strong>{verifyAllocation.returnedQuantity} {verifyAllocation.stockItem?.unit}</strong> of{" "}
               <strong>{verifyAllocation.stockItem?.name}</strong> back into warehouse available inventory.
@@ -1201,22 +1381,22 @@ export default function ManagerStockPage() {
                 placeholder="Inspected and restocked on shelf"
                 value={verifyNotes}
                 onChange={(e) => setVerifyNotes(e.target.value)}
-                className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none"
+                className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs outline-none"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setVerifyAllocation(null)}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleVerifyReturn}
-                className="rounded-xl bg-emerald-700 px-5 py-2 text-xs font-extrabold text-white hover:bg-emerald-800"
+                className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 cursor-pointer"
               >
                 Approve & Restock
               </button>
@@ -1229,9 +1409,18 @@ export default function ManagerStockPage() {
       {/* MODAL: REPORT DISCREPANCY */}
       {/* ========================================================================= */}
       {discrepancyAllocation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-            <h3 className="text-base font-black text-rose-900">Report Stock Return Discrepancy</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-black text-rose-900">Report Stock Return Discrepancy</h3>
+              <button
+                type="button"
+                onClick={() => setDiscrepancyAllocation(null)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
             <p className="text-xs text-gray-600">
               Explain why the physically counted items do not match what staff submitted for{" "}
               <strong>{discrepancyAllocation.stockItem?.name}</strong>.
@@ -1245,15 +1434,15 @@ export default function ManagerStockPage() {
                 placeholder="e.g. Box contained only 280 plates instead of 290 submitted. 10 plates missing from crate."
                 value={discrepancyNotes}
                 onChange={(e) => setDiscrepancyNotes(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-xs outline-none focus:border-rose-500"
+                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm sm:text-xs outline-none focus:border-rose-500"
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setDiscrepancyAllocation(null)}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -1261,7 +1450,7 @@ export default function ManagerStockPage() {
                 type="button"
                 disabled={!discrepancyNotes.trim()}
                 onClick={handleReportDiscrepancy}
-                className="rounded-xl bg-rose-700 px-5 py-2 text-xs font-extrabold text-white hover:bg-rose-800 disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl bg-rose-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-rose-800 disabled:opacity-50 cursor-pointer"
               >
                 Submit Discrepancy Flag
               </button>

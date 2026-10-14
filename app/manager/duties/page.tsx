@@ -99,8 +99,13 @@ function OperationsHubContent() {
 
   useEffect(() => {
     if (!token) return;
-    getEvents({ limit: 100 }, token)
-      .then((result) => setEvents(result.data))
+    const now = new Date();
+    // Fetch events starting from today (with a 1-day safety buffer for timezone differences)
+    const safetyBufferDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const startDate = `${safetyBufferDate.getFullYear()}-${String(safetyBufferDate.getMonth() + 1).padStart(2, "0")}-${String(safetyBufferDate.getDate()).padStart(2, "0")}`;
+
+    getEvents({ startDate, limit: 300 }, token)
+      .then((result) => setEvents(result.data || []))
       .catch((error) =>
         setEventsError(error instanceof Error ? error.message : "Failed to load events")
       );
@@ -288,12 +293,52 @@ function OperationsHubContent() {
     });
   }, [tasks, taskPriorityFilter, taskSearch]);
 
-  const eventOptions = events.map((ev) => ({
-    id: ev._id,
-    name: ev.eventName,
-    date: ev.eventDate.slice(0, 10),
-    time: ev.eventTime,
-  }));
+  // Filter events for duty assignment:
+  // - Exclude completed and cancelled events
+  // - Only show events from today's date onwards
+  // - Sort chronologically by date and start time
+  const eventOptions = useMemo(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    return events
+      .filter((ev) => {
+        // If editing a duty, preserve the duty's currently assigned event so it remains selected in form
+        if (editingDuty && (ev._id === editingDuty.eventId || ev.eventName === editingDuty.event)) {
+          return true;
+        }
+
+        // 1. Exclude completed or cancelled events
+        const s = (ev.status || "").toUpperCase();
+        if (s === "COMPLETED" || s === "CANCELLED" || s === "REJECTED" || s === "SETTLED") {
+          return false;
+        }
+
+        // 2. Only show events from today's date onwards
+        const rawDate = (ev.eventDate || "").slice(0, 10);
+        if (rawDate && rawDate >= todayStr) return true;
+
+        const dateObj = new Date(ev.eventDate);
+        if (!isNaN(dateObj.getTime())) {
+          const localDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+          if (localDate >= todayStr) return true;
+        }
+
+        return false;
+      })
+      .sort((a, b) => {
+        const dateA = (a.eventDate || "").slice(0, 10);
+        const dateB = (b.eventDate || "").slice(0, 10);
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return (a.eventTime || "").localeCompare(b.eventTime || "");
+      })
+      .map((ev) => ({
+        id: ev._id,
+        name: ev.eventName,
+        date: ev.eventDate ? ev.eventDate.slice(0, 10) : "",
+        time: ev.eventTime || "",
+      }));
+  }, [events, editingDuty]);
   const staffOptions = staff
     .filter((member) => member.isActive)
     .map((member) => ({ id: member.id, name: member.name, department: member.department }));

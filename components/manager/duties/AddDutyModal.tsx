@@ -233,10 +233,15 @@ export default function AddDutyModal({
               )}
               {events.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name}
+                  {e.name}{e.date ? ` (${e.date}${e.time ? ` · ${e.time}` : ""})` : ""}
                 </option>
               ))}
             </select>
+            {events.length === 0 && !editingDuty && (
+              <p className="mt-1.5 text-xs text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                No active events scheduled from today onwards. Only upcoming/ongoing events from today date can be assigned duties.
+              </p>
+            )}
           </Field>
 
           {/* Department Filter for Staff */}
