@@ -1,6 +1,6 @@
 "use client";
 
-import { DollarSign, Info } from "lucide-react";
+import { IndianRupee, Info } from "lucide-react";
 import type { PricingType } from "@/types/service";
 
 type PricingRuleFormProps = {
@@ -151,7 +151,7 @@ export default function PricingRuleForm({
           </label>
 
           <div className="relative">
-            <DollarSign
+            <IndianRupee
               size={17}
               strokeWidth={2}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8B8F]"

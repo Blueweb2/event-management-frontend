@@ -410,7 +410,7 @@ export default function AddDutyModal({
                   if (endMin < startMin) endMin += 24 * 60;
                   return (Math.max(0, endMin - startMin) / 60).toFixed(1);
                 })()} hrs</strong></span>
-                <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
+                <span className="font-bold text-[#b8894b]">Est. Pay: ₹{(() => {
                   if (!form.startTime || !form.endTime) return "0.00";
                   const [sH, sM] = form.startTime.split(":").map(Number);
                   const [eH, eM] = form.endTime.split(":").map(Number);

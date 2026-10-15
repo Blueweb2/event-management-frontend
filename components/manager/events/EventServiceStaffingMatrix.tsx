@@ -843,7 +843,7 @@ export default function EventServiceStaffingMatrix({
                         if (endMin < startMin) endMin += 24 * 60;
                         return (Math.max(0, endMin - startMin) / 60).toFixed(1);
                       })()} hrs</strong></span>
-                      <span className="font-bold text-[#b8894b]">Est. Pay: ${(() => {
+                      <span className="font-bold text-[#b8894b]">Est. Pay: ₹{(() => {
                         if (!startTime || !endTime) return "0.00";
                         const [sH, sM] = startTime.split(":").map(Number);
                         const [eH, eM] = endTime.split(":").map(Number);

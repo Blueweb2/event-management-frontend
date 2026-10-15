@@ -1,5 +1,5 @@
 import {
-  CircleDollarSign,
+  IndianRupee,
   Clock3,
   Receipt,
   Wallet,
@@ -46,7 +46,7 @@ export default function ExpensesStats({ expenses }: { expenses: Expense[] }) {
           : 0
       ),
       count: "Per expense",
-      icon: CircleDollarSign,
+      icon: IndianRupee,
     },
   ];
 

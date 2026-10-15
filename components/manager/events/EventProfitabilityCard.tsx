@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Clock,
-  DollarSign,
   Layers,
   Loader2,
   PieChart,

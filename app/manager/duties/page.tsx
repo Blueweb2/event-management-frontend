@@ -7,7 +7,6 @@ import {
   CalendarDays,
   CheckSquare,
   Building2,
-  DollarSign,
   IndianRupee,
   Wallet,
   Sparkles,
