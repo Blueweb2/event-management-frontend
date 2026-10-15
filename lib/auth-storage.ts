@@ -71,8 +71,12 @@ export function readAuth() {
     const roleMatch = document.cookie.match(/(?:^|;\s*)user_role=([^;]+)/);
     if (tokenMatch && tokenMatch[1]) {
       const token = decodeURIComponent(tokenMatch[1]);
-      const roleStr = roleMatch ? decodeURIComponent(roleMatch[1]).toLowerCase() : "admin";
-      const role: AuthUser["role"] = roleStr === "staff" ? "staff" : "admin";
+      const roleStr = roleMatch ? decodeURIComponent(roleMatch[1]).toLowerCase() : "manager";
+      let role: AuthUser["role"] = "manager";
+      if (roleStr === "superadmin") role = "superadmin";
+      else if (roleStr === "staff") role = "staff";
+      else if (roleStr === "admin") role = "admin";
+      else role = "manager";
       return {
         token,
         user: {

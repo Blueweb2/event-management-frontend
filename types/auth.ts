@@ -3,8 +3,10 @@
 // ==========================================
 
 export type UserRole =
-  | "admin"
-  | "staff";
+  | "superadmin"
+  | "manager"
+  | "staff"
+  | "admin";
 
 // ==========================================
 // USER STATUS
@@ -38,6 +40,10 @@ export type AuthUser = {
     | "temporary";
 
   role: UserRole;
+
+  department?: string;
+
+  permissions?: string[];
 
   status?: UserStatus;
 
@@ -114,4 +120,53 @@ export type MeResponse = {
   data: {
     user: AuthUser;
   };
+};
+
+// ==========================================
+// MANAGER TYPES
+// ==========================================
+
+export type ManagerItem = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  department?: string;
+  permissions?: string[];
+  employmentType?: string;
+  role: "manager" | "admin";
+  isActive: boolean;
+  createdAt?: string;
+};
+
+export type CreateManagerPayload = {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  location?: string;
+  department?: string;
+  permissions?: string[];
+};
+
+export type UpdateManagerPayload = {
+  name?: string;
+  phone?: string;
+  location?: string;
+  department?: string;
+  permissions?: string[];
+  isActive?: boolean;
+};
+
+export type BootstrapSuperAdminPayload = {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  location?: string;
+  secret?: string;
 };

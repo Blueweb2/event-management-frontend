@@ -471,9 +471,9 @@ export default function AddStaffModal({
             />
           </FormField>
 
-          {/* Role */}
+          {/* Job Title / Role */}
           <FormField
-            label="Role"
+            label="Job Title / Designation"
             icon={BriefcaseBusiness}
             required
           >
@@ -486,10 +486,13 @@ export default function AddStaffModal({
                   event.target.value,
                 )
               }
-              placeholder="e.g. Event Staff"
+              placeholder="e.g. Lead Decorator, Event Staff"
               disabled={isSaving}
               className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
+            <p className="mt-1 text-[10px] text-gray-400">
+              Operational job title. System access level is automatically restricted to staff accounts.
+            </p>
           </FormField>
 
           {/* Department */}

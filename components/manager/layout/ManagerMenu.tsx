@@ -24,6 +24,7 @@ import {
   LogOut,
   ChevronRight,
   Package,
+  ShieldCheck,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -196,9 +197,11 @@ export default function ManagerMenu({
                 {user?.name || "Manager"}
               </p>
 
-              <p className="truncate text-xs text-gray-500">
-                {user?.email || "Management Panel"}
-              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 truncate">
+                  {user?.department || (user?.role === "superadmin" ? "Superadmin" : "Operations")}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -225,6 +228,27 @@ export default function ManagerMenu({
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Menu
           </p>
+
+          {user?.role === "superadmin" && (
+            <div className="mb-3 px-1">
+              <Link
+                href="/superadmin"
+                onClick={onClose}
+                className="flex items-center justify-between rounded-xl border border-amber-300 bg-linear-to-r from-amber-50 to-amber-100/60 p-3 text-xs font-bold text-[#84632a] shadow-xs transition hover:bg-amber-100"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#9A7B4F] text-white">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#6d5122]">Superadmin Console</p>
+                    <p className="text-[10px] text-[#9A7B4F]/80 font-medium">Manage executive managers</p>
+                  </div>
+                </div>
+                <ChevronRight size={15} />
+              </Link>
+            </div>
+          )}
 
           <div className="space-y-1">
             {menuItems.map((item) => {

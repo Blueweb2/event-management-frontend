@@ -8,7 +8,7 @@ export default function TasksRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/manager/duties?tab=tasks");
+    router.replace("/manager/duties");
   }, [router]);
 
   return (
@@ -16,7 +16,7 @@ export default function TasksRedirectPage() {
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#9A7B4F]/10 text-[#9A7B4F]">
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
-      <p className="text-xs font-medium text-gray-500">Redirecting to Operations Task Checklist...</p>
+      <p className="text-xs font-medium text-gray-500">Redirecting to Operations Hub...</p>
     </div>
   );
 }

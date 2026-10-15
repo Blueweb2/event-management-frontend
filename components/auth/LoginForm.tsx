@@ -35,7 +35,14 @@ function getSafeRedirectUrl(
   userRole: string,
 ): string {
   const role = (userRole || "").toLowerCase();
-  const defaultPath = role === "admin" || role === "manager" ? "/manager" : "/staff";
+  let defaultPath = "/staff";
+  if (role === "superadmin") {
+    defaultPath = "/superadmin";
+  } else if (role === "admin" || role === "manager") {
+    defaultPath = "/manager";
+  } else {
+    defaultPath = "/staff";
+  }
 
   if (!target) return defaultPath;
 
@@ -57,12 +64,19 @@ function getSafeRedirectUrl(
       return defaultPath;
     }
 
-    // Enforce role-based dashboard access
-    if (role === "staff" && decoded.startsWith("/manager")) {
-      return "/staff";
-    }
-    if ((role === "admin" || role === "manager") && decoded.startsWith("/staff")) {
-      return "/manager";
+    // Enforce role boundaries on redirect destination
+    if (role === "staff") {
+      if (decoded.startsWith("/manager") || decoded.startsWith("/superadmin")) {
+        return "/staff";
+      }
+    } else if (role === "manager" || role === "admin") {
+      if (decoded.startsWith("/staff") || decoded.startsWith("/superadmin")) {
+        return "/manager";
+      }
+    } else if (role === "superadmin") {
+      if (decoded.startsWith("/staff")) {
+        return "/superadmin";
+      }
     }
 
     return decoded;
