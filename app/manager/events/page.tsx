@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Kanban, ListFilter, FileText } from "lucide-react";
+import { CheckCircle2, AlertCircle, X } from "lucide-react";
 
 import {
   getEvents,
   deleteEvent,
+  startEvent,
+  updateEventStatus,
   type Event,
   type EventStatus,
 } from "@/lib/event.api";
@@ -19,26 +20,15 @@ import EventList from "@/components/manager/events/EventList";
 import EmptyEvents from "@/components/manager/events/EmptyEvents";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import EventLifecycleBoard from "@/components/manager/events/EventLifecycleBoard";
-import EventEstimatesTab from "@/components/manager/events/EventEstimatesTab";
 import EditEventModal from "@/components/manager/events/EditEventModal";
 import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
+import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
+import { buildDocumentDataFromEvent } from "@/lib/document-formatter";
 import { useAuth } from "@/hooks/useAuth";
-
-type ViewMode = "list" | "pipeline" | "estimates";
 
 function ManagerEventsContent() {
   const { token } = useAuth();
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab");
 
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    initialTab === "estimates"
-      ? "estimates"
-      : initialTab === "pipeline"
-      ? "pipeline"
-      : "list"
-  );
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<EventStatus | "All">("All");
@@ -47,26 +37,12 @@ function ManagerEventsContent() {
 
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+  const [exportingEvent, setExportingEvent] = useState<Event | null>(null);
 
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "estimates") setViewMode("estimates");
-    else if (tab === "pipeline") setViewMode("pipeline");
-    else if (tab === "list" || !tab) setViewMode("list");
-  }, [searchParams]);
-
-  const handleTabChange = (mode: ViewMode) => {
-    setViewMode(mode);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      if (mode === "list") {
-        url.searchParams.delete("tab");
-      } else {
-        url.searchParams.set("tab", mode);
-      }
-      window.history.replaceState(null, "", url.toString());
-    }
-  };
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -83,9 +59,7 @@ function ManagerEventsContent() {
       setEvents(response.data);
     } catch (err) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Failed to load events";
+        err instanceof Error ? err.message : "Failed to load events";
 
       setError(message);
     } finally {
@@ -94,52 +68,50 @@ function ManagerEventsContent() {
   }, [search, status]);
 
   useEffect(() => {
-    if (viewMode === "list") {
-      const timeout = setTimeout(() => {
-        fetchEvents();
-      }, 300);
+    const timeout = setTimeout(() => {
+      fetchEvents();
+    }, 300);
 
-      return () => clearTimeout(timeout);
+    return () => clearTimeout(timeout);
+  }, [fetchEvents]);
+
+  const handleStartEvent = async (event: Event) => {
+    try {
+      await startEvent(event._id, token || undefined);
+      setActionFeedback({
+        type: "success",
+        message: `Operations for "${event.eventName}" have been started successfully!`,
+      });
+      await fetchEvents();
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to start event. Please check required duties or time window.",
+      });
     }
-  }, [fetchEvents, viewMode]);
-
-  const totalEvents = events.length;
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const isCompletedEvent = (st?: string) => {
-    const s = (st || "").toLowerCase();
-    return s === "completed" || s === "settled" || s === "invoiced" || s === "cancelled";
   };
 
-  const isTodayDate = (dateStr?: string) => {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    return !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString();
+  const handleAcceptEvent = async (event: Event) => {
+    try {
+      await updateEventStatus(event._id, "CONFIRMED", token || undefined);
+      setActionFeedback({
+        type: "success",
+        message: `Event "${event.eventName}" has been accepted and confirmed!`,
+      });
+      await fetchEvents();
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to accept event. Please try again.",
+      });
+    }
   };
-
-  const ongoingEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    if (isCompletedEvent(event.status)) return false;
-    return (s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate);
-  }).length;
-
-  const upcomingEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    if (isCompletedEvent(event.status)) return false;
-    if ((s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate)) return false;
-    if (!event.eventDate) return false;
-    const d = new Date(event.eventDate);
-    if (isNaN(d.getTime())) return false;
-    const eventEnd = new Date(d);
-    eventEnd.setHours(23, 59, 59, 999);
-    return eventEnd.getTime() >= todayStart.getTime();
-  }).length;
-
-  const completedEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    return s === "completed" || s === "settled" || s === "invoiced";
-  }).length;
 
   const handleEditSuccess = (updatedEvent: Event) => {
     setEvents((prev) =>
@@ -153,118 +125,142 @@ function ManagerEventsContent() {
     setEvents((prev) => prev.filter((e) => e._id !== eventId));
   };
 
+  const totalEvents = events.length;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const isCompletedEvent = (st?: string) => {
+    const s = (st || "").toLowerCase();
+    return (
+      s === "completed" ||
+      s === "settled" ||
+      s === "invoiced" ||
+      s === "cancelled"
+    );
+  };
+
+  const isTodayDate = (dateStr?: string) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return (
+      !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString()
+    );
+  };
+
+  const ongoingEvents = events.filter((event) => {
+    const s = (event.status || "").toLowerCase();
+    if (isCompletedEvent(event.status)) return false;
+    return (
+      (s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate)
+    );
+  }).length;
+
+  const upcomingEvents = events.filter((event) => {
+    const s = (event.status || "").toLowerCase();
+    if (isCompletedEvent(event.status)) return false;
+    if (
+      (s === "ongoing" || s === "in_progress") &&
+      isTodayDate(event.eventDate)
+    )
+      return false;
+    if (!event.eventDate) return false;
+    const d = new Date(event.eventDate);
+    if (isNaN(d.getTime())) return false;
+    const eventEnd = new Date(d);
+    eventEnd.setHours(23, 59, 59, 999);
+    return eventEnd.getTime() >= todayStart.getTime();
+  }).length;
+
+  const completedEvents = events.filter((event) => {
+    const s = (event.status || "").toLowerCase();
+    return s === "completed" || s === "settled" || s === "invoiced";
+  }).length;
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       <div className="w-full">
-        {/* Header & View Switcher */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 pb-5">
+        {/* Unified Header */}
+        <div className="border-b border-gray-200 pb-5">
           <EventsHeader />
-
-          {/* View Mode Toggle */}
-          <div className="flex w-full sm:w-auto items-center overflow-x-auto no-scrollbar rounded-xl bg-gray-200/70 p-1 gap-1">
-            <button
-              type="button"
-              onClick={() => handleTabChange("list")}
-              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
-                viewMode === "list"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <ListFilter size={15} />
-              <span>Events List</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTabChange("pipeline")}
-              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
-                viewMode === "pipeline"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Kanban size={15} />
-              <span>Pipeline</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTabChange("estimates")}
-              className={`flex-1 sm:flex-initial shrink-0 inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-3 sm:px-3.5 py-2 text-xs font-semibold transition ${
-                viewMode === "estimates"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <FileText size={15} />
-              <span>Proposals & Estimates</span>
-            </button>
-          </div>
         </div>
 
-        {/* ESTIMATES TAB */}
-        {viewMode === "estimates" && (
-          <section className="mt-6">
-            <EventEstimatesTab onSwitchToList={() => handleTabChange("list")} />
-          </section>
-        )}
-
-        {/* PIPELINE KANBAN VIEW */}
-        {viewMode === "pipeline" && (
-          <section className="mt-6">
-            <EventLifecycleBoard />
-          </section>
-        )}
-
-        {/* STANDARD LIST VIEW */}
-        {viewMode === "list" && (
-          <>
-            <section className="mt-5 max-w-3xl">
-              <EventsStats
-                total={totalEvents}
-                upcoming={upcomingEvents}
-                ongoing={ongoingEvents}
-                completed={completedEvents}
-              />
-            </section>
-
-            <section className="mt-6 max-w-3xl">
-              <EventSearch value={search} onChange={setSearch} />
-            </section>
-
-            <section className="mt-4 max-w-3xl">
-              <EventFilters value={status} onChange={setStatus} />
-            </section>
-
-            <section className="mt-6 max-w-3xl">
-              {loading ? (
-                <div className="flex min-h-[240px] items-center justify-center">
-                  <LoadingSpinner />
-                </div>
-              ) : error ? (
-                <div className="rounded-2xl bg-white p-5 shadow-sm">
-                  <ErrorMessage message={error} />
-                  <button
-                    type="button"
-                    onClick={fetchEvents}
-                    className="mt-4 min-h-11 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98]"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : events.length === 0 ? (
-                <EmptyEvents />
+        {/* Action Feedback Banner */}
+        {actionFeedback && (
+          <div
+            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs font-semibold shadow-xs transition ${
+              actionFeedback.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {actionFeedback.type === "success" ? (
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
               ) : (
-                <EventList
-                  events={events}
-                  onEdit={(evt) => setEditingEvent(evt)}
-                  onDelete={(evt) => setDeletingEvent(evt)}
-                />
+                <AlertCircle size={16} className="text-red-600 shrink-0" />
               )}
-            </section>
-          </>
+              <span className="truncate">{actionFeedback.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="text-gray-400 hover:text-gray-700 shrink-0"
+            >
+              <X size={15} />
+            </button>
+          </div>
         )}
+
+        {/* Stats Overview */}
+        <section className="mt-5 max-w-7xl">
+          <EventsStats
+            total={totalEvents}
+            upcoming={upcomingEvents}
+            ongoing={ongoingEvents}
+            completed={completedEvents}
+          />
+        </section>
+
+        {/* Search */}
+        <section className="mt-6 max-w-7xl">
+          <EventSearch value={search} onChange={setSearch} />
+        </section>
+
+        {/* Status Filters */}
+        <section className="mt-4 max-w-7xl">
+          <EventFilters value={status} onChange={setStatus} />
+        </section>
+
+        {/* Unified Event List */}
+        <section className="mt-6 max-w-7xl">
+          {loading ? (
+            <div className="flex min-h-[240px] items-center justify-center">
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl bg-white p-5 shadow-sm">
+              <ErrorMessage message={error} />
+              <button
+                type="button"
+                onClick={fetchEvents}
+                className="mt-4 min-h-11 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98]"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : events.length === 0 ? (
+            <EmptyEvents />
+          ) : (
+            <EventList
+              events={events}
+              onEdit={(evt) => setEditingEvent(evt)}
+              onDelete={(evt) => setDeletingEvent(evt)}
+              onStart={handleStartEvent}
+              onAccept={handleAcceptEvent}
+              onExport={(evt) => setExportingEvent(evt)}
+            />
+          )}
+        </section>
       </div>
 
       {/* Edit Event Modal */}
@@ -282,6 +278,15 @@ function ManagerEventsContent() {
         onClose={() => setDeletingEvent(null)}
         onConfirm={handleDeleteConfirm}
       />
+
+      {/* Export Quotation / Invoice Modal */}
+      {exportingEvent && (
+        <ClientDocumentModal
+          isOpen={Boolean(exportingEvent)}
+          onClose={() => setExportingEvent(null)}
+          data={buildDocumentDataFromEvent(exportingEvent)}
+        />
+      )}
     </div>
   );
 }

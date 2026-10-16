@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, UserPlus, Sparkles, Phone, Mail, Edit, Trash2 } from "lucide-react";
+import { Loader2, UserPlus, Sparkles, Phone, Mail, Edit, Trash2, CreditCard, Play, CheckCircle2, Check, Plus, AlertCircle, X } from "lucide-react";
 
 import {
   getEventById,
   deleteEvent,
+  startEvent,
+  updateEventStatus,
   type Event,
+  type EventStatus,
 } from "@/lib/event.api";
 
 import LoadingSpinner from "@/components/common/LoadingSpinner";
@@ -18,6 +21,7 @@ import EventStaffAttendanceCard from "@/components/manager/events/EventStaffAtte
 import EventTaskProgressCard from "@/components/manager/events/EventTaskProgressCard";
 import EventActivityTimelineCard from "@/components/manager/events/EventActivityTimelineCard";
 import EventStockTab from "@/components/manager/events/EventStockTab";
+import EventClientPaymentCard from "@/components/manager/events/EventClientPaymentCard";
 import EditEventModal from "@/components/manager/events/EditEventModal";
 import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import { getEventStaffAttendance } from "@/lib/attendance.api";
@@ -62,6 +66,11 @@ export default function ManagerEventDetailsPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const [assignmentForm, setAssignmentForm] = useState({
     staff: "",
@@ -159,6 +168,52 @@ export default function ManagerEventDetailsPage() {
       setLoading(false);
     }
   }, [eventId]);
+
+  const handleStartEvent = async () => {
+    if (!eventId) return;
+    try {
+      setActionLoading(true);
+      await startEvent(eventId, token || undefined);
+      setActionFeedback({
+        type: "success",
+        message: "Operations for this event have been started successfully!",
+      });
+      await fetchEvent();
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to start event. Please check required staff or timing.",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: EventStatus) => {
+    if (!eventId) return;
+    try {
+      setActionLoading(true);
+      await updateEventStatus(eventId, newStatus, token || undefined);
+      setActionFeedback({
+        type: "success",
+        message: `Event status updated to "${newStatus}"!`,
+      });
+      await fetchEvent();
+    } catch (err) {
+      setActionFeedback({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to update event status.",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // ==========================================
   // Load Event
@@ -542,23 +597,86 @@ export default function ManagerEventDetailsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {/* Create Estimate / Booking Button */}
             <button
               type="button"
-              onClick={() => setEditModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
+              onClick={() => router.push("/manager/booking")}
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-[#d8cfc4] bg-[#faf8f5] px-3.5 py-2 text-xs font-bold text-[#29241f] shadow-xs hover:bg-[#eee8de] transition active:scale-95"
+              title="Create a new estimate or booking proposal"
             >
-              <Edit size={14} className="text-[#9A7B4F]" />
-              <span>Edit Event</span>
+              <Plus size={14} className="text-[#9a6c37]" />
+              <span>Create Estimate</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setDeleteModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 shadow-xs hover:bg-red-100 transition active:scale-95"
-            >
-              <Trash2 size={14} />
-              <span>Delete</span>
-            </button>
+            {/* Accept / Confirm Action if Pending */}
+            {(event.status || "").toLowerCase() === "pending" && (
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => handleUpdateStatus("CONFIRMED")}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95 disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                <span>Accept & Confirm</span>
+              </button>
+            )}
+
+            {/* Start Event Trigger if Upcoming/Confirmed */}
+            {!isEventClosed &&
+              (event.status || "").toLowerCase() !== "ongoing" &&
+              (event.status || "").toLowerCase() !== "in_progress" && (
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={handleStartEvent}
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95 disabled:opacity-50"
+                  title="Start live operations for this event"
+                >
+                  {actionLoading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Play size={14} className="fill-white" />
+                  )}
+                  <span>Start Event</span>
+                </button>
+              )}
+
+            {/* Complete Event Trigger if Live/Ongoing */}
+            {((event.status || "").toLowerCase() === "ongoing" ||
+              (event.status || "").toLowerCase() === "in_progress") && (
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => handleUpdateStatus("Completed")}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-purple-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-purple-800 transition active:scale-95 disabled:opacity-50"
+                title="Mark this event operations as completed"
+              >
+                {actionLoading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                <span>Complete Event</span>
+              </button>
+            )}
+
+            {/* Mark Settled Trigger if Completed */}
+            {(event.status || "").toLowerCase() === "completed" && (
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => handleUpdateStatus("Settled")}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-[#29241F] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95 disabled:opacity-50"
+                title="Mark financial settlement as closed"
+              >
+                {actionLoading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={14} className="text-emerald-400" />
+                )}
+                <span>Mark Settled</span>
+              </button>
+            )}
 
             {/* Export Studio Trigger */}
             {eventDocumentData && (
@@ -571,8 +689,66 @@ export default function ManagerEventDetailsPage() {
                 <span>Export Invoice & Quotation</span>
               </button>
             )}
+
+            {/* Record Payment Trigger */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("payments");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
+            >
+              <CreditCard size={14} />
+              <span>Record Payment</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditModalOpen(true)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
+            >
+              <Edit size={14} className="text-[#9A7B4F]" />
+              <span>Edit</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeleteModalOpen(true)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 shadow-xs hover:bg-red-100 transition active:scale-95"
+            >
+              <Trash2 size={14} />
+              <span>Delete</span>
+            </button>
           </div>
         </header>
+
+        {/* Action Feedback Banner */}
+        {actionFeedback && (
+          <div
+            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs font-semibold shadow-xs transition ${
+              actionFeedback.type === "success"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              {actionFeedback.type === "success" ? (
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle size={16} className="text-red-600 shrink-0" />
+              )}
+              <span className="truncate">{actionFeedback.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionFeedback(null)}
+              className="text-gray-400 hover:text-gray-700 shrink-0"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
 
         {/* ======================================
             Event Overview Grid
@@ -587,12 +763,12 @@ export default function ManagerEventDetailsPage() {
                   Event Status
                 </p>
                 <p className="mt-1 text-lg font-black text-[#252525]">
-                  {event.status}
+                  {event.eventType}
                 </p>
               </div>
 
               <span className="rounded-full bg-[#F4EFE4] px-3 py-1 text-xs font-bold text-[#8C7A55]">
-                {event.eventType}
+                {event.status}
               </span>
             </div>
 
@@ -614,6 +790,16 @@ export default function ManagerEventDetailsPage() {
               <div className="flex justify-between">
                 <span className="text-gray-400">Venue:</span>
                 <span className="font-bold text-[#252525] truncate max-w-[150px]">{event.location}</span>
+              </div>
+              <div className="flex justify-between border-t border-dashed border-gray-100 pt-2">
+                <span className="text-gray-400">Client Payments:</span>
+                <span className="font-bold text-[#252525]">
+                  <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
+                  {" / "}
+                  <span className={eventBalance > 0 ? "text-red-600" : "text-gray-500"}>
+                    ₹{eventBalance.toLocaleString("en-IN")} bal
+                  </span>
+                </span>
               </div>
             </div>
           </section>
@@ -655,6 +841,17 @@ export default function ManagerEventDetailsPage() {
             </p>
           </section>
         </div>
+
+        {/* ======================================
+            Client Payment Details & Balance Settlement
+        ====================================== */}
+        <section className="mt-6" id="payments">
+          <EventClientPaymentCard
+            event={event}
+            token={token || undefined}
+            onPaymentRecorded={fetchEvent}
+          />
+        </section>
 
         {/* ======================================
             Event Profitability & Expense Tracking

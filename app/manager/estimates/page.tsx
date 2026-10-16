@@ -7,7 +7,7 @@ export default function EstimatesRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/manager/events?tab=estimates");
+    router.replace("/manager/events");
   }, [router]);
 
   return (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Event } from "@/lib/event.api";
-import { Edit, Trash2, ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity } from "lucide-react";
+import { Edit, Trash2, ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity, CreditCard, Plus, Play, CheckCircle2 } from "lucide-react";
 import EventStatusBadge from "./EventStatusBadge";
 import { formatTime24to12 } from "@/lib/time-utils";
 
@@ -11,6 +11,9 @@ interface EventCardProps {
   event: Event;
   onEdit?: (event: Event) => void;
   onDelete?: (event: Event) => void;
+  onStart?: (event: Event) => void;
+  onAccept?: (event: Event) => void;
+  onExport?: (event: Event) => void;
   compact?: boolean;
   isFeatured?: boolean;
 }
@@ -23,6 +26,9 @@ export default function EventCard({
   event,
   onEdit,
   onDelete,
+  onStart,
+  onAccept,
+  onExport,
   compact = false,
   isFeatured = false,
 }: EventCardProps) {
@@ -55,6 +61,13 @@ export default function EventCard({
       event.status === "IN_PROGRESS" ||
       isFeatured);
 
+  const bookingObj = typeof event.booking === "object" && event.booking !== null ? event.booking : null;
+  const eventTotal = bookingObj?.total || 0;
+  const eventPaid = event.paidAmount ?? event.advancePayment ?? bookingObj?.paidAmount ?? bookingObj?.advancePayment ?? 0;
+  const eventBalance = Math.max(0, eventTotal - eventPaid);
+  const isSettled = event.paymentStatus === "PAID" || (eventBalance === 0 && eventTotal > 0);
+  const isPartiallyPaid = event.paymentStatus === "PARTIAL" || (eventPaid > 0 && eventBalance > 0);
+
   // COMPACT SMALL CARD (For Completed / Past Events)
   if (compact && !isExpanded) {
     return (
@@ -82,8 +95,29 @@ export default function EventCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 pt-1 sm:pt-0 border-t border-gray-100 sm:border-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t border-gray-100 sm:border-0">
+            {eventTotal > 0 && (
+              <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                isSettled ? "bg-emerald-50 text-emerald-700" : isPartiallyPaid ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
+              }`}>
+                {isSettled ? "Paid" : `₹${eventBalance.toLocaleString("en-IN")} Due`}
+              </span>
+            )}
             <EventStatusBadge status={event.status} />
+            {onExport && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExport(event);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                title="Export Invoice / Quotation"
+              >
+                <Sparkles size={11} className="text-[#D4AF37]" />
+                <span>Export</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={(e) => {
@@ -220,8 +254,104 @@ export default function EventCard({
           />
         </div>
 
+        {/* Payment & Financial Ledger Strip */}
+        <div className="mt-4 rounded-xl border border-gray-100 bg-[#faf8f5] p-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CreditCard size={15} className="text-[#9a6c37] shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment Status</p>
+              <p className="text-xs font-black text-gray-900">
+                {eventTotal > 0 ? (
+                  <>
+                    <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
+                    <span className="text-gray-400 font-normal"> / </span>
+                    <span>₹{eventTotal.toLocaleString("en-IN")}</span>
+                  </>
+                ) : (
+                  <span className="text-gray-400 font-medium">Estimate pending</span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+            {eventTotal > 0 && (
+              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                isSettled
+                  ? "bg-emerald-100 text-emerald-800"
+                  : isPartiallyPaid
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-red-100 text-red-800"
+              }`}>
+                {isSettled ? "PAID" : `₹${eventBalance.toLocaleString("en-IN")} DUE`}
+              </span>
+            )}
+
+            {/* Accept Action if Pending */}
+            {onAccept && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAccept(event);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
+                title="Accept / Confirm booking"
+              >
+                <CheckCircle2 size={12} />
+                <span>Accept</span>
+              </button>
+            )}
+
+            {/* Start Event Action if Upcoming/Confirmed */}
+            {onStart && !isCompleted && !isOngoing && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStart(event);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
+                title="Start event operations now"
+              >
+                <Play size={11} className="fill-white" />
+                <span>Start Event</span>
+              </button>
+            )}
+
+            {/* Export Document Action */}
+            {onExport && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExport(event);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                title="Export Quotation, Invoice & WhatsApp Summary"
+              >
+                <Sparkles size={11} className="text-[#D4AF37]" />
+                <span>Export</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/manager/events/${event._id}#payments`);
+              }}
+              className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95"
+              title="Record or view client payment for this event"
+            >
+              <Plus size={11} className="text-[#9a6c37]" />
+              <span>Record Payment</span>
+            </button>
+          </div>
+        </div>
+
         {/* Client & Navigation Footer */}
-        <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
           <div>
             <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
               Client

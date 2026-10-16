@@ -228,3 +228,100 @@ export function createWhatsAppUrl(phone: string, text: string): string {
     ? `https://wa.me/${clean}?text=${encoded}`
     : `https://api.whatsapp.com/send?text=${encoded}`;
 }
+
+export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
+  const bookingObj =
+    typeof event.booking === "object" && event.booking !== null
+      ? event.booking
+      : null;
+  const eventTotal = bookingObj?.total || event.total || 0;
+  const eventPaid =
+    event.paidAmount ??
+    event.advancePayment ??
+    bookingObj?.paidAmount ??
+    bookingObj?.advancePayment ??
+    0;
+  const eventBalance = Math.max(0, eventTotal - eventPaid);
+
+  return {
+    documentType:
+      event.status === "Completed" ||
+      event.status === "Settled" ||
+      event.paymentStatus === "PAID"
+        ? "INVOICE"
+        : "ESTIMATE",
+    documentNumber: `DOC-${String(event._id || "").slice(-6).toUpperCase()}`,
+    date: new Date().toISOString().slice(0, 10),
+    status:
+      event.status === "Completed" ||
+      event.status === "Settled" ||
+      event.paymentStatus === "PAID"
+        ? "PAID"
+        : "CONFIRMED",
+    company: defaultCompanyDetails,
+    client: {
+      name:
+        typeof event.client === "object" && event.client?.name
+          ? event.client.name
+          : "Valued Client",
+      phone: typeof event.client === "object" ? event.client?.phone || "" : "",
+      email: typeof event.client === "object" ? event.client?.email || "" : "",
+      address:
+        typeof event.client === "object" ? event.client?.address : undefined,
+    },
+    event: {
+      name: event.eventName || "Event",
+      type: event.eventType || "Event",
+      date: event.eventDate || new Date().toISOString(),
+      time: formatTime24to12(event.eventTime) || event.eventTime || "",
+      guests: event.guests || 0,
+      location: event.location || "",
+      description: event.description || event.notes || "",
+    },
+    services:
+      bookingObj &&
+      Array.isArray(bookingObj.services) &&
+      bookingObj.services.length > 0
+        ? bookingObj.services.map((s: any, idx: number) => ({
+            id: s._id || String(idx),
+            name: s.serviceName,
+            category: s.category,
+            quantity: s.quantity,
+            unitLabel: s.unitLabel,
+            unitPrice: s.unitPrice,
+            total: s.total,
+          }))
+        : [
+            {
+              id: "1",
+              name: `${event.eventType || "Event"} Management Package`,
+              category: "Production",
+              quantity: 1,
+              unitLabel: "Package",
+              unitPrice: bookingObj?.subtotal || eventTotal,
+              total: bookingObj?.subtotal || eventTotal,
+            },
+          ],
+    catering:
+      bookingObj && bookingObj.foodMenu && bookingObj.foodMenu.included
+        ? {
+            included: true,
+            servingType: bookingObj.foodMenu.servingType,
+            ratePerGuest: bookingObj.foodMenu.ratePerGuest,
+            totalFoodAmount: bookingObj.foodMenu.totalFoodAmount,
+            guestCount: event.guests || 0,
+            notes: bookingObj.foodMenu.notes,
+            items: bookingObj.foodMenu.items,
+          }
+        : undefined,
+    subtotal: bookingObj?.subtotal || eventTotal,
+    discount: bookingObj?.discountAmount || 0,
+    additionalCharges: bookingObj?.additionalCharges || 0,
+    gstRate: bookingObj?.gstRate || 0,
+    gstAmount: bookingObj?.gstAmount || 0,
+    total: eventTotal,
+    currency: bookingObj?.currency || "INR",
+    paidAmount: eventPaid,
+    balanceDue: eventBalance,
+  };
+}

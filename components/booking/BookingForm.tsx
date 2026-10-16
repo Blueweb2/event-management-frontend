@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Clock, Trash2, Sparkles, Mic, CheckCircle2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Clock,
+  Trash2,
+  Sparkles,
+  Mic,
+  CheckCircle2,
+  FileEdit,
+  PlusCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 
 import BookingProgress from "./BookingProgress";
 import BookingNavigation from "./BookingNavigation";
@@ -13,7 +23,12 @@ import FoodMenuStep from "./steps/FoodMenuStep";
 import ServicesItemsStep from "./steps/ServicesItemsStep";
 import EstimatePreviewStep from "./steps/EstimatePreviewStep";
 import type { BookingFormData, ServiceItem } from "./types";
-import { createEstimate, type Estimate } from "@/lib/estimates.api";
+import {
+  createEstimate,
+  updateEstimate,
+  getEstimateById,
+  type Estimate,
+} from "@/lib/estimates.api";
 import { getServices } from "@/lib/services.api";
 import VoiceBookingModal from "./ai/VoiceBookingModal";
 import type { ExtractedBookingFields } from "@/lib/ai-booking-parser";
@@ -95,6 +110,8 @@ const initialFormData: BookingFormData = {
 
 export default function BookingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editEstimateIdParam = searchParams?.get("editEstimateId");
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<BookingFormData>(initialFormData);
@@ -111,9 +128,118 @@ export default function BookingForm() {
     daysLeft: number;
   } | null>(null);
 
+  // Edit estimate state
+  const [editingEstimateId, setEditingEstimateId] = useState<string | null>(null);
+  const [editingEstimateNumber, setEditingEstimateNumber] = useState<string | null>(null);
+  const [isLoadingEstimateToEdit, setIsLoadingEstimateToEdit] = useState(false);
+  const estimateCreatedRef = useRef(false);
+
+  // Load estimate if editEstimateId is present in URL
+  useEffect(() => {
+    if (!editEstimateIdParam) return;
+
+    let isMounted = true;
+    setIsLoadingEstimateToEdit(true);
+    setError("");
+
+    getEstimateById(editEstimateIdParam)
+      .then((est) => {
+        if (!isMounted) return;
+        if (est.convertedToEvent) {
+          setError(
+            `Estimate #${est.estimateNumber} has already been converted to an event and cannot be edited.`
+          );
+          setIsLoadingEstimateToEdit(false);
+          return;
+        }
+
+        setEditingEstimateId(est._id);
+        setEditingEstimateNumber(est.estimateNumber);
+        estimateCreatedRef.current = false;
+
+        // Clear any previous draft info since we are editing an existing estimate
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+        setDraftRestoredInfo(null);
+
+        setFormData({
+          eventName: est.eventName || "",
+          eventType: est.eventType || "",
+          eventDate: est.eventDate
+            ? est.eventDate.includes("T")
+              ? est.eventDate.split("T")[0]
+              : est.eventDate
+            : "",
+          eventTime: est.eventTime || "",
+          guests: String(est.guests || ""),
+          location: est.location || "",
+          description: est.description || "",
+
+          name: est.client?.name || "",
+          phone: est.client?.phone || "",
+          email: est.client?.email || "",
+          message: est.client?.message || "",
+          address: "",
+          referralSource: est.client?.referralSource || "",
+          customReferral: "",
+
+          foodMenu:
+            est.foodMenu && est.foodMenu.included
+              ? {
+                  included: true,
+                  servingType: est.foodMenu.servingType || "FIXED",
+                  ratePerGuest: est.foodMenu.ratePerGuest || 0,
+                  totalFoodAmount: est.foodMenu.totalFoodAmount || 0,
+                  notes: est.foodMenu.notes || "",
+                  items: est.foodMenu.items || [],
+                }
+              : {
+                  included: false,
+                  servingType: "PER_GUEST",
+                  ratePerGuest: 0,
+                  totalFoodAmount: 0,
+                  notes: "",
+                  items: [],
+                },
+
+          services: Array.isArray(est.items)
+            ? est.items.map((item) => ({
+                id: item.serviceId,
+                serviceId: item.serviceId,
+                optionId: item.optionId ?? undefined,
+                name: item.serviceName,
+                category: item.category,
+                description: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                pricingType: item.pricingType as any,
+                unitLabel: item.unitLabel,
+              }))
+            : [],
+
+          discountType: est.discountType || "percentage",
+          discountValue: String(est.discountValue ?? 0),
+          additionalCharges: String(est.additionalCharges ?? 0),
+        });
+
+        setIsLoadingEstimateToEdit(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error("Failed to load estimate for editing:", err);
+        setError("Failed to load the requested estimate for editing.");
+        setIsLoadingEstimateToEdit(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [editEstimateIdParam]);
+
   // Restore draft on mount if within 7 days; auto-delete if expired
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || editEstimateIdParam) return;
 
     try {
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
@@ -155,11 +281,16 @@ export default function BookingForm() {
     } catch (err) {
       console.warn("Could not parse booking draft from localStorage", err);
     }
-  }, []);
+  }, [editEstimateIdParam]);
 
   // Auto-save draft on changes (held for 7 days)
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // NEVER auto-save to draft if an estimate is already created, or if in edit mode, or if estimate was just generated
+    if (createdEstimate || editingEstimateId || estimateCreatedRef.current) {
+      return;
+    }
 
     const hasData =
       Boolean(formData.eventName.trim()) ||
@@ -182,18 +313,39 @@ export default function BookingForm() {
         console.warn("Could not save booking draft to localStorage", err);
       }
     }
-  }, [formData, currentStep]);
+  }, [formData, currentStep, createdEstimate, editingEstimateId]);
 
   // Discard draft & start fresh
   const handleDiscardDraft = () => {
+    estimateCreatedRef.current = false;
     if (typeof window !== "undefined") {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
     setFormData(initialFormData);
     setCurrentStep(1);
+    setCreatedEstimate(null);
+    setEditingEstimateId(null);
+    setEditingEstimateNumber(null);
     setDraftRestoredInfo(null);
     setAiSuccessBanner(null);
     setError("");
+    if (typeof window !== "undefined" && window.location.search) {
+      router.replace("/manager/booking");
+    }
+  };
+
+  // Start fresh booking after estimate creation
+  const handleStartFreshBooking = () => {
+    handleDiscardDraft();
+  };
+
+  // Edit the current estimate that was just created
+  const handleEditCurrentEstimate = () => {
+    if (!createdEstimate) return;
+    setEditingEstimateId(createdEstimate._id);
+    setEditingEstimateNumber(createdEstimate.estimateNumber);
+    estimateCreatedRef.current = false;
+    setCreatedEstimate(null);
   };
 
   // AI Voice Auto-Fill Handler
@@ -654,6 +806,7 @@ export default function BookingForm() {
         additionalCharges: Number(formData.additionalCharges || 0),
       });
 
+      estimateCreatedRef.current = true;
       setCreatedEstimate(result);
       if (typeof window !== "undefined") {
         localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -665,6 +818,67 @@ export default function BookingForm() {
         err instanceof Error
           ? err.message
           : "Failed to create estimate. Please try again."
+      );
+    } finally {
+      setIsCreatingEstimate(false);
+    }
+  };
+
+  // UPDATE ESTIMATE
+  const handleUpdateEstimate = async () => {
+    if (!editingEstimateId || isCreatingEstimate) {
+      return;
+    }
+
+    if (!validateStep()) {
+      return;
+    }
+
+    setError("");
+    setIsCreatingEstimate(true);
+
+    try {
+      const result = await updateEstimate(editingEstimateId, {
+        eventName: formData.eventName.trim(),
+        eventType: formData.eventType.trim(),
+        eventDate: formData.eventDate,
+        eventTime: formData.eventTime.trim(),
+        guests: Number(formData.guests),
+        location: formData.location.trim(),
+        description: formData.description.trim(),
+        client: {
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim().toLowerCase(),
+          message: formData.message?.trim() || "",
+          referralSource:
+            formData.customReferral && formData.customReferral.trim()
+              ? `${formData.referralSource || "Referral"} (${formData.customReferral.trim()})`
+              : formData.referralSource || "",
+        },
+        services: formData.services.map((item) => ({
+          serviceId: item.serviceId,
+          optionId: item.optionId ?? null,
+          quantity: Number(item.quantity || 1),
+        })),
+        foodMenu: formData.foodMenu,
+        discountType: formData.discountType || "percentage",
+        discountValue: Number(formData.discountValue || 0),
+        additionalCharges: Number(formData.additionalCharges || 0),
+      });
+
+      estimateCreatedRef.current = true;
+      setCreatedEstimate(result);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+      setDraftRestoredInfo(null);
+    } catch (err) {
+      console.error("Failed to update estimate:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update estimate. Please try again."
       );
     } finally {
       setIsCreatingEstimate(false);
@@ -701,6 +915,11 @@ export default function BookingForm() {
         });
 
         router.push(`/booking/success?${params.toString()}`);
+        return;
+      }
+
+      if (editingEstimateId) {
+        handleUpdateEstimate();
         return;
       }
 
@@ -784,8 +1003,39 @@ export default function BookingForm() {
             </div>
           )}
 
+          {/* Editing Existing Estimate Banner */}
+          {editingEstimateNumber && (
+            <div className="mb-4 sm:mb-6 rounded-2xl border border-blue-200 bg-blue-50/90 p-3.5 sm:p-4 text-xs font-medium text-blue-900 shadow-2xs backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center gap-2.5">
+                <FileEdit size={16} className="text-blue-700 shrink-0" />
+                <span>
+                  <strong>Editing Proposal:</strong> Estimate #{editingEstimateNumber}. You can modify any step and save your changes back to this estimate.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDiscardDraft}
+                  className="inline-flex items-center gap-1 rounded-xl border border-blue-300 bg-white px-3 py-1.5 text-[11px] font-bold text-blue-900 hover:bg-blue-100 transition shadow-2xs active:scale-95 cursor-pointer"
+                  title="Clear and start a blank proposal"
+                >
+                  <PlusCircle size={12} />
+                  Start Blank Booking
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loading Estimate to Edit */}
+          {isLoadingEstimateToEdit && (
+            <div className="mb-4 sm:mb-6 flex items-center gap-2.5 rounded-2xl border border-gray-200 bg-gray-50/90 p-4 text-xs font-semibold text-gray-700 animate-pulse">
+              <Loader2 size={16} className="animate-spin text-gray-500 shrink-0" />
+              <span>Loading estimate details for editing...</span>
+            </div>
+          )}
+
           {/* Draft Restored Banner */}
-          {draftRestoredInfo && (
+          {draftRestoredInfo && !editingEstimateNumber && (
             <div className="mb-4 sm:mb-6 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 sm:p-4 text-xs text-amber-900 shadow-2xs backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
               <div className="flex items-center gap-2.5">
                 <Clock size={16} className="text-amber-700 shrink-0" />
@@ -804,7 +1054,7 @@ export default function BookingForm() {
                 <button
                   type="button"
                   onClick={handleDiscardDraft}
-                  className="inline-flex items-center gap-1 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-900 hover:bg-amber-100 transition shadow-2xs active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-900 hover:bg-amber-100 transition shadow-2xs active:scale-95 cursor-pointer"
                   title="Discard this draft and start a blank proposal"
                 >
                   <Trash2 size={12} />
@@ -813,7 +1063,7 @@ export default function BookingForm() {
                 <button
                   type="button"
                   onClick={() => setDraftRestoredInfo(null)}
-                  className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 px-1"
+                  className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 px-1 cursor-pointer"
                 >
                   Dismiss
                 </button>
@@ -873,6 +1123,10 @@ export default function BookingForm() {
               onEstimateCreated={setCreatedEstimate}
               isCreating={isCreatingEstimate}
               onCreateEstimate={handleCreateEstimate}
+              isEditing={Boolean(editingEstimateId)}
+              onUpdateEstimate={handleUpdateEstimate}
+              onEditEstimate={handleEditCurrentEstimate}
+              onStartFresh={handleStartFreshBooking}
             />
           )}
 
@@ -906,7 +1160,9 @@ export default function BookingForm() {
               currentStep === 5
                 ? createdEstimate
                   ? "View Confirmation"
-                  : "Create Estimate"
+                  : editingEstimateId
+                    ? "Update Estimate"
+                    : "Create Estimate"
                 : undefined
             }
           />

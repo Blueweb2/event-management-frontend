@@ -1,148 +1,189 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Users,
+  Clock3,
+  UserCheck,
+  CalendarDays,
+  IndianRupee,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 
-import PageHeader from "@/components/common/PageHeader";
-import StaffList from "@/components/manager/staff/StaffList";
-import AddStaffModal from "@/components/manager/staff/AddStaffModal";
+import StaffDirectoryTab from "@/components/manager/staff/StaffDirectoryTab";
+import StaffAvailabilityTab from "@/components/manager/staff/StaffAvailabilityTab";
+import StaffAttendanceTab from "@/components/manager/staff/StaffAttendanceTab";
+import StaffAssignmentsTab from "@/components/manager/staff/StaffAssignmentsTab";
+import StaffPayrollTab from "@/components/manager/staff/StaffPayrollTab";
 
-import { useStaff } from "@/hooks/useStaff";
-import { useAuth } from "@/hooks/useAuth";
+type StaffTabType = "directory" | "availability" | "attendance" | "assignments" | "schedule" | "payroll";
 
-import type {
-  CreateStaffPayload,
-  Staff,
-} from "@/types/staff";
+function ManagerStaffContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-export default function ManagerStaffPage() {
-  const { token } = useAuth();
+  const tabParam = (searchParams.get("tab") as StaffTabType) || "directory";
+  const initialDate = searchParams.get("date") || undefined;
+  const initialStaffId = searchParams.get("staffId") || searchParams.get("staff") || undefined;
 
-  const [isAddModalOpen, setIsAddModalOpen] =
-    useState(false);
-
-  const filters = useMemo(
-    () => ({
-      page: 1,
-      limit: 20,
-    }),
-    [],
+  const [activeTab, setActiveTab] = useState<StaffTabType>(
+    tabParam === "schedule" ? "assignments" : tabParam
   );
 
-  const {
-    staff,
-    pagination,
-    loading,
-    error,
-    fetchStaff,
-    addStaff,
-    clearError,
-  } = useStaff({
-    token,
-    filters,
-  });
+  useEffect(() => {
+    const rawTab = searchParams.get("tab") as StaffTabType;
+    if (rawTab) {
+      const normalized = rawTab === "schedule" ? "assignments" : rawTab;
+      if (["directory", "availability", "attendance", "assignments", "payroll"].includes(normalized)) {
+        setActiveTab(normalized);
+      }
+    }
+  }, [searchParams]);
 
-  /*
-   * Open Add Staff modal
-   */
-  const handleOpenAddStaff = useCallback(() => {
-    clearError();
-    setIsAddModalOpen(true);
-  }, [clearError]);
-
-  /*
-   * Close Add Staff modal
-   */
-  const handleCloseAddStaff = useCallback(() => {
-    setIsAddModalOpen(false);
-  }, []);
-
-  /*
-   * Create Staff
-   */
-  const handleCreateStaff = useCallback(
-    async (payload: CreateStaffPayload): Promise<Staff> => {
-      const newStaff = await addStaff(payload);
-
-      await fetchStaff({
-        page: 1,
-        limit: 20,
-      });
-
-      setIsAddModalOpen(false);
-      return newStaff;
-    },
-    [addStaff, fetchStaff],
-  );
-
-  /*
-   * Retry loading staff
-   */
-  const handleRetry = async () => {
-    clearError();
-
-    await fetchStaff({
-      page: pagination.page || 1,
-      limit: pagination.limit || 20,
-    });
+  const switchTab = (tab: "directory" | "availability" | "attendance" | "assignments" | "payroll") => {
+    setActiveTab(tab);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", tab);
+    router.replace(`/manager/staff?${newParams.toString()}`);
   };
 
   return (
-    <>
-      <main className="space-y-5">
-        {/* =====================================
-            PAGE HEADER
-        ====================================== */}
-        <PageHeader
-          title="Staff"
-          description="Manage your event staff"
-        />
-
-        {/* =====================================
-            ERROR
-        ====================================== */}
-        {error && (
-          <div
-            role="alert"
-            className="rounded-xl border border-red-100 bg-red-50 px-4 py-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-xs font-medium leading-5 text-red-600">
-                {error}
-              </p>
-
-              <button
-                type="button"
-                onClick={handleRetry}
-                className="shrink-0 text-xs font-semibold text-red-700 underline"
-              >
-                Retry
-              </button>
-            </div>
+    <main className="space-y-6 pb-12">
+      {/* ========================================================
+          PAGE HEADER & TAB SUB-NAVIGATION
+      ======================================================== */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between border-b border-gray-200 pb-5">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#9A7B4F]/15 text-[#9A7B4F]">
+              <Sparkles size={13} />
+            </span>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#9A7B4F]">
+              Staff Management Hub
+            </p>
           </div>
-        )}
+          <h1 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#1F1F1F]">
+            Staff Members & Operations
+          </h1>
+          <p className="mt-1 text-xs text-gray-500">
+            Centralized staff directory, working availability, daily attendance logs, shift assignments, and payroll compensation.
+          </p>
+        </div>
 
-        {/* =====================================
-            STAFF LIST
-        ====================================== */}
-        <StaffList
-          staff={staff}
-          pagination={pagination}
-          loading={loading}
-          error={error}
-          onFetchStaff={fetchStaff}
-          onClearError={clearError}
-          onAddStaff={handleOpenAddStaff}
+        {/* View Switcher Tabs - Responsive scrollable */}
+        <div className="flex w-full overflow-x-auto rounded-2xl border border-[#e8e1d8] bg-white p-1.5 shadow-xs xl:w-auto">
+          <div className="flex items-center gap-1 min-w-max">
+            <button
+              type="button"
+              onClick={() => switchTab("directory")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
+                activeTab === "directory"
+                  ? "bg-[#29241f] text-white shadow-xs"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
+              }`}
+            >
+              <Users size={14} className="shrink-0" />
+              <span>1. Staff Directory</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchTab("availability")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
+                activeTab === "availability"
+                  ? "bg-[#29241f] text-white shadow-xs"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
+              }`}
+            >
+              <Clock3 size={14} className="shrink-0" />
+              <span>2. Availability & Leave</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchTab("attendance")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
+                activeTab === "attendance"
+                  ? "bg-[#29241f] text-white shadow-xs"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
+              }`}
+            >
+              <UserCheck size={14} className="shrink-0" />
+              <span>3. Attendance Logs</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchTab("assignments")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
+                activeTab === "assignments"
+                  ? "bg-[#29241f] text-white shadow-xs"
+                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
+              }`}
+            >
+              <CalendarDays size={14} className="shrink-0" />
+              <span>4. Assignments & Schedule</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => switchTab("payroll")}
+              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3.5 sm:px-4 py-2 text-xs font-bold transition-all ${
+                activeTab === "payroll"
+                  ? "bg-[#9A7B4F] text-white shadow-xs ring-2 ring-[#9A7B4F]/30"
+                  : "bg-amber-50 text-[#9A7B4F] border border-amber-200/80 hover:bg-amber-100"
+              }`}
+            >
+              <IndianRupee size={14} className="shrink-0 text-amber-700" />
+              <span>5. Hours & Payroll</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          ACTIVE TAB CONTENT
+      ======================================================== */}
+      {activeTab === "directory" && <StaffDirectoryTab />}
+
+      {activeTab === "availability" && (
+        <StaffAvailabilityTab
+          initialDate={initialDate}
+          initialStaffId={initialStaffId}
         />
-      </main>
+      )}
 
-      {/* =======================================
-          ADD STAFF MODAL
-      ======================================== */}
-      <AddStaffModal
-        isOpen={isAddModalOpen}
-        onClose={handleCloseAddStaff}
-        onSave={handleCreateStaff}
-      />
-    </>
+      {activeTab === "attendance" && (
+        <StaffAttendanceTab
+          initialDate={initialDate}
+          initialStaffId={initialStaffId}
+        />
+      )}
+
+      {activeTab === "assignments" && (
+        <StaffAssignmentsTab initialStaffId={initialStaffId} />
+      )}
+
+      {activeTab === "payroll" && <StaffPayrollTab />}
+    </main>
+  );
+}
+
+export default function ManagerStaffPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#9A7B4F]/10 text-[#9A7B4F]">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+          <p className="text-xs font-medium text-gray-500">Loading Staff Management Hub...</p>
+        </div>
+      }
+    >
+      <ManagerStaffContent />
+    </Suspense>
   );
 }

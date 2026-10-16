@@ -32,19 +32,26 @@ import {
 import { formatTime24to12 } from "@/lib/time-utils";
 
 interface ClientDocumentModalProps {
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
-  documentData: ClientDocumentData;
+  documentData?: ClientDocumentData;
+  data?: ClientDocumentData;
 }
 
 export default function ClientDocumentModal({
   open,
+  isOpen,
   onClose,
   documentData,
+  data,
 }: ClientDocumentModalProps) {
+  const activeDocumentData = (documentData || data)!;
+  const isModalOpen = open ?? isOpen ?? false;
+
   const [mounted, setMounted] = useState(false);
   const [docType, setDocType] = useState<"ESTIMATE" | "INVOICE">(
-    documentData.documentType || "ESTIMATE"
+    activeDocumentData?.documentType || "ESTIMATE"
   );
   const [activeTab, setActiveTab] = useState<"preview" | "whatsapp">("preview");
   const [showItemizedPrices, setShowItemizedPrices] = useState(true);
@@ -73,31 +80,31 @@ export default function ClientDocumentModal({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!isModalOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [isModalOpen, onClose]);
 
-  if (!open || !mounted) return null;
+  if (!isModalOpen || !mounted || !activeDocumentData) return null;
 
   // Active document data reflecting current mode (ESTIMATE vs INVOICE)
   const isInvoice = docType === "INVOICE";
   const docNumber = isInvoice
-    ? documentData.documentNumber.startsWith("INV")
-      ? documentData.documentNumber
-      : `INV-${documentData.documentNumber.replace(/^(EST-|EST)/, "")}`
-    : documentData.documentNumber.startsWith("EST")
-    ? documentData.documentNumber
-    : `EST-${documentData.documentNumber.replace(/^(INV-|INV)/, "")}`;
+    ? activeDocumentData.documentNumber.startsWith("INV")
+      ? activeDocumentData.documentNumber
+      : `INV-${activeDocumentData.documentNumber.replace(/^(EST-|EST)/, "")}`
+    : activeDocumentData.documentNumber.startsWith("EST")
+    ? activeDocumentData.documentNumber
+    : `EST-${activeDocumentData.documentNumber.replace(/^(INV-|INV)/, "")}`;
 
   const currentDoc: ClientDocumentData = {
-    ...documentData,
+    ...activeDocumentData,
     documentType: docType,
     documentNumber: docNumber,
-    notes: customNote || documentData.notes,
+    notes: customNote || activeDocumentData.notes,
   };
 
   const whatsappMessage = generateWhatsAppMessage(currentDoc, showItemizedPrices);

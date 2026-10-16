@@ -66,6 +66,11 @@ export interface EventBooking {
     | "Confirmed"
     | "Rejected"
     | "Cancelled";
+
+  advancePayment?: number;
+  paidAmount?: number;
+  paymentStatus?: "UNPAID" | "PARTIAL" | "PAID" | "REFUNDED" | string;
+  paymentHistory?: EventPaymentLog[];
 }
 
 export type EventStatus =
@@ -406,6 +411,29 @@ export function getEventActivityTimeline(
 ): Promise<{ success: boolean; data: { eventId: string; eventName: string; activities: any[] } }> {
   return get<{ success: boolean; data: { eventId: string; eventName: string; activities: any[] } }>(
     `/events/${eventId}/activity-timeline`,
+    token
+  );
+}
+
+// ==========================================
+// Record Client Payment for Event
+// ==========================================
+
+export function recordEventPayment(
+  eventId: string,
+  payload: {
+    amount: number;
+    paymentMethod: string;
+    transactionId?: string;
+    paymentType: "ADVANCE" | "INSTALLMENT" | "FINAL_BALANCE" | string;
+    notes?: string;
+    paymentDate?: string;
+  },
+  token?: string
+): Promise<{ success: boolean; message: string; data: any }> {
+  return post<{ success: boolean; message: string; data: any }>(
+    `/events/${eventId}/payments`,
+    payload,
     token
   );
 }

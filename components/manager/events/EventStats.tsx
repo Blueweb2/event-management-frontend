@@ -16,22 +16,24 @@ export default function EventsStats({
   completed,
 }: EventsStatsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       <StatCard
         label="Total"
         value={total}
       />
+
+       <StatCard
+        label="Ongoing"
+        value={ongoing}
+      />
+
 
       <StatCard
         label="Upcoming"
         value={upcoming}
       />
 
-      <StatCard
-        label="Ongoing"
-        value={ongoing}
-      />
-
+     
       <StatCard
         label="Completed"
         value={completed}

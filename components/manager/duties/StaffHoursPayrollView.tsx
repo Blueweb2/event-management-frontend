@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Clock,
   IndianRupee,
@@ -628,7 +629,16 @@ export default function StaffHoursPayrollView({
                           {duty.staffName ? duty.staffName[0].toUpperCase() : "S"}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-gray-900 text-sm truncate">{duty.staffName}</p>
+                          {duty.staffId ? (
+                            <Link
+                              href={`/manager/staff/${duty.staffId}`}
+                              className="font-bold text-gray-900 text-sm truncate hover:text-[#9A7B4F] hover:underline block"
+                            >
+                              {duty.staffName}
+                            </Link>
+                          ) : (
+                            <p className="font-bold text-gray-900 text-sm truncate">{duty.staffName}</p>
+                          )}
                           <p className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
                             <Building2 size={11} className="text-[#a7773f] shrink-0" />
                             <span>{duty.department || "Operations"}</span>
@@ -776,7 +786,16 @@ export default function StaffHoursPayrollView({
                                 {duty.staffName ? duty.staffName[0].toUpperCase() : "S"}
                               </div>
                               <div className="min-w-0">
-                                <p className="font-bold text-gray-900 truncate">{duty.staffName}</p>
+                                {duty.staffId ? (
+                                  <Link
+                                    href={`/manager/staff/${duty.staffId}`}
+                                    className="font-bold text-gray-900 truncate hover:text-[#9A7B4F] hover:underline block"
+                                  >
+                                    {duty.staffName}
+                                  </Link>
+                                ) : (
+                                  <p className="font-bold text-gray-900 truncate">{duty.staffName}</p>
+                                )}
                                 <p className="text-[11px] text-gray-500 truncate flex items-center gap-1">
                                   <Building2 size={11} /> {duty.department || "Operations"}
                                 </p>

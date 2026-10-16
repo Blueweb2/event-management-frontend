@@ -71,12 +71,20 @@ function OperationsHubContent() {
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab") as TabType;
+    if (tabFromUrl === "payroll") {
+      router.replace("/manager/staff?tab=payroll");
+      return;
+    }
     if (tabFromUrl && ["list", "calendar", "departments", "payroll"].includes(tabFromUrl)) {
       setActiveTab(tabFromUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const switchTab = (tab: TabType) => {
+    if (tab === "payroll") {
+      router.push("/manager/staff?tab=payroll");
+      return;
+    }
     setActiveTab(tab);
     router.replace(`/manager/duties?tab=${tab}`);
   };

@@ -62,16 +62,14 @@ export default function ManagerDashboardPage() {
       <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#9A7B4F]">
-              {user?.role === "superadmin" ? "Superadmin Executive Oversight" : "Operations Hub"}
-            </span>
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
+           
+            {/* <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
               {user?.department || (user?.role === "superadmin" ? "Executive" : "Operations")}
-            </span>
+            </span> */}
           </div>
 
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#1F1F1F]">
-            Good morning, {user?.name || "Manager"} 👋
+            Welcome, {user?.name || "Manager"} 
           </h1>
 
           <p className="mt-0.5 text-sm text-gray-500">
@@ -82,15 +80,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {user?.role === "superadmin" && (
-            <Link
-              href="/superadmin"
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3.5 text-xs font-bold text-[#84632a] transition hover:bg-amber-100"
-            >
-              <ShieldCheck size={14} />
-              <span>Superadmin Console</span>
-            </Link>
-          )}
+        
 
           <Link
             href="/manager/booking"
@@ -102,7 +92,7 @@ export default function ManagerDashboardPage() {
       </section>
 
       {/* Executive Department Switcher Tabs */}
-      {isExecutive && (
+      {/* {isExecutive && (
         <div className="flex items-center gap-2 border-b border-gray-200 pb-2 overflow-x-auto">
           {[
             { id: "OVERVIEW", label: "Operations Overview", icon: Layers },
@@ -129,7 +119,7 @@ export default function ManagerDashboardPage() {
             );
           })}
         </div>
-      )}
+      )} */}
 
       {/* View Content */}
       {activeDepartmentView === "OVERVIEW" && (

@@ -8,7 +8,7 @@ export default function TasksRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/manager/duties");
+    router.replace("/manager/staff?tab=assignments");
   }, [router]);
 
   return (

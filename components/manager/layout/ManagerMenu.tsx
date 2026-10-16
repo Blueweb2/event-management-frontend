@@ -7,7 +7,6 @@ import {
   X,
   LayoutDashboard,
   Users,
-  UserRound,
   ClipboardList,
   CalendarDays,
   Clock3,
@@ -54,21 +53,10 @@ const menuItems = [
   // Core Management & Operations
   // ==========================================
 
- 
-  {
-    label: "Operations Hub",
-    href: "/manager/duties",
-    icon: ClipboardList,
-  },
   {
     label: "Events",
     href: "/manager/events",
     icon: CalendarCheck,
-  },
-  {
-    label: "Clients",
-    href: "/manager/clients",
-    icon: UserRound,
   },
   {
     label: "Services",
@@ -95,26 +83,11 @@ const menuItems = [
     href: "/manager/staff",
     icon: Users,
   },
-  {
-    label: "Availability",
-    href: "/manager/availability",
-    icon: Clock3,
-  },
-  {
-    label: "Attendance",
-    href: "/manager/attendance",
-    icon: UserCheck,
-  },
 
   // ==========================================
   // Finance and Reports
   // ==========================================
 
-  {
-    label: "Staff Payroll & Hours",
-    href: "/manager/payroll",
-    icon: IndianRupee,
-  },
   {
     label: "Expenses",
     href: "/manager/expenses",
@@ -229,26 +202,18 @@ export default function ManagerMenu({
             Menu
           </p>
 
-          {user?.role === "superadmin" && (
+          {/* {user?.role === "superadmin" && (
             <div className="mb-3 px-1">
               <Link
                 href="/superadmin"
                 onClick={onClose}
                 className="flex items-center justify-between rounded-xl border border-amber-300 bg-linear-to-r from-amber-50 to-amber-100/60 p-3 text-xs font-bold text-[#84632a] shadow-xs transition hover:bg-amber-100"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#9A7B4F] text-white">
-                    <ShieldCheck size={16} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#6d5122]">Superadmin Console</p>
-                    <p className="text-[10px] text-[#9A7B4F]/80 font-medium">Manage executive managers</p>
-                  </div>
-                </div>
+            
                 <ChevronRight size={15} />
               </Link>
             </div>
-          )}
+          )} */}
 
           <div className="space-y-1">
             {menuItems.map((item) => {

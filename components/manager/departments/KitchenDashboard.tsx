@@ -172,17 +172,19 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
 
     try {
       setReqSubmitting(true);
-      const items = calculationResult.shortages.map((s) => ({
-        itemName: s.name,
-        requiredQuantity: s.requiredQuantity,
-        availableQuantity: s.availableQuantity,
-        shortageQuantity: s.shortageQuantity,
-        unit: s.unit,
-        estimatedCost: 0,
-        urgency: "HIGH" as const,
-        stockItem: s.stockItemId,
-        notes: `Required for event: ${calculationResult.eventName}`,
-      }));
+      const items = calculationResult.shortages
+        .filter((s) => s.shortageQuantity !== null && s.shortageQuantity > 0)
+        .map((s) => ({
+          itemName: s.name,
+          requiredQuantity: s.requiredQuantity,
+          availableQuantity: s.availableQuantity ?? 0,
+          shortageQuantity: s.shortageQuantity ?? 0,
+          unit: s.unit,
+          estimatedCost: 0,
+          urgency: "HIGH" as const,
+          stockItem: s.stockItemId || undefined,
+          notes: `Required for event: ${calculationResult.eventName}`,
+        }));
 
       await createKitchenPurchaseRequest(
         {
@@ -688,6 +690,23 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                 </div>
               )}
 
+              {/* Unmapped Stock & Unit Mismatch Notice */}
+              {calculationResult.aggregatedIngredients.some((i) => i.hasStockMapping === false || i.isUnitCompatible === false) && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800 space-y-1">
+                  <div className="flex items-start gap-2.5">
+                    <Info size={18} className="shrink-0 text-slate-500 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-slate-900">
+                        Inventory Mapping Notice
+                      </p>
+                      <p className="text-slate-600 leading-relaxed">
+                        Items designated as <span className="font-bold text-slate-800">Missing Stock Mapping</span> are not linked to warehouse stock items and are not assumed to be zero inventory. Items designated as <span className="font-bold text-amber-800">Unit Mismatch</span> require unit alignment before live stock comparisons can be computed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Aggregated Requirements Table */}
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
@@ -713,38 +732,99 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {calculationResult.aggregatedIngredients.map((ing, idx) => (
-                        <tr key={idx} className={ing.hasShortage ? "bg-rose-50/40" : "hover:bg-gray-50/50"}>
-                          <td className="px-4 py-3 font-bold text-gray-900">{ing.name}</td>
-                          <td className="px-4 py-3 text-gray-600">{ing.usedInMenuItems.join(", ")}</td>
-                          <td className="px-4 py-3 font-bold text-gray-900">
-                            {ing.requiredQuantity} {ing.unit}
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-gray-700">
-                            {ing.availableQuantity} {ing.unit}
-                          </td>
-                          <td className="px-4 py-3 font-bold">
-                            {ing.hasShortage ? (
-                              <span className="text-rose-600 font-extrabold">
-                                -{ing.shortageQuantity} {ing.unit}
-                              </span>
-                            ) : (
-                              <span className="text-emerald-600">Sufficient</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {ing.hasShortage ? (
-                              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                                Shortage
-                              </span>
-                            ) : (
-                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                                In Stock
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {calculationResult.aggregatedIngredients.map((ing, idx) => {
+                        const isUnmapped = ing.hasStockMapping === false;
+                        const isMismatch = ing.isUnitCompatible === false;
+                        const isShortage = !isUnmapped && !isMismatch && Boolean(ing.hasShortage && ing.shortageQuantity && ing.shortageQuantity > 0);
+
+                        return (
+                          <tr
+                            key={idx}
+                            className={
+                              isShortage
+                                ? "bg-rose-50/40"
+                                : isMismatch
+                                ? "bg-amber-50/30"
+                                : isUnmapped
+                                ? "bg-slate-50/40"
+                                : "hover:bg-gray-50/50"
+                            }
+                          >
+                            <td className="px-4 py-3 font-bold text-gray-900">
+                              <div>{ing.name}</div>
+                              {isMismatch && ing.unitMismatchWarning && (
+                                <p className="text-[10px] text-amber-700 font-normal mt-0.5">
+                                  {ing.unitMismatchWarning}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">{ing.usedInMenuItems.join(", ")}</td>
+                            <td className="px-4 py-3 font-bold text-gray-900">
+                              {ing.requiredQuantity} {ing.unit}
+                            </td>
+                            <td className="px-4 py-3 font-semibold text-gray-700">
+                              {isUnmapped ? (
+                                <span className="text-slate-500 italic font-medium inline-flex items-center gap-1">
+                                  <Info size={12} className="text-slate-400" />
+                                  Not Mapped
+                                </span>
+                              ) : isMismatch ? (
+                                <div>
+                                  <span>
+                                    {ing.stockItemAvailableQuantity ?? ing.availableQuantity ?? "—"} {ing.stockItemUnit || ing.unit}
+                                  </span>
+                                  <span className="block text-[10px] text-amber-600 font-medium">Incompatible unit</span>
+                                </div>
+                              ) : (
+                                <span>
+                                  {ing.availableQuantity ?? 0} {ing.unit}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-bold">
+                              {isUnmapped ? (
+                                <span className="text-gray-400 font-medium italic">— (Not Mapped)</span>
+                              ) : isMismatch ? (
+                                <span className="text-amber-700 font-medium text-[11px] inline-flex items-center gap-1" title={ing.unitMismatchWarning || "Incompatible units"}>
+                                  <AlertTriangle size={13} className="shrink-0 text-amber-600" />
+                                  Unit Mismatch
+                                </span>
+                              ) : isShortage ? (
+                                <span className="text-rose-600 font-extrabold">
+                                  {ing.shortageQuantity} {ing.unit}
+                                </span>
+                              ) : (
+                                <span className="text-emerald-700 font-bold">
+                                  0 {ing.unit}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {isUnmapped ? (
+                                <span className="rounded-full bg-slate-100 border border-slate-200 px-2.5 py-0.5 text-[10px] font-bold text-slate-700 inline-flex items-center gap-1">
+                                  <Info size={11} className="text-slate-500" />
+                                  Missing Stock Mapping
+                                </span>
+                              ) : isMismatch ? (
+                                <span className="rounded-full bg-amber-100 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 inline-flex items-center gap-1">
+                                  <AlertTriangle size={11} className="text-amber-600" />
+                                  Unit Mismatch
+                                </span>
+                              ) : isShortage ? (
+                                <span className="rounded-full bg-rose-100 border border-rose-200 px-2.5 py-0.5 text-[10px] font-bold text-rose-800 inline-flex items-center gap-1">
+                                  <AlertTriangle size={11} className="text-rose-600" />
+                                  Shortage
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 inline-flex items-center gap-1">
+                                  <CheckCircle2 size={11} className="text-emerald-600" />
+                                  Sufficient Stock
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

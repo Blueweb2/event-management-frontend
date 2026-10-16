@@ -79,7 +79,7 @@ export function useManagerNotifications() {
               message: `${staffName} declined "${duty.dutyTitle}" for ${eventName}. Reason: "${duty.rejectionReason || "Unavailable"}". Click to reassign.`,
               timestamp: duty.respondedAt || duty.updatedAt || duty.dutyDate,
               timeAgo: "Action Required",
-              link: `/manager/duties`,
+              link: `/manager/staff?tab=assignments`,
               read: false,
               priority: "HIGH",
             });
@@ -91,7 +91,7 @@ export function useManagerNotifications() {
               message: `Awaiting shift confirmation from ${staffName} for "${duty.dutyTitle}" (${eventName}).`,
               timestamp: duty.createdAt || duty.dutyDate,
               timeAgo: "Pending Response",
-              link: `/manager/duties`,
+              link: `/manager/staff?tab=assignments`,
               read: false,
               priority: "MEDIUM",
             });

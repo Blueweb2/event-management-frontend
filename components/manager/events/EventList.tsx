@@ -6,6 +6,9 @@ interface EventListProps {
   events: Event[];
   onEdit?: (event: Event) => void;
   onDelete?: (event: Event) => void;
+  onStart?: (event: Event) => void;
+  onAccept?: (event: Event) => void;
+  onExport?: (event: Event) => void;
 }
 
 // ==========================================
@@ -66,6 +69,9 @@ export default function EventList({
   events,
   onEdit,
   onDelete,
+  onStart,
+  onAccept,
+  onExport,
 }: EventListProps) {
   const todayStart = useMemo(() => {
     const d = new Date();
@@ -154,6 +160,9 @@ export default function EventList({
                 event={event}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onStart={onStart}
+                onAccept={onAccept}
+                onExport={onExport}
                 isFeatured={true}
               />
             ))}
@@ -178,6 +187,9 @@ export default function EventList({
                 event={event}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onStart={onStart}
+                onAccept={onAccept}
+                onExport={onExport}
                 isFeatured={false}
                 compact={false}
               />
@@ -205,6 +217,9 @@ export default function EventList({
                 event={event}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onStart={onStart}
+                onAccept={onAccept}
+                onExport={onExport}
                 compact={true}
               />
             ))}

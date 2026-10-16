@@ -266,7 +266,7 @@ export default function ManagerStockPage() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black active:scale-95 cursor-pointer w-full sm:w-auto"
         >
           <Plus size={16} />
-          <span>New Stock Item</span>
+          <span>Add Products </span>
         </button>
       </div>
 
@@ -280,67 +280,16 @@ export default function ManagerStockPage() {
         </div>
       )}
 
-      {/* KPI Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-3.5 sm:p-4 shadow-xs">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#9a6c37]/10 text-[#9a6c37]">
-            <Package size={18} />
-          </div>
-          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Catalog</p>
-          <p className="mt-0.5 text-xl sm:text-2xl font-black text-[#29241f]">{summary?.totalItems ?? items.length}</p>
-        </div>
-
-        <div className="rounded-2xl border border-[#e8e1d8] bg-white p-3.5 sm:p-4 shadow-xs">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-            <Clock size={18} />
-          </div>
-          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-gray-400">Active Allocations</p>
-          <p className="mt-0.5 text-xl sm:text-2xl font-black text-blue-900">{summary?.activeAllocationsCount ?? 0}</p>
-        </div>
-
-        <div
-          onClick={() => setActiveTab("returns")}
-          className="cursor-pointer rounded-2xl border border-amber-200 bg-amber-50/50 p-3.5 sm:p-4 shadow-xs transition hover:bg-amber-50"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
-            <RotateCcw size={18} />
-          </div>
-          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-900">Returns Pending</p>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <p className="mt-0.5 text-xl sm:text-2xl font-black text-amber-900">{summary?.pendingReturnsCount ?? 0}</p>
-            {(summary?.pendingReturnsCount ?? 0) > 0 && (
-              <span className="rounded-full bg-amber-500 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black text-white animate-pulse">
-                Verify
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div
-          onClick={() => {
-            setLowStockFilter(true);
-            setActiveTab("inventory");
-          }}
-          className="cursor-pointer rounded-2xl border border-rose-200 bg-rose-50/40 p-3.5 sm:p-4 shadow-xs transition hover:bg-rose-50"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
-            <AlertTriangle size={18} />
-          </div>
-          <p className="mt-2.5 sm:mt-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-900">Low Stock Alerts</p>
-          <p className="mt-0.5 text-xl sm:text-2xl font-black text-rose-900">{summary?.lowStockCount ?? 0}</p>
-        </div>
-      </div>
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => setActiveTab("inventory")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "inventory"
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "inventory"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
+            }`}
         >
           <Package size={16} />
           <span>Master Inventory ({items.length})</span>
@@ -349,11 +298,10 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("allocations")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "allocations"
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "allocations"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
+            }`}
         >
           <PackageCheck size={16} />
           <span>Event Allocations ({summary?.activeAllocationsCount ?? 0})</span>
@@ -362,11 +310,10 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("returns")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "returns"
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "returns"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
+            }`}
         >
           <RotateCcw size={16} />
           <span>Returns & Verifications</span>
@@ -380,11 +327,10 @@ export default function ManagerStockPage() {
         <button
           type="button"
           onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "history"
+          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "history"
               ? "border-[#9a6c37] text-[#9a6c37]"
               : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
+            }`}
         >
           <History size={16} />
           <span>Audit History</span>
@@ -423,31 +369,9 @@ export default function ManagerStockPage() {
                 ))}
               </select>
 
-              <button
-                type="button"
-                onClick={() => setLowStockFilter(!lowStockFilter)}
-                className={`flex h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
-                  lowStockFilter
-                    ? "border-rose-300 bg-rose-50 text-rose-800"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <AlertTriangle size={14} />
-                <span>Low Stock</span>
-              </button>
+          
 
-              <button
-                type="button"
-                onClick={() => setRentableFilter(!rentableFilter)}
-                className={`flex h-10 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition cursor-pointer ${
-                  rentableFilter
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                <PackageCheck size={14} />
-                <span>For Rent</span>
-              </button>
+             
             </div>
           </div>
 
@@ -514,9 +438,8 @@ export default function ManagerStockPage() {
                           <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Available</p>
                           <div className="flex items-baseline gap-1 mt-0.5">
                             <span
-                              className={`text-base font-black ${
-                                isLow ? "text-rose-700 animate-pulse" : "text-emerald-700"
-                              }`}
+                              className={`text-base font-black ${isLow ? "text-rose-700 animate-pulse" : "text-emerald-700"
+                                }`}
                             >
                               {item.availableQuantity}
                             </span>
@@ -630,12 +553,11 @@ export default function ManagerStockPage() {
                     <thead className="bg-[#f9f7f2] border-b border-[#e8e1d8] text-[10px] font-black uppercase tracking-wider text-gray-500">
                       <tr>
                         <th className="px-4 py-3">Item / Category</th>
+                        <th className="px-4 py-3 text-center">Total</th>
                         <th className="px-4 py-3 text-center">Available</th>
                         <th className="px-4 py-3 text-center">Rental Rate</th>
                         <th className="px-4 py-3 text-center">Reserved</th>
-                        <th className="px-4 py-3 text-center">In Use</th>
                         <th className="px-4 py-3 text-center">Damaged / Lost</th>
-                        <th className="px-4 py-3 text-center">Total</th>
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -655,13 +577,16 @@ export default function ManagerStockPage() {
                               </div>
                             </td>
 
+                              <td className="px-4 py-3.5 text-center font-black text-gray-900">
+                              {item.totalQuantity} {item.unit}
+                            </td>
+
                             <td className="px-4 py-3.5 text-center">
                               <span
-                                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-black ${
-                                  isLow
+                                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-black ${isLow
                                     ? "bg-rose-100 text-rose-800 border border-rose-200 animate-pulse"
                                     : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                }`}
+                                  }`}
                               >
                                 {item.availableQuantity} {item.unit}
                               </span>
@@ -686,9 +611,6 @@ export default function ManagerStockPage() {
                               {item.reservedQuantity} {item.unit}
                             </td>
 
-                            <td className="px-4 py-3.5 text-center font-bold text-blue-700">
-                              {item.inUseQuantity} {item.unit}
-                            </td>
 
                             <td className="px-4 py-3.5 text-center text-[11px]">
                               <span className="text-amber-700 font-bold">{item.damagedQuantity || 0} dmg</span>
@@ -696,9 +618,7 @@ export default function ManagerStockPage() {
                               <span className="text-rose-700 font-bold">{item.lostQuantity || 0} lost</span>
                             </td>
 
-                            <td className="px-4 py-3.5 text-center font-black text-gray-900">
-                              {item.totalQuantity} {item.unit}
-                            </td>
+                          {/* only need view button here and need to create a edit page  */}
 
                             <td className="px-4 py-3.5 text-right whitespace-nowrap">
                               <div className="inline-flex items-center gap-1.5">
@@ -782,11 +702,10 @@ export default function ManagerStockPage() {
                           <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-700">
                             Qty: {alloc.takenQuantity || alloc.requiredQuantity} {alloc.stockItem?.unit}
                           </span>
-                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                            alloc.status === "TAKEN_BY_STAFF" ? "bg-emerald-100 text-emerald-800" :
-                            alloc.status === "READY_FOR_COLLECTION" ? "bg-amber-100 text-amber-800" :
-                            "bg-blue-100 text-blue-800"
-                          }`}>
+                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${alloc.status === "TAKEN_BY_STAFF" ? "bg-emerald-100 text-emerald-800" :
+                              alloc.status === "READY_FOR_COLLECTION" ? "bg-amber-100 text-amber-800" :
+                                "bg-blue-100 text-blue-800"
+                            }`}>
                             {alloc.status.replace(/_/g, " ")}
                           </span>
                         </div>
@@ -950,13 +869,12 @@ export default function ManagerStockPage() {
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-3.5 rounded-xl border border-gray-100 bg-[#fdfcfb] text-xs"
                   >
                     <div className="flex items-start sm:items-center gap-3">
-                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase shrink-0 ${
-                        tx.type === "CREATED" || tx.type === "ADDED" ? "bg-emerald-100 text-emerald-800" :
-                        tx.type === "TAKEN" ? "bg-blue-100 text-blue-800" :
-                        tx.type === "RETURNED" || tx.type === "VERIFIED" ? "bg-teal-100 text-teal-800" :
-                        tx.type === "DAMAGED" || tx.type === "LOST" ? "bg-rose-100 text-rose-800" :
-                        "bg-amber-100 text-amber-800"
-                      }`}>
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase shrink-0 ${tx.type === "CREATED" || tx.type === "ADDED" ? "bg-emerald-100 text-emerald-800" :
+                          tx.type === "TAKEN" ? "bg-blue-100 text-blue-800" :
+                            tx.type === "RETURNED" || tx.type === "VERIFIED" ? "bg-teal-100 text-teal-800" :
+                              tx.type === "DAMAGED" || tx.type === "LOST" ? "bg-rose-100 text-rose-800" :
+                                "bg-amber-100 text-amber-800"
+                        }`}>
                         {tx.type}
                       </span>
                       <div>

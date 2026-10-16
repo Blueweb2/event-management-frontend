@@ -425,6 +425,29 @@ export const updateEstimateStatus =
   };
 
 // ==========================================
+// UPDATE ESTIMATE
+// PUT /api/estimates/:id
+// ==========================================
+
+export const updateEstimate = async (
+  id: string,
+  payload: Partial<CreateEstimatePayload>
+): Promise<Estimate> => {
+  if (!id) {
+    throw new Error(
+      "Estimate ID is required"
+    );
+  }
+
+  const result = await put<ApiResponse<Estimate>>(
+    `/estimates/${id}`,
+    payload
+  );
+
+  return result.data;
+};
+
+// ==========================================
 // CONVERT ESTIMATE TO BOOKING + EVENT
 // POST /api/estimates/:id/convert
 // ==========================================

@@ -8,7 +8,7 @@ export default function PayrollRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/manager/duties?tab=payroll");
+    router.replace("/manager/staff?tab=payroll");
   }, [router]);
 
   return (

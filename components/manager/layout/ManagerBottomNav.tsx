@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-LayoutDashboard,
-Users,
-ClipboardList,
-CalendarDays,
-MoreHorizontal,
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  Wallet,
 } from "lucide-react";
 
 // interface ManagerBottomNavProps {
@@ -21,11 +20,6 @@ const navigationItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Operations",
-    href: "/manager/duties",
-    icon: ClipboardList,
-  },
-  {
     label: "Events",
     href: "/manager/events",
     icon: CalendarDays,
@@ -34,6 +28,11 @@ const navigationItems = [
     label: "Staff",
     href: "/manager/staff",
     icon: Users,
+  },
+  {
+    label: "Expenses",
+    href: "/manager/expenses",
+    icon: Wallet,
   },
 ];
 

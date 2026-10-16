@@ -129,7 +129,7 @@ export default function ManagerStats() {
       description: "Paid amount from clients",
     },
     {
-      label: "Pending Estimates",
+      label: "Pending Proposals",
       value: counts.loaded ? String(counts.pendingEstimates) : "...",
       icon: FileText,
       description: "Awaiting client response",

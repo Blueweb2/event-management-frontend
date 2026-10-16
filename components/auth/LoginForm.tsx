@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -98,6 +98,21 @@ export default function LoginForm() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Support auto-filling credentials from query parameter (e.g. ?role=superadmin)
+  useEffect(() => {
+    const roleParam = searchParams?.get("role")?.toLowerCase();
+    if (roleParam === "superadmin") {
+      setEmail("superadmin@eventmanagement.com");
+      setPassword("superadmin123");
+    } else if (roleParam === "manager" || roleParam === "admin") {
+      setEmail("admin@eventmanagement.com");
+      setPassword("admin123");
+    } else if (roleParam === "staff") {
+      setEmail("staff@eventmanagement.com");
+      setPassword("staff123");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
@@ -227,17 +242,27 @@ export default function LoginForm() {
           </Button>
         </form>
 
-        {/* Staff / Manager information */}
+        {/* System Role Quick Access & Auto-fetch */}
         <div className="mt-6 rounded-xl border border-[#3A3327] bg-[#201D18] p-4">
           <div className="flex items-start gap-3">
             <ShieldCheck size={19} className="mt-0.5 shrink-0 text-[#D2B47A]"/>
             
             <div className="w-full">
-
-              <p className="text-sm font-semibold text-gray-200"> Manager & Staff Access </p>
-              <p className="mt-1 text-xs leading-5 text-gray-500"> Click below to auto-fill credentials for testing: </p>
+              <p className="text-sm font-semibold text-gray-200"> Quick Access & Auto-Fill </p>
+              <p className="mt-1 text-xs leading-5 text-gray-400"> Click below to auto-fetch credentials for any role: </p>
               
               <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => { 
+                    setEmail("superadmin@eventmanagement.com");
+                    setPassword("superadmin123"); 
+                  }}
+                  className="rounded-lg bg-[#D2B47A]/20 border border-[#D2B47A]/40 px-2.5 py-1 text-xs font-semibold text-[#D2B47A] transition hover:bg-[#D2B47A]/30"
+                >
+                  Superadmin: superadmin@eventmanagement.com
+                </button>
+
                 <button
                   type="button"
                   onClick={() => { 
@@ -245,7 +270,7 @@ export default function LoginForm() {
                     setPassword("admin123"); 
                   }}
                   className="rounded-lg bg-[#D2B47A]/10 px-2.5 py-1 text-xs font-medium text-[#D2B47A] transition hover:bg-[#D2B47A]/20"
-                  >
+                >
                   Manager: admin@eventmanagement.com
                 </button>
                   

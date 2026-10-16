@@ -19,6 +19,7 @@ import {
   UserCheck,
   UserX,
   X,
+  RotateCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,9 +49,17 @@ const formatDate = (value: string) =>
 const formatTime = (value: string | null) =>
   value ? formatTime24to12(value) || "--" : "--";
 
-export default function ManagerAttendancePage() {
+interface StaffAttendanceTabProps {
+  initialDate?: string;
+  initialStaffId?: string;
+}
+
+export default function StaffAttendanceTab({
+  initialDate,
+  initialStaffId,
+}: StaffAttendanceTabProps) {
   const { token } = useAuth();
-  const [date, setDate] = useState(localToday());
+  const [date, setDate] = useState(initialDate || localToday());
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<
     AttendanceStatus | "UNRECORDED" | "ALL"
@@ -121,6 +130,13 @@ export default function ManagerAttendancePage() {
               : assignment.event.eventName;
           const staff =
             typeof assignment.staff === "string" ? "" : assignment.staff.name;
+          const staffId =
+            typeof assignment.staff === "string" ? assignment.staff : assignment.staff.id || (assignment.staff as any)._id;
+          
+          if (initialStaffId && staffId !== initialStaffId) {
+            return false;
+          }
+
           const query = search.trim().toLowerCase();
           const matchesSearch =
             !query ||
@@ -132,7 +148,7 @@ export default function ManagerAttendancePage() {
             matchesSearch && (status === "ALL" || currentStatus === status)
           );
         }),
-    [assignments, attendanceByDuty, search, status]
+    [assignments, attendanceByDuty, search, status, initialStaffId]
   );
 
   const counts = useMemo(() => {
@@ -221,21 +237,15 @@ export default function ManagerAttendancePage() {
   };
 
   return (
-    <main className="space-y-6 py-5 sm:space-y-7 sm:py-6">
-      {/* Top Header */}
-      <header className="flex flex-col gap-4 border-b border-[#e8e1d8] pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6">
+      {/* Header & Export Toolbar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Link
-            href="/manager"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#9A7B4F] hover:underline"
-          >
-            ← Manager Dashboard
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-[#1F1F1F] sm:text-3xl">
-            Staff Attendance Hub
-          </h1>
-          <p className="mt-1 text-xs text-gray-500">
-            Real-time daily attendance monitoring, staff GPS notes, and manual overrides.
+          <h2 className="text-lg font-bold tracking-tight text-[#1F1F1F] sm:text-xl">
+            Staff Attendance & Clock Logs
+          </h2>
+          <p className="text-xs text-gray-500">
+            Real-time daily attendance monitoring, staff GPS check-in tags, late arrival tracking, and manager overrides.
           </p>
         </div>
 
@@ -243,73 +253,73 @@ export default function ManagerAttendancePage() {
           <button
             type="button"
             onClick={exportAttendanceCSV}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 active:scale-95"
           >
-            <Download size={15} className="text-[#9A7B4F]" />
-            Export CSV
+            <Download size={14} className="text-[#9A7B4F]" />
+            <span>Export CSV</span>
           </button>
 
           <button
             type="button"
             onClick={() => void loadAttendance()}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1F1F1F] px-4 text-xs font-semibold text-white transition hover:bg-gray-800"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#1F1F1F] px-4 text-xs font-semibold text-white transition hover:bg-gray-800 active:scale-95 shadow-xs"
           >
-            <CalendarDays size={15} />
-            Refresh Roster
+            <RotateCw size={13} className={loading ? "animate-spin" : ""} />
+            <span>Refresh Roster</span>
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Date Navigation & Search Controls */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <section className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 shadow-xs sm:flex-row sm:items-center sm:justify-between">
         {/* Date Navigator */}
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => changeDateByDays(-1)}
             title="Previous Day"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={16} />
           </button>
 
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-10 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-gray-900 focus:border-[#9A7B4F] focus:outline-none"
+            className="h-9 rounded-xl border border-gray-200 px-3 text-xs font-semibold text-gray-900 focus:border-[#9A7B4F] focus:outline-none"
           />
 
           <button
             type="button"
             onClick={() => changeDateByDays(1)}
             title="Next Day"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-50"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 active:scale-95"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={16} />
           </button>
 
           <button
             type="button"
             onClick={() => setDate(localToday())}
-            className="h-10 rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+            className="h-9 rounded-xl border border-gray-200 bg-gray-50 px-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 active:scale-95"
           >
             Today
           </button>
         </div>
 
         {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-sm">
           <Search
-            size={16}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           />
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search staff name, duty title, or event..."
-            className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-9 pr-3 text-xs focus:border-[#9A7B4F] focus:bg-white focus:outline-none"
+            placeholder="Search staff, duty, or event..."
+            className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-8 pr-3 text-xs focus:border-[#9A7B4F] focus:bg-white focus:outline-none"
           />
         </div>
 
@@ -321,7 +331,7 @@ export default function ManagerAttendancePage() {
                 key={item}
                 type="button"
                 onClick={() => setStatus(item)}
-                className={`rounded-lg px-3 py-2 text-[11px] font-semibold transition ${
+                className={`rounded-xl px-2.5 py-1.5 text-[10px] font-bold transition whitespace-nowrap ${
                   status === item
                     ? "bg-[#9A7B4F] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -337,9 +347,9 @@ export default function ManagerAttendancePage() {
       {error && (
         <div
           role="alert"
-          className="flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700"
+          className="flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-xs text-red-700 font-medium"
         >
-          <AlertCircle size={16} />
+          <AlertCircle size={15} />
           <span className="flex-1">{error}</span>
           <button
             type="button"
@@ -353,28 +363,28 @@ export default function ManagerAttendancePage() {
 
       {loading ? (
         <div className="flex min-h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white">
-          <Loader2 size={28} className="animate-spin text-[#9A7B4F]" />
+          <Loader2 size={26} className="animate-spin text-[#9A7B4F]" />
         </div>
       ) : (
         <>
           {/* KPI Analytics Bar */}
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <Summary label="Present" value={counts.present} tone="green" />
-            <Summary label="Late" value={counts.late} tone="gold" />
+            <Summary label="Late Arrival" value={counts.late} tone="gold" />
             <Summary label="Absent" value={counts.absent} tone="red" />
             <Summary label="Unrecorded" value={counts.unrecorded} tone="gray" />
-            
+
             {/* Attendance Rate Card */}
-            <div className="col-span-2 sm:col-span-1 rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm transition hover:shadow-md sm:p-5 flex flex-col justify-between">
+            <div className="col-span-2 sm:col-span-1 rounded-2xl border border-amber-200 bg-amber-50/50 p-3.5 shadow-xs transition hover:shadow-sm sm:p-4 flex flex-col justify-between">
               <div>
-                <span className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                <span className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-800">
                   Coverage Rate
                 </span>
-                <p className="mt-2 text-3xl font-extrabold tracking-tight text-amber-950">
+                <p className="mt-1 text-2xl font-extrabold tracking-tight text-amber-950">
                   {counts.rate}%
                 </p>
               </div>
-              <div className="mt-3">
+              <div className="mt-2">
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-amber-200">
                   <div
                     className="h-full bg-[#9A7B4F] transition-all duration-300"
@@ -389,17 +399,17 @@ export default function ManagerAttendancePage() {
           </section>
 
           {/* Attendance Roster List */}
-          <section className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <section className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden">
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
               <div>
-                <h2 className="text-base font-bold text-gray-900">
+                <h3 className="text-sm font-bold text-gray-900">
                   {formatDate(date)} Duty Roster & Attendance
-                </h2>
-                <p className="mt-0.5 text-xs text-gray-500">
+                </h3>
+                <p className="mt-0.5 text-xs text-gray-400">
                   {rows.length} matching duty record{rows.length === 1 ? "" : "s"}
                 </p>
               </div>
-              <UserCheck size={19} className="text-[#9A7B4F]" />
+              <UserCheck size={18} className="text-[#9A7B4F]" />
             </div>
 
             <div className="divide-y divide-gray-100">
@@ -410,7 +420,7 @@ export default function ManagerAttendancePage() {
                     No assigned duties found for {date}
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
-                    Try changing the date navigator or clear search filters.
+                    Try changing the date navigator or clearing the search filters.
                   </p>
                 </div>
               ) : (
@@ -443,7 +453,7 @@ export default function ManagerAttendancePage() {
           }}
         />
       )}
-    </main>
+    </div>
   );
 }
 
@@ -462,6 +472,7 @@ function AttendanceRow({
 }) {
   const event = typeof assignment.event === "string" ? null : assignment.event;
   const staff = typeof assignment.staff === "string" ? null : assignment.staff;
+  const staffId = staff?.id || (staff as any)?._id;
   const checkedIn = Boolean(record?.checkIn && !record.checkOut);
   const complete = Boolean(record?.checkOut);
   const status = record?.status || "UNRECORDED";
@@ -469,17 +480,26 @@ function AttendanceRow({
   const isGPS = record?.notes?.includes("GPS:");
 
   return (
-    <article className="flex flex-col gap-4 p-5 transition hover:bg-gray-50 lg:flex-row lg:items-center lg:justify-between">
-      <div className="flex min-w-0 items-start gap-3.5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F4EBDD] font-bold text-[#9A7B4F]">
+    <article className="flex flex-col gap-3.5 p-4 sm:p-5 transition hover:bg-gray-50/70 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F4EBDD] font-bold text-xs text-[#9A7B4F]">
           {staff?.name?.charAt(0).toUpperCase() || "S"}
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-bold text-gray-900">
-              {staff?.name || "Staff member"}
-            </h3>
+            {staffId ? (
+              <Link
+                href={`/manager/staff/${staffId}`}
+                className="text-sm font-bold text-gray-900 hover:text-[#9A7B4F] hover:underline"
+              >
+                {staff?.name || "Staff member"}
+              </Link>
+            ) : (
+              <h4 className="text-sm font-bold text-gray-900">
+                {staff?.name || "Staff member"}
+              </h4>
+            )}
             <Badge status={status} />
           </div>
 
@@ -524,9 +544,9 @@ function AttendanceRow({
           type="button"
           onClick={onEdit}
           title="Manual Edit / Override"
-          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+          className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 active:scale-95"
         >
-          <Edit3 size={14} className="text-[#9A7B4F]" />
+          <Edit3 size={13} className="text-[#9A7B4F]" />
           <span>Edit</span>
         </button>
 
@@ -535,9 +555,9 @@ function AttendanceRow({
             type="button"
             disabled={Boolean(actionId)}
             onClick={() => onAction(assignment, "absent")}
-            className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            className="rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 active:scale-95"
           >
-            <UserX size={14} className="mr-1 inline" />
+            <UserX size={13} className="mr-1 inline" />
             Mark Absent
           </button>
         )}
@@ -547,7 +567,7 @@ function AttendanceRow({
             type="button"
             disabled={Boolean(actionId)}
             onClick={() => onAction(assignment, checkedIn ? "out" : "in")}
-            className={`rounded-xl px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition disabled:opacity-50 ${
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition disabled:opacity-50 active:scale-95 ${
               checkedIn
                 ? "bg-[#557555] hover:bg-[#456345]"
                 : "bg-[#9A7B4F] hover:bg-[#80653e]"
@@ -555,12 +575,12 @@ function AttendanceRow({
           >
             {checkedIn ? (
               <>
-                <LogOut size={14} className="mr-1 inline" />
+                <LogOut size={13} className="mr-1 inline" />
                 Check Out
               </>
             ) : (
               <>
-                <LogIn size={14} className="mr-1 inline" />
+                <LogIn size={13} className="mr-1 inline" />
                 Check In
               </>
             )}
@@ -568,8 +588,8 @@ function AttendanceRow({
         )}
 
         {complete && (
-          <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-            <CheckCircle2 size={14} />
+          <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 border border-emerald-200">
+            <CheckCircle2 size={13} />
             Completed
           </span>
         )}
@@ -614,16 +634,16 @@ function Summary({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+    <div className="rounded-2xl border border-gray-200 bg-white p-3.5 shadow-xs transition hover:shadow-sm sm:p-4">
       <span
-        className={`inline-flex rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${styles[tone]}`}
+        className={`inline-flex rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${styles[tone]}`}
       >
         {label}
       </span>
-      <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900">
+      <p className="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">
         {value}
       </p>
-      <p className="mt-1 text-[11px] text-gray-400">Duties on date</p>
+      <p className="mt-0.5 text-[10px] text-gray-400">Duties on date</p>
     </div>
   );
 }
@@ -708,9 +728,9 @@ function EditAttendanceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 sm:p-6 shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div>
             <h3 className="text-base font-bold text-gray-900">
               Edit Attendance Record
@@ -728,9 +748,9 @@ function EditAttendanceModal({
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="mt-4 space-y-4">
+        <form onSubmit={handleSave} className="mt-4 space-y-3.5">
           {error && (
-            <p className="rounded-xl bg-red-50 p-3 text-xs text-red-600 border border-red-100">
+            <p className="rounded-xl bg-red-50 p-2.5 text-xs text-red-600 border border-red-100 font-medium">
               {error}
             </p>
           )}
@@ -742,7 +762,7 @@ function EditAttendanceModal({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as AttendanceStatus)}
-              className="mt-1.5 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold focus:border-[#9A7B4F] focus:outline-none"
+              className="mt-1 h-9.5 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold focus:border-[#9A7B4F] focus:outline-none"
             >
               <option value="PRESENT">PRESENT 🟢</option>
               <option value="LATE">LATE 🟡</option>
@@ -755,7 +775,7 @@ function EditAttendanceModal({
               <label className="block text-xs font-semibold text-gray-700">
                 Check-In Time
                 {checkInTime && (
-                  <span className="ml-2 font-normal text-[#9A7B4F]">
+                  <span className="ml-1.5 font-normal text-[#9A7B4F]">
                     ({formatTime24to12(checkInTime)})
                   </span>
                 )}
@@ -764,7 +784,7 @@ function EditAttendanceModal({
                 type="time"
                 value={checkInTime}
                 onChange={(e) => setCheckInTime(e.target.value)}
-                className="mt-1.5 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs focus:border-[#9A7B4F] focus:outline-none"
+                className="mt-1 h-9.5 w-full rounded-xl border border-gray-200 px-3 text-xs focus:border-[#9A7B4F] focus:outline-none"
               />
             </div>
 
@@ -772,7 +792,7 @@ function EditAttendanceModal({
               <label className="block text-xs font-semibold text-gray-700">
                 Check-Out Time
                 {checkOutTime && (
-                  <span className="ml-2 font-normal text-[#9A7B4F]">
+                  <span className="ml-1.5 font-normal text-[#9A7B4F]">
                     ({formatTime24to12(checkOutTime)})
                   </span>
                 )}
@@ -781,7 +801,7 @@ function EditAttendanceModal({
                 type="time"
                 value={checkOutTime}
                 onChange={(e) => setCheckOutTime(e.target.value)}
-                className="mt-1.5 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs focus:border-[#9A7B4F] focus:outline-none"
+                className="mt-1 h-9.5 w-full rounded-xl border border-gray-200 px-3 text-xs focus:border-[#9A7B4F] focus:outline-none"
               />
             </div>
           </div>
@@ -795,7 +815,7 @@ function EditAttendanceModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add manager override note (e.g. Approved late arrival due to traffic)"
-              className="mt-1.5 w-full rounded-xl border border-gray-200 p-2.5 text-xs outline-none focus:border-[#9A7B4F]"
+              className="mt-1 w-full rounded-xl border border-gray-200 p-2 text-xs outline-none focus:border-[#9A7B4F]"
             />
           </div>
 
@@ -804,14 +824,14 @@ function EditAttendanceModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-semibold text-gray-600 hover:bg-gray-50"
+              className="h-9.5 rounded-xl border border-gray-200 px-4 text-xs font-semibold text-gray-600 hover:bg-gray-50 active:scale-95"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="h-10 rounded-xl bg-[#9A7B4F] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#80653e] disabled:opacity-50"
+              className="h-9.5 rounded-xl bg-[#9A7B4F] px-5 text-xs font-semibold text-white shadow-xs hover:bg-[#80653e] disabled:opacity-50 active:scale-95"
             >
               {loading ? "Saving..." : "Save Record"}
             </button>

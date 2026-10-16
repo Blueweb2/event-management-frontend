@@ -75,7 +75,7 @@ export default function TodaySchedule() {
         </div>
 
         <Link
-          href="/manager/schedule"
+          href="/manager/staff?tab=assignments"
           className="text-xs font-medium text-[#9A7B4F] transition hover:text-[#7D623E]"
         >
           View All
@@ -90,7 +90,7 @@ export default function TodaySchedule() {
           return (
             <Link
               key={item.id}
-              href={`/manager/schedule?item=${item.id}`}
+              href="/manager/staff?tab=assignments"
               className={`relative flex gap-3 p-4 transition hover:bg-gray-50 active:bg-gray-100 ${
                 !isLast ? "border-b border-gray-100" : ""
               }`}

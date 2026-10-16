@@ -200,29 +200,14 @@ export default function EventProfitabilityCard({
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#9a6c37]">
-              <TrendingUp size={15} />
-              <span>Event Financial Intelligence & Profitability</span>
-            </div>
+           
             <h3 className="mt-1 text-xl font-black tracking-tight text-[#29241f]">
-              Profit & Margin Breakdown
+              Cost & Profit
             </h3>
           </div>
 
           <div className="flex items-center gap-3">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold ${
-                isHealthy
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : isModerate
-                  ? "bg-amber-50 text-amber-700 border border-amber-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}
-            >
-              {isHealthy && "🟢 Healthy Margin (≥30%)"}
-              {isModerate && "🟡 Moderate Margin (15-29%)"}
-              {isRisk && "🔴 Margin At Risk (<15%)"}
-            </span>
+          
 
             <button
               type="button"
@@ -230,24 +215,14 @@ export default function EventProfitabilityCard({
               className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#29241f] px-4 text-xs font-bold text-white shadow-xs transition hover:bg-black"
             >
               <Plus size={14} />
-              Log Expense
+              Add Expense
             </button>
           </div>
         </div>
 
         {/* 4 Main KPI Cards */}
-        <div className="grid grid-cols-2 gap-px bg-[#f1ece5] sm:grid-cols-4">
-          <div className="bg-white p-5 text-center sm:text-left">
-            <p className="text-[10px] font-extrabold uppercase text-gray-400">
-              Total Invoiced Revenue
-            </p>
-            <p className="mt-1.5 text-xl font-black text-[#29241f] sm:text-2xl">
-              ₹{revenue.total.toLocaleString()}
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-              From client booking
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-px bg-[#f1ece5] sm:grid-cols-2">
+         
 
           <div className="bg-white p-5 text-center sm:text-left">
             <p className="text-[10px] font-extrabold uppercase text-gray-400">
@@ -278,25 +253,7 @@ export default function EventProfitabilityCard({
             </p>
           </div>
 
-          <div className="bg-white p-5 text-center sm:text-left">
-            <p className="text-[10px] font-extrabold uppercase text-gray-400">
-              Profit Margin
-            </p>
-            <p
-              className={`mt-1.5 text-xl font-black sm:text-2xl ${
-                isHealthy
-                  ? "text-emerald-600"
-                  : isModerate
-                  ? "text-amber-600"
-                  : "text-red-600"
-              }`}
-            >
-              {profitability.profitMargin}%
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-              Operating efficiency
-            </p>
-          </div>
+      
         </div>
 
         {/* Catering vs. Services Streams Comparison */}
@@ -310,7 +267,7 @@ export default function EventProfitabilityCard({
                 </span>
                 <div>
                   <h4 className="text-xs font-extrabold uppercase text-[#29241f]">
-                    Catering Financials
+                    Catering 
                   </h4>
                   <p className="text-[11px] text-gray-500">
                     Food & Beverage Menu Stream
@@ -356,7 +313,7 @@ export default function EventProfitabilityCard({
                 </span>
                 <div>
                   <h4 className="text-xs font-extrabold uppercase text-[#29241f]">
-                    Services Financials
+                    Services 
                   </h4>
                   <p className="text-[11px] text-gray-500">
                     Decor, AV, Sound, Media & Logistics
@@ -395,54 +352,7 @@ export default function EventProfitabilityCard({
         </div>
 
         {/* Expense Category Distribution Bar */}
-        {expenses.total > 0 && (
-          <div className="border-t border-[#f1ece5] px-5 py-4 sm:px-6">
-            <div className="flex items-center justify-between text-xs">
-              <p className="font-extrabold uppercase tracking-wider text-[#9b938a] text-[10px]">
-                Expense Category Distribution
-              </p>
-              <p className="font-bold text-gray-500">
-                ₹{expenses.paid.toLocaleString()} Paid · ₹{expenses.pending.toLocaleString()} Pending
-              </p>
-            </div>
-
-            {/* Stacked Percentage Bar */}
-            <div className="mt-2.5 flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
-              {expenses.distribution
-                .filter((d) => d.amount > 0)
-                .map((d, i) => (
-                  <div
-                    key={d.category}
-                    title={`${d.category}: ₹${d.amount.toLocaleString()} (${d.percentage}%)`}
-                    style={{ width: `${d.percentage}%` }}
-                    className={`${getCategoryColor(d.category)} transition-all`}
-                  />
-                ))}
-            </div>
-
-            {/* Legend Pills */}
-            <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-bold">
-              {expenses.distribution
-                .filter((d) => d.amount > 0)
-                .map((d) => (
-                  <span
-                    key={d.category}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#faf8f5] px-2 py-1 text-gray-700 border border-gray-200"
-                  >
-                    <span
-                      className={`h-2 w-2 rounded-full ${getCategoryColor(
-                        d.category
-                      )}`}
-                    />
-                    <span>{d.category}:</span>
-                    <span className="text-[#29241f]">
-                      ₹{d.amount.toLocaleString()} ({d.percentage}%)
-                    </span>
-                  </span>
-                ))}
-            </div>
-          </div>
-        )}
+     
 
         {/* Automatic Staff Duty Payroll Deductions */}
         {data?.staffPayroll && data.staffPayroll.count > 0 && (

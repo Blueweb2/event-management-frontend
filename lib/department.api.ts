@@ -241,10 +241,18 @@ export interface CalculatedIngredient {
   name: string;
   unit: string;
   requiredQuantity: number;
-  availableQuantity: number;
-  shortageQuantity: number;
+  availableQuantity: number | null;
+  shortageQuantity: number | null;
   hasShortage: boolean;
-  stockItemId?: string;
+  hasStockMapping?: boolean;
+  isUnitCompatible?: boolean;
+  unitMismatchWarning?: string | null;
+  stockItemId?: string | null;
+  stockItemName?: string | null;
+  stockItemUnit?: string | null;
+  stockItemAvailableQuantity?: number | null;
+  status?: "SUFFICIENT" | "SHORTAGE" | "UNIT_MISMATCH" | "UNMAPPED";
+  statusLabel?: string;
   usedInMenuItems: string[];
 }
 
