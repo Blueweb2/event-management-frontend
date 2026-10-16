@@ -28,10 +28,14 @@ export default function ManagerHeader({
           <Menu size={22} strokeWidth={2} />
         </button>
 
-        {/* Page Title */}
-        <h1 className="text-base font-semibold text-gray-900">
-          {title}
-        </h1>
+        {/* Logo */}
+        <div className="flex flex-1 justify-center">
+          <img
+            src="/images/logo.svg"
+            alt="Logo"
+            className="h-9 w-auto object-contain"
+          />
+        </div>
 
         {/* Notification Button */}
         <button
