@@ -6,7 +6,6 @@ import {
   Users,
   Clock3,
   UserCheck,
-  CalendarDays,
   IndianRupee,
   Sparkles,
   Loader2,
@@ -15,10 +14,9 @@ import {
 import StaffDirectoryTab from "@/components/manager/staff/StaffDirectoryTab";
 import StaffAvailabilityTab from "@/components/manager/staff/StaffAvailabilityTab";
 import StaffAttendanceTab from "@/components/manager/staff/StaffAttendanceTab";
-import StaffAssignmentsTab from "@/components/manager/staff/StaffAssignmentsTab";
 import StaffPayrollTab from "@/components/manager/staff/StaffPayrollTab";
 
-type StaffTabType = "directory" | "availability" | "attendance" | "assignments" | "schedule" | "payroll";
+type StaffTabType = "directory" | "availability" | "attendance" | "payroll";
 
 function ManagerStaffContent() {
   const router = useRouter();
@@ -29,20 +27,29 @@ function ManagerStaffContent() {
   const initialStaffId = searchParams.get("staffId") || searchParams.get("staff") || undefined;
 
   const [activeTab, setActiveTab] = useState<StaffTabType>(
-    tabParam === "schedule" ? "assignments" : tabParam
+    ["directory", "availability", "attendance", "payroll"].includes(tabParam)
+      ? tabParam
+      : "directory"
   );
 
   useEffect(() => {
-    const rawTab = searchParams.get("tab") as StaffTabType;
-    if (rawTab) {
-      const normalized = rawTab === "schedule" ? "assignments" : rawTab;
-      if (["directory", "availability", "attendance", "assignments", "payroll"].includes(normalized)) {
-        setActiveTab(normalized);
+    const rawTab = searchParams.get("tab");
+    if (rawTab === "assignments" || rawTab === "schedule") {
+      const staffId = searchParams.get("staffId") || searchParams.get("staff");
+      if (staffId) {
+        router.replace(`/manager/staff/${staffId}?tab=schedule`);
+        return;
       }
+      setActiveTab("directory");
+      return;
     }
-  }, [searchParams]);
 
-  const switchTab = (tab: "directory" | "availability" | "attendance" | "assignments" | "payroll") => {
+    if (rawTab && ["directory", "availability", "attendance", "payroll"].includes(rawTab)) {
+      setActiveTab(rawTab as StaffTabType);
+    }
+  }, [searchParams, router]);
+
+  const switchTab = (tab: StaffTabType) => {
     setActiveTab(tab);
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set("tab", tab);
@@ -68,7 +75,7 @@ function ManagerStaffContent() {
             Staff Members & Operations
           </h1>
           <p className="mt-1 text-xs text-gray-500">
-            Centralized staff directory, working availability, daily attendance logs, shift assignments, and payroll compensation.
+            Centralized staff directory, working availability, daily attendance logs, and staff payroll compensation. Individual staff assignments & schedules can be viewed and managed from each staff member&apos;s profile.
           </p>
         </div>
 
@@ -116,19 +123,6 @@ function ManagerStaffContent() {
 
             <button
               type="button"
-              onClick={() => switchTab("assignments")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all ${
-                activeTab === "assignments"
-                  ? "bg-[#29241f] text-white shadow-xs"
-                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
-              }`}
-            >
-              <CalendarDays size={14} className="shrink-0" />
-              <span>4. Assignments & Schedule</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => switchTab("payroll")}
               className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3.5 sm:px-4 py-2 text-xs font-bold transition-all ${
                 activeTab === "payroll"
@@ -137,7 +131,7 @@ function ManagerStaffContent() {
               }`}
             >
               <IndianRupee size={14} className="shrink-0 text-amber-700" />
-              <span>5. Hours & Payroll</span>
+              <span>4. Hours & Payroll</span>
             </button>
           </div>
         </div>
@@ -160,10 +154,6 @@ function ManagerStaffContent() {
           initialDate={initialDate}
           initialStaffId={initialStaffId}
         />
-      )}
-
-      {activeTab === "assignments" && (
-        <StaffAssignmentsTab initialStaffId={initialStaffId} />
       )}
 
       {activeTab === "payroll" && <StaffPayrollTab />}

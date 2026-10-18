@@ -31,7 +31,7 @@ function ManagerEventsContent() {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<EventStatus | "All">("All");
+  const [status, setStatus] = useState<EventStatus>("Upcoming");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -51,7 +51,7 @@ function ManagerEventsContent() {
 
       const response = await getEvents({
         search: search.trim() || undefined,
-        status: status === "All" ? undefined : status,
+        status: status,
         page: 1,
         limit: 100,
       });

@@ -47,6 +47,8 @@ export const getStaff = async (
     search?: string;
     status?: StaffStatusFilter;
     department?: string;
+    role?: string;
+    employmentType?: string;
     page?: number;
     limit?: number;
   },
@@ -71,6 +73,20 @@ export const getStaff = async (
     searchParams.set(
       "department",
       params.department,
+    );
+  }
+
+  if (params?.role) {
+    searchParams.set(
+      "role",
+      params.role,
+    );
+  }
+
+  if (params?.employmentType) {
+    searchParams.set(
+      "employmentType",
+      params.employmentType,
     );
   }
 

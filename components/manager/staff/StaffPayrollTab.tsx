@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import StaffHoursPayrollView from "@/components/manager/duties/StaffHoursPayrollView";
 import ManageChecklistModal from "@/components/manager/duties/ManageChecklistModal";
 import { useAssignments } from "@/hooks/useAssignments";
@@ -10,14 +10,18 @@ import { mapAssignmentToDuty } from "@/lib/duty-mapper";
 import type { Duty } from "@/components/manager/duties/constants";
 
 export default function StaffPayrollTab() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const isChefManager =
+    user?.role === "manager" &&
+    (user?.department?.toLowerCase() === "kitchen" || user?.department?.toLowerCase() === "catering");
+
   const {
     assignments,
     loading,
     error,
     fetchAllAssignments,
     editAssignment,
-  } = useAssignments({ token, autoFetch: true });
+  } = useAssignments({ token, autoFetch: !isChefManager });
 
   const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
 
@@ -36,6 +40,26 @@ export default function StaffPayrollTab() {
     await editAssignment(dutyId, { checklist: updatedChecklist });
     await fetchAllAssignments();
   };
+
+  if (isChefManager) {
+    return (
+      <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 p-8 text-center shadow-xs">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100/70 text-amber-800 shadow-xs">
+          <ShieldAlert size={28} />
+        </div>
+        <h3 className="mt-4 text-base font-bold text-gray-900">
+          Payroll & Financial Compensation Restricted
+        </h3>
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-gray-600">
+          As <span className="font-semibold text-amber-900">Chef Manager</span>, your permissions allow operational oversight of kitchen staff attendance, schedules, and duties.
+          Detailed staff payroll calculations, hourly rates, and disbursements are restricted to Super Admin and Finance administrators.
+        </p>
+        <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 shadow-xs">
+          <span>Scope: Kitchen Department (Operations & Attendance only)</span>
+        </div>
+      </div>
+    );
+  }
 
   if (loading && duties.length === 0) {
     return (

@@ -21,6 +21,8 @@ import {
   Trash2,
   Upload,
   IndianRupee,
+  ShieldCheck,
+  ChefHat,
 } from "lucide-react";
 
 import type {
@@ -43,6 +45,7 @@ interface FormData {
   email: string;
   phone: string;
   role: string;
+  userRole: "staff" | "manager";
   department: string;
   salary: string;
   salaryType: "hourly" | "daily" | "monthly" | "per_event";
@@ -56,6 +59,7 @@ const initialFormData: FormData = {
   email: "",
   phone: "",
   role: "",
+  userRole: "staff",
   department: "",
   salary: "",
   salaryType: "hourly",
@@ -74,7 +78,14 @@ export default function AddStaffModal({
   onClose,
   onSave,
 }: AddStaffModalProps) {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const role = (user?.role || "").toLowerCase();
+  const isSuperAdmin = role === "superadmin" || role === "admin";
+  const isChefManager =
+    role === "manager" &&
+    String(user?.department || "").toLowerCase().includes("kitchen");
+  const isDepartmentManager = role === "manager" && !isChefManager;
+
   const [formData, setFormData] =
     useState<FormData>(initialFormData);
 
@@ -103,7 +114,17 @@ export default function AddStaffModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    setFormData(initialFormData);
+    const defaultDept = isChefManager
+      ? "Kitchen"
+      : isDepartmentManager
+      ? user?.department || ""
+      : "";
+
+    setFormData({
+      ...initialFormData,
+      department: defaultDept,
+      userRole: "staff",
+    });
     setError(null);
     setIsSaving(false);
     setIsUploadingAvatar(false);
@@ -113,7 +134,7 @@ export default function AddStaffModal({
     void getDepartmentAndServiceOptions().then((opts) => {
       setDepartmentOptions(opts);
     });
-  }, [isOpen]);
+  }, [isOpen, isChefManager, isDepartmentManager, user?.department]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -238,6 +259,12 @@ export default function AddStaffModal({
     const sanitizedUsername = rawUsername.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
     const validUsername = sanitizedUsername.length >= 3 ? sanitizedUsername.slice(0, 30) : `${sanitizedUsername}staff`;
 
+    const finalDepartment = isChefManager
+      ? "Kitchen"
+      : isDepartmentManager
+      ? (user?.department || department)
+      : department;
+
     const numSalary = Number(formData.salary) || 0;
 
     const payload: CreateStaffPayload = {
@@ -245,12 +272,11 @@ export default function AddStaffModal({
       username: validUsername,
       email,
       phone: phone || undefined,
-      role,
-      department:
-        department || undefined,
-      salary: numSalary,
+      role: isSuperAdmin && formData.userRole === "manager" ? "manager" : "staff",
+      department: finalDepartment || undefined,
+      salary: isChefManager ? 0 : numSalary,
       salaryType: formData.salaryType,
-      hourlyRate: formData.salaryType === "hourly" ? numSalary : undefined,
+      hourlyRate: !isChefManager && formData.salaryType === "hourly" ? numSalary : undefined,
       password,
       avatar: formData.avatar ? formData.avatar : undefined,
     };
@@ -471,6 +497,38 @@ export default function AddStaffModal({
             />
           </FormField>
 
+          {/* System Role Selection for Super Admin */}
+          {isSuperAdmin && (
+            <FormField label="Account Type / Level" icon={ShieldCheck} required>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleChange("userRole", "staff")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition ${
+                    formData.userRole === "staff"
+                      ? "border-[#9A7B4F] bg-[#9A7B4F]/10 text-[#9A7B4F] shadow-xs"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <UserRound size={14} />
+                  Staff Member
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChange("userRole", "manager")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition ${
+                    formData.userRole === "manager"
+                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <ShieldCheck size={14} />
+                  Department Manager
+                </button>
+              </div>
+            </FormField>
+          )}
+
           {/* Job Title / Role */}
           <FormField
             label="Job Title / Designation"
@@ -486,93 +544,111 @@ export default function AddStaffModal({
                   event.target.value,
                 )
               }
-              placeholder="e.g. Lead Decorator, Event Staff"
+              placeholder="e.g. Lead Decorator, Chef de Partie, Server"
               disabled={isSaving}
               className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
             />
-            <p className="mt-1 text-[10px] text-gray-400">
-              Operational job title. System access level is automatically restricted to staff accounts.
-            </p>
           </FormField>
 
           {/* Department */}
           <FormField
-            label="Department / Service"
+            label="Department / Scope"
             icon={Building2}
             required
           >
-            <select
-              value={formData.department}
-              onChange={(event) =>
-                handleChange(
-                  "department",
-                  event.target.value,
-                )
-              }
-              disabled={isSaving}
-              required
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
-            >
-              <option value="">Select a department / service</option>
-              {departmentOptions.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[10px] text-gray-400">
-              Populated from active services configured in your Service Menu.
-            </p>
-          </FormField>
-
-          {/* Salary & Pay Structure */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3 border border-[#e8e1d8]">
-            <FormField
-              label="Salary / Pay Rate (₹)"
-              icon={IndianRupee}
-            >
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={formData.salary}
+            {isChefManager ? (
+              <div className="flex h-11 w-full items-center justify-between rounded-xl border border-amber-200 bg-amber-50/60 px-3.5 text-xs font-semibold text-amber-900">
+                <span className="flex items-center gap-1.5">
+                  <ChefHat size={14} className="text-amber-700" />
+                  Kitchen Department
+                </span>
+                <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                  Locked to Chef Scope
+                </span>
+              </div>
+            ) : isDepartmentManager ? (
+              <div className="flex h-11 w-full items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-3.5 text-xs font-semibold text-sky-900">
+                <span className="flex items-center gap-1.5">
+                  <Building2 size={14} className="text-sky-700" />
+                  {user?.department || "Operations"}
+                </span>
+                <span className="rounded-md bg-sky-100 px-2 py-0.5 text-[10px] font-bold uppercase text-sky-800">
+                  Locked to Your Scope
+                </span>
+              </div>
+            ) : (
+              <select
+                value={formData.department}
                 onChange={(event) =>
                   handleChange(
-                    "salary",
+                    "department",
                     event.target.value,
                   )
                 }
-                placeholder="e.g. 500"
                 disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
-              />
-            </FormField>
-
-            <FormField
-              label="Rate Structure"
-              icon={IndianRupee}
-            >
-              <select
-                value={formData.salaryType}
-                onChange={(event) =>
-                  handleChange(
-                    "salaryType",
-                    event.target.value as any,
-                  )
-                }
-                disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                required
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
               >
-                <option value="hourly">Hourly Rate (₹/hr)</option>
-                <option value="daily">Daily Rate (₹/day)</option>
-                <option value="monthly">Monthly Salary (₹/mo)</option>
-                <option value="per_event">Per Event Pay (₹/event)</option>
+                <option value="">Select a department</option>
+                {departmentOptions.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
               </select>
-            </FormField>
-            <p className="col-span-full text-[10px] text-gray-500 italic">
-              Configured rate will automatically apply when assigning this staff member to events.
-            </p>
-          </div>
+            )}
+          </FormField>
+
+          {/* Salary & Pay Structure (Hidden for Chef Manager) */}
+          {!isChefManager && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3 border border-[#e8e1d8]">
+              <FormField
+                label="Salary / Pay Rate (₹)"
+                icon={IndianRupee}
+              >
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.salary}
+                  onChange={(event) =>
+                    handleChange(
+                      "salary",
+                      event.target.value,
+                    )
+                  }
+                  placeholder="e.g. 500"
+                  disabled={isSaving}
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                />
+              </FormField>
+
+              <FormField
+                label="Rate Structure"
+                icon={IndianRupee}
+              >
+                <select
+                  value={formData.salaryType}
+                  onChange={(event) =>
+                    handleChange(
+                      "salaryType",
+                      event.target.value as any,
+                    )
+                  }
+                  disabled={isSaving}
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                >
+                  <option value="hourly">Hourly Rate (₹/hr)</option>
+                  <option value="daily">Daily Rate (₹/day)</option>
+                  <option value="monthly">Monthly Salary (₹/mo)</option>
+                  <option value="per_event">Per Event Pay (₹/event)</option>
+                </select>
+              </FormField>
+              <p className="col-span-full text-[10px] text-gray-500 italic">
+                Configured rate will automatically apply when assigning this staff member to events.
+              </p>
+            </div>
+          )}
 
           {/* Password */}
           <FormField

@@ -16,12 +16,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/manager/assignments",
-        destination: "/manager/staff?tab=assignments",
+        destination: "/manager/staff",
         permanent: false,
       },
       {
         source: "/manager/schedule",
-        destination: "/manager/staff?tab=assignments",
+        destination: "/manager/staff",
         permanent: false,
       },
       {

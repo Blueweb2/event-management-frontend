@@ -69,6 +69,7 @@ export function useManagerNotifications() {
       if (assignmentsRes.status === "fulfilled" && assignmentsRes.value?.data) {
         assignmentsRes.value.data.forEach((duty) => {
           const staffName = typeof duty.staff === "object" ? duty.staff.name : "Staff member";
+          const staffId = typeof duty.staff === "object" && duty.staff !== null ? (duty.staff.id || (duty.staff as any)._id) : (typeof duty.staff === "string" ? duty.staff : "");
           const eventName = typeof duty.event === "object" ? duty.event.eventName : "Event";
 
           if (duty.status === "REJECTED") {
@@ -79,7 +80,7 @@ export function useManagerNotifications() {
               message: `${staffName} declined "${duty.dutyTitle}" for ${eventName}. Reason: "${duty.rejectionReason || "Unavailable"}". Click to reassign.`,
               timestamp: duty.respondedAt || duty.updatedAt || duty.dutyDate,
               timeAgo: "Action Required",
-              link: `/manager/staff?tab=assignments`,
+              link: staffId ? `/manager/staff/${staffId}?tab=schedule` : "/manager/staff",
               read: false,
               priority: "HIGH",
             });
@@ -91,7 +92,7 @@ export function useManagerNotifications() {
               message: `Awaiting shift confirmation from ${staffName} for "${duty.dutyTitle}" (${eventName}).`,
               timestamp: duty.createdAt || duty.dutyDate,
               timeAgo: "Pending Response",
-              link: `/manager/staff?tab=assignments`,
+              link: staffId ? `/manager/staff/${staffId}?tab=schedule` : "/manager/staff",
               read: false,
               priority: "MEDIUM",
             });

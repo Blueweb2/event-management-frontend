@@ -10,6 +10,7 @@ import {
   IndianRupee,
 } from "lucide-react";
 
+import { useAuth } from "@/hooks/useAuth";
 import type { Staff } from "@/types/staff";
 
 interface StaffDetailsProps {
@@ -19,6 +20,10 @@ interface StaffDetailsProps {
 export default function StaffDetails({
   staff,
 }: StaffDetailsProps) {
+  const { user } = useAuth();
+  const isChefManager =
+    user?.role === "manager" &&
+    (user?.department?.toLowerCase() === "kitchen" || user?.department?.toLowerCase() === "catering");
   return (
     <section
       aria-labelledby="staff-details-heading"
@@ -63,26 +68,28 @@ export default function StaffDetails({
           />
         )}
 
-        {/* Base Salary & Pay Rate */}
-        <DetailRow
-          icon={IndianRupee}
-          label="Base Salary / Rate"
-          value={
-            typeof staff.salary === "number" && staff.salary > 0
-              ? `₹${staff.salary.toLocaleString("en-IN")}${
-                  staff.salaryType === "hourly"
-                    ? " / hr (Hourly)"
-                    : staff.salaryType === "daily"
-                    ? " / day (Daily)"
-                    : staff.salaryType === "monthly"
-                    ? " / mo (Monthly)"
-                    : " / event (Per Event)"
-                }`
-              : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
-              ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr (Hourly)`
-              : "₹0.00 (Not configured)"
-          }
-        />
+        {/* Base Salary & Pay Rate (Hidden for Chef Manager) */}
+        {!isChefManager && (typeof staff.salary === "number" || typeof staff.hourlyRate === "number") && (
+          <DetailRow
+            icon={IndianRupee}
+            label="Base Salary / Rate"
+            value={
+              typeof staff.salary === "number" && staff.salary > 0
+                ? `₹${staff.salary.toLocaleString("en-IN")}${
+                    staff.salaryType === "hourly"
+                      ? " / hr (Hourly)"
+                      : staff.salaryType === "daily"
+                      ? " / day (Daily)"
+                      : staff.salaryType === "monthly"
+                      ? " / mo (Monthly)"
+                      : " / event (Per Event)"
+                  }`
+                : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
+                ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr (Hourly)`
+                : "₹0.00 (Not configured)"
+            }
+          />
+        )}
 
         {/* Email */}
         <DetailRow

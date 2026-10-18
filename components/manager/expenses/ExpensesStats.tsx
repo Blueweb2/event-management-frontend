@@ -58,25 +58,25 @@ export default function ExpensesStats({ expenses }: { expenses: Expense[] }) {
         return (
           <article
             key={stat.label}
-            className="rounded-2xl border border-[#e8e1d8] bg-white p-5 shadow-sm"
+            className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs"
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-[#756d64]">
+                <p className="text-xs font-semibold text-[#756d64]">
                   {stat.label}
                 </p>
 
-                <p className="mt-2 text-2xl font-bold tracking-tight text-[#29241f]">
+                <p className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#29241f]">
                   {stat.value}
                 </p>
 
-                <p className="mt-1 text-xs text-[#9b938a]">
+                <p className="mt-0.5 text-[11px] text-[#9b938a]">
                   {stat.count}
                 </p>
               </div>
 
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
-                <Icon size={19} />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f7efe4] text-[#a7773f]">
+                <Icon size={17} />
               </div>
             </div>
           </article>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import StaffProfile from "@/components/manager/staff/StaffProfile";
@@ -127,13 +127,15 @@ export default function StaffProfilePage() {
         </div>
       )}
 
-      <StaffProfile
-        staff={selectedStaff}
-        token={token ?? undefined}
-        onStaffUpdated={handleEdit}
-        onStatusChange={handleStatusChange}
-        onPasswordReset={handleResetPassword}
-      />
+      <Suspense fallback={<LoadingState />}>
+        <StaffProfile
+          staff={selectedStaff}
+          token={token ?? undefined}
+          onStaffUpdated={handleEdit}
+          onStatusChange={handleStatusChange}
+          onPasswordReset={handleResetPassword}
+        />
+      </Suspense>
     </div>
   );
 }

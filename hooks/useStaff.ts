@@ -20,6 +20,7 @@ import type {
   CreateStaffPayload,
   UpdateStaffPayload,
   StaffFilters,
+  StaffSummary,
   ResetStaffPasswordResponse,
 } from "@/types/staff";
 
@@ -47,6 +48,9 @@ export const useStaff = ({
       total: 0,
       totalPages: 0,
     });
+
+  const [summary, setSummary] =
+    useState<StaffSummary | null>(null);
 
   const [loading, setLoading] =
     useState(false);
@@ -78,6 +82,9 @@ export const useStaff = ({
 
         setStaff(result.data);
         setPagination(result.pagination);
+        if (result.summary) {
+          setSummary(result.summary);
+        }
       } catch (err) {
         setError(
           err instanceof Error
@@ -363,6 +370,7 @@ export const useStaff = ({
     staff,
     selectedStaff,
     pagination,
+    summary,
 
     loading,
     error,

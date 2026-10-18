@@ -13,7 +13,9 @@ export type EmploymentType =
 // ==========================================
 
 export type StaffRole =
+  | "superadmin"
   | "admin"
+  | "manager"
   | "staff";
 
 // ==========================================
@@ -39,6 +41,18 @@ export type SalaryType =
   | "daily"
   | "monthly"
   | "per_event";
+
+// ==========================================
+// STAFF SUMMARY
+// ==========================================
+
+export type StaffSummary = {
+  totalManagers: number;
+  totalStaff: number;
+  activeEmployees: number;
+  inactiveEmployees: number;
+  departmentCounts: Record<string, number>;
+};
 
 // ==========================================
 // STAFF
@@ -165,6 +179,10 @@ export type StaffFilters = {
 
   department?: string;
 
+  role?: string;
+
+  employmentType?: string;
+
   page?: number;
 
   limit?: number;
@@ -194,6 +212,8 @@ export type StaffListResponse = {
   data: Staff[];
 
   pagination: StaffPagination;
+
+  summary?: StaffSummary;
 };
 
 // ==========================================

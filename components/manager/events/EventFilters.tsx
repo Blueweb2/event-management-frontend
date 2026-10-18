@@ -1,6 +1,6 @@
 import type { EventStatus } from "@/lib/event.api";
 
-type EventFilterStatus = EventStatus | "All";
+export type EventFilterStatus = EventStatus;
 
 interface EventFiltersProps {
   value: EventFilterStatus;
@@ -11,10 +11,6 @@ const filters: {
   label: string;
   value: EventFilterStatus;
 }[] = [
-  {
-    label: "All",
-    value: "All",
-  },
   {
     label: "Upcoming",
     value: "Upcoming",

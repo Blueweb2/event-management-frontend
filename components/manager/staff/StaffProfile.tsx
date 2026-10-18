@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
@@ -21,6 +22,8 @@ import {
 import StaffStatusBadge from "./StaffStatusBadge";
 import StaffDetails from "./StaffDetails";
 import StaffActions from "./StaffActions";
+import StaffScheduleSection from "./StaffScheduleSection";
+import { useAuth } from "@/hooks/useAuth";
 import { getAssignments } from "@/lib/assignment.api";
 import { uploadStaffAvatarImage, getStaffAvatarUrl } from "@/lib/staff.api";
 import { formatTime24to12 } from "@/lib/time-utils";
@@ -60,13 +63,30 @@ export default function StaffProfile({
   onStaffUpdated,
   onPasswordReset,
 }: StaffProfileProps) {
+  const { user } = useAuth();
+  const isChefManager =
+    user?.role === "manager" &&
+    (user?.department?.toLowerCase() === "kitchen" || user?.department?.toLowerCase() === "catering");
+
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<"details" | "hours">("details");
+  const [activeTab, setActiveTab] = useState<"schedule" | "hours" | "details">("schedule");
   const [duties, setDuties] = useState<Assignment[]>([]);
   const [loadingDuties, setLoadingDuties] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarToast, setAvatarToast] = useState("");
   const [avatarError, setAvatarError] = useState("");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "hours" || tab === "payroll") {
+      setActiveTab("hours");
+    } else if (tab === "details" || tab === "profile") {
+      setActiveTab("details");
+    } else if (tab === "schedule" || tab === "assignments") {
+      setActiveTab("schedule");
+    }
+  }, [searchParams]);
 
   const targetStaffId = staff.id || (staff as any)._id;
 
@@ -225,25 +245,27 @@ export default function StaffProfile({
             />
 
             {/* Base Rate Badge */}
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50/80 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-900">
-              <IndianRupee size={12} className="text-amber-700" />
-              <span>
-                Rate:{" "}
-                {typeof staff.salary === "number" && staff.salary > 0
-                  ? `₹${staff.salary.toLocaleString("en-IN")}${
-                      staff.salaryType === "hourly"
-                        ? " / hr"
-                        : staff.salaryType === "daily"
-                        ? " / day"
-                        : staff.salaryType === "monthly"
-                        ? " / mo"
-                        : " / event"
-                    }`
-                  : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
-                  ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr`
-                  : "Unset"}
-              </span>
-            </div>
+            {!isChefManager && (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50/80 border border-amber-200 px-3 py-1 text-xs font-bold text-amber-900">
+                <IndianRupee size={12} className="text-amber-700" />
+                <span>
+                  Rate:{" "}
+                  {typeof staff.salary === "number" && staff.salary > 0
+                    ? `₹${staff.salary.toLocaleString("en-IN")}${
+                        staff.salaryType === "hourly"
+                          ? " / hr"
+                          : staff.salaryType === "daily"
+                          ? " / day"
+                          : staff.salaryType === "monthly"
+                          ? " / mo"
+                          : " / event"
+                      }`
+                    : typeof staff.hourlyRate === "number" && staff.hourlyRate > 0
+                    ? `₹${staff.hourlyRate.toLocaleString("en-IN")} / hr`
+                    : "Unset"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Staff ID */}
@@ -280,18 +302,32 @@ export default function StaffProfile({
             <p className="text-[10px] text-gray-500">Total Hours</p>
           </div>
 
-          {/* Total Earnings */}
-          <div className="rounded-xl bg-emerald-50/60 p-3 text-center">
-            <IndianRupee
-              size={17}
-              className="mx-auto text-emerald-700"
-              strokeWidth={1.8}
-            />
-            <p className="mt-1.5 text-lg font-bold text-emerald-900">
-              ₹{totalEarnings.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-[10px] text-emerald-700">Total Compensation</p>
-          </div>
+          {/* Total Earnings OR Department Scope */}
+          {isChefManager ? (
+            <div className="rounded-xl bg-[#F8F7F3] p-3 text-center">
+              <Building2
+                size={17}
+                className="mx-auto text-amber-700"
+                strokeWidth={1.8}
+              />
+              <p className="mt-1.5 text-lg font-semibold text-[#1F1F1F]">
+                {staff.department || "Kitchen"}
+              </p>
+              <p className="text-[10px] text-gray-500">Department</p>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-emerald-50/60 p-3 text-center">
+              <IndianRupee
+                size={17}
+                className="mx-auto text-emerald-700"
+                strokeWidth={1.8}
+              />
+              <p className="mt-1.5 text-lg font-bold text-emerald-900">
+                ₹{totalEarnings.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-[10px] text-emerald-700">Total Compensation</p>
+            </div>
+          )}
 
           {/* Current Status */}
           <div className="rounded-xl bg-[#F8F7F3] p-3 text-center">
@@ -313,33 +349,56 @@ export default function StaffProfile({
       </section>
 
       {/* Tabs */}
-      <div className="flex rounded-2xl border border-gray-200 bg-gray-100 p-1">
+      <div className="flex flex-wrap rounded-2xl border border-gray-200 bg-gray-100 p-1.5 gap-1">
         <button
           type="button"
-          onClick={() => setActiveTab("details")}
-          className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
-            activeTab === "details"
-              ? "bg-white text-gray-900 shadow-sm"
+          onClick={() => setActiveTab("schedule")}
+          className={`flex-1 min-w-[170px] rounded-xl py-2.5 px-3 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            activeTab === "schedule"
+              ? "bg-[#29241f] text-white shadow-xs"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          Staff Profile & Settings
+          <CalendarDays size={14} className={activeTab === "schedule" ? "text-[#9A7B4F]" : "text-gray-400"} />
+          <span>Assignments & Schedule ({duties.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("hours")}
-          className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${
+          className={`flex-1 min-w-[170px] rounded-xl py-2.5 px-3 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
             activeTab === "hours"
               ? "bg-white text-gray-900 shadow-sm"
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          Working Hours & Payment History ({duties.length})
+          <Clock size={14} className={activeTab === "hours" ? "text-amber-700" : "text-gray-400"} />
+          <span>{isChefManager ? "Working Hours & Shifts" : "Working Hours & Payroll"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("details")}
+          className={`flex-1 min-w-[170px] rounded-xl py-2.5 px-3 text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            activeTab === "details"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          <User size={14} className={activeTab === "details" ? "text-emerald-700" : "text-gray-400"} />
+          <span>Profile & Info</span>
         </button>
       </div>
 
-      {activeTab === "details" ? (
+      {activeTab === "schedule" && (
+        <StaffScheduleSection
+          staff={staff}
+          duties={duties}
+          loading={loadingDuties}
+        />
+      )}
+
+      {activeTab === "details" && (
         <>
           {/* Staff Details */}
           <StaffDetails staff={staff} />
@@ -352,7 +411,9 @@ export default function StaffProfile({
             onPasswordReset={onPasswordReset}
           />
         </>
-      ) : (
+      )}
+
+      {activeTab === "hours" && (
         /* Working Hours & Payment Breakdown */
         <section className="space-y-4">
           {loadingDuties ? (
@@ -376,9 +437,9 @@ export default function StaffProfile({
                       <th className="px-4 py-3">Event & Venue</th>
                       <th className="px-4 py-3">Duty Covered</th>
                       <th className="px-4 py-3">Hours</th>
-                      <th className="px-4 py-3 text-right">Rate & Pay</th>
+                      {!isChefManager && <th className="px-4 py-3 text-right">Rate & Pay</th>}
                       <th className="px-4 py-3 text-center">Shift Status</th>
-                      <th className="px-4 py-3 text-center">Payment</th>
+                      {!isChefManager && <th className="px-4 py-3 text-center">Payment</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -412,10 +473,12 @@ export default function StaffProfile({
                           <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">
                             {hours} hrs
                           </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <p className="font-bold text-gray-900">₹{pay.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
-                            <p className="text-[10px] text-gray-500">@ ₹{rate.toFixed(2)}/hr</p>
-                          </td>
+                          {!isChefManager && (
+                            <td className="px-4 py-3 text-right whitespace-nowrap">
+                              <p className="font-bold text-gray-900">₹{pay.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
+                              <p className="text-[10px] text-gray-500">@ ₹{rate.toFixed(2)}/hr</p>
+                            </td>
+                          )}
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <span
                               className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -431,17 +494,19 @@ export default function StaffProfile({
                               {duty.status === "ACCEPTED" ? "Confirmed" : duty.status}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                                duty.paymentStatus === "PAID"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {duty.paymentStatus === "PAID" ? "PAID" : "PENDING"}
-                            </span>
-                          </td>
+                          {!isChefManager && (
+                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  duty.paymentStatus === "PAID"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {duty.paymentStatus === "PAID" ? "PAID" : "PENDING"}
+                              </span>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

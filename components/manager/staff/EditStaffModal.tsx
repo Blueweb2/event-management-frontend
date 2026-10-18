@@ -52,7 +52,13 @@ export default function EditStaffModal({
   onClose,
   onSave,
 }: EditStaffModalProps) {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const role = (user?.role || "").toLowerCase();
+  const isSuperAdmin = role === "superadmin" || role === "admin";
+  const isChefManager =
+    role === "manager" &&
+    String(user?.department || "").toLowerCase().includes("kitchen");
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [formData, setFormData] =
@@ -452,77 +458,93 @@ export default function EditStaffModal({
             label="Department / Service"
             icon={Building2}
           >
-            <select
-              value={formData.department}
-              onChange={(event) =>
-                handleChange(
-                  "department",
-                  event.target.value,
-                )
-              }
-              disabled={isSaving}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
-            >
-              <option value="">Select a department or service...</option>
-              {departmentOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[10px] text-gray-400">
-              Populated from active services configured in your Service Menu.
-            </p>
-          </FormField>
-
-          {/* Salary & Pay Structure */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3.5 border border-[#e8e1d8]">
-            <FormField
-              label="Salary / Pay Rate (₹)"
-              icon={IndianRupee}
-            >
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={formData.salary}
+            {isSuperAdmin ? (
+              <select
+                value={formData.department}
                 onChange={(event) =>
                   handleChange(
-                    "salary",
+                    "department",
                     event.target.value,
                   )
                 }
-                placeholder="e.g. 500"
                 disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
-              />
-            </FormField>
-
-            <FormField
-              label="Rate Structure"
-              icon={IndianRupee}
-            >
-              <select
-                value={formData.salaryType}
-                onChange={(event) =>
-                  handleChange(
-                    "salaryType",
-                    event.target.value as any,
-                  )
-                }
-                disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
+                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
               >
-                <option value="hourly">Hourly Rate (₹/hr)</option>
-                <option value="daily">Daily Rate (₹/day)</option>
-                <option value="monthly">Monthly Salary (₹/mo)</option>
-                <option value="per_event">Per Event Pay (₹/event)</option>
+                <option value="">Select a department or service...</option>
+                {departmentOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
-            </FormField>
-            <p className="col-span-full text-[10px] text-gray-500 italic">
-              Configured rate will automatically apply when assigning this staff member to events.
+            ) : (
+              <div className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3.5 text-xs text-gray-700 font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Building2 size={13} className="text-gray-400" />
+                  {formData.department || "Assigned Department"}
+                </span>
+                <span className="rounded-md bg-gray-200/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-gray-500">
+                  Super Admin Only
+                </span>
+              </div>
+            )}
+            <p className="mt-1.5 text-[10px] text-gray-400">
+              {isSuperAdmin
+                ? "Department reassignment is permitted for Super Admin accounts."
+                : "Staff department reassignment is restricted to Super Admin."}
             </p>
-          </div>
+          </FormField>
+
+          {/* Salary & Pay Structure (Hidden for Chef Manager) */}
+          {!isChefManager && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3.5 border border-[#e8e1d8]">
+              <FormField
+                label="Salary / Pay Rate (₹)"
+                icon={IndianRupee}
+              >
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={formData.salary}
+                  onChange={(event) =>
+                    handleChange(
+                      "salary",
+                      event.target.value,
+                    )
+                  }
+                  placeholder="e.g. 500"
+                  disabled={isSaving}
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                />
+              </FormField>
+
+              <FormField
+                label="Rate Structure"
+                icon={IndianRupee}
+              >
+                <select
+                  value={formData.salaryType}
+                  onChange={(event) =>
+                    handleChange(
+                      "salaryType",
+                      event.target.value as any,
+                    )
+                  }
+                  disabled={isSaving}
+                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
+                >
+                  <option value="hourly">Hourly Rate (₹/hr)</option>
+                  <option value="daily">Daily Rate (₹/day)</option>
+                  <option value="monthly">Monthly Salary (₹/mo)</option>
+                  <option value="per_event">Per Event Pay (₹/event)</option>
+                </select>
+              </FormField>
+              <p className="col-span-full text-[10px] text-gray-500 italic">
+                Configured rate will automatically apply when assigning this staff member to events.
+              </p>
+            </div>
+          )}
 
           {/* Error */}
           {error && (
