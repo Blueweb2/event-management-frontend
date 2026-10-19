@@ -1,47 +1,31 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Package,
-  PackageCheck,
   PackagePlus,
   AlertTriangle,
-  History,
   CheckCircle2,
-  Clock,
   Search,
-  Filter,
   Plus,
-  ArrowUpDown,
-  RotateCcw,
-  ShieldAlert,
   Loader2,
-  Calendar,
-  User,
   MapPin,
-  FileText,
   X,
+  Eye,
+  BadgeCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getStockItems,
   createStockItem,
-  updateStockItem,
-  addStock,
-  deleteStockItem,
   getManagerStockSummary,
-  getStockTransactions,
-  verifyStockReturn,
-  reportDiscrepancy,
 } from "@/lib/stock.api";
 import type {
   StockItem,
   StockCategory,
-  EventStockAllocation,
-  StockTransaction,
   ManagerStockSummary,
 } from "@/types/stock";
-import Button from "@/components/ui/Button";
 
 const CATEGORIES: StockCategory[] = [
   "Crockery",
@@ -58,12 +42,10 @@ const CATEGORIES: StockCategory[] = [
 
 export default function ManagerStockPage() {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState<"inventory" | "allocations" | "returns" | "history">("inventory");
 
   // State
   const [items, setItems] = useState<StockItem[]>([]);
   const [summary, setSummary] = useState<ManagerStockSummary | null>(null);
-  const [transactions, setTransactions] = useState<StockTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toastMessage, setToastMessage] = useState("");
@@ -72,22 +54,10 @@ export default function ManagerStockPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [lowStockFilter, setLowStockFilter] = useState(false);
-  const [rentableFilter, setRentableFilter] = useState(false);
 
-  // Modals
+  // Create Modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState<StockItem | null>(null);
-  const [editData, setEditData] = useState<Partial<StockItem>>({});
-  const [restockItem, setRestockItem] = useState<StockItem | null>(null);
-  const [restockQty, setRestockQty] = useState(10);
-  const [restockNotes, setRestockNotes] = useState("");
-
-  const [verifyAllocation, setVerifyAllocation] = useState<EventStockAllocation | null>(null);
-  const [verifyNotes, setVerifyNotes] = useState("");
-
-  const [discrepancyAllocation, setDiscrepancyAllocation] = useState<EventStockAllocation | null>(null);
-  const [discrepancyNotes, setDiscrepancyNotes] = useState("");
-
+  const [createSubmitting, setCreateSubmitting] = useState(false);
   const [newItem, setNewItem] = useState({
     name: "",
     category: "Crockery" as StockCategory,
@@ -112,36 +82,34 @@ export default function ManagerStockPage() {
       setLoading(true);
       setError("");
 
-      const [itemsRes, summaryRes, txRes] = await Promise.all([
+      const [itemsRes, summaryRes] = await Promise.all([
         getStockItems(token, {
           search,
           category: categoryFilter !== "ALL" ? categoryFilter : undefined,
           lowStock: lowStockFilter ? true : undefined,
-          isRentable: rentableFilter ? true : undefined,
         }),
         getManagerStockSummary(token),
-        getStockTransactions(token, { limit: 50 }),
       ]);
 
       setItems(itemsRes.data || []);
       setSummary(summaryRes.data || null);
-      setTransactions(txRes.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load stock data");
     } finally {
       setLoading(false);
     }
-  }, [token, search, categoryFilter, lowStockFilter, rentableFilter]);
+  }, [token, search, categoryFilter, lowStockFilter]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
-  // Handlers
+  // Handle Create Stock Item
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
     try {
+      setCreateSubmitting(true);
       await createStockItem(newItem, token);
       showToast(`Stock item "${newItem.name}" created successfully`);
       setCreateModalOpen(false);
@@ -159,753 +127,376 @@ export default function ManagerStockPage() {
       });
       void loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create item");
-    }
-  };
-
-  const handleEditItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !editItem) return;
-    try {
-      await updateStockItem(editItem._id, editData, token);
-      showToast(`Stock item "${editItem.name}" updated successfully`);
-      setEditItem(null);
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update item");
-    }
-  };
-
-  const handleRestock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !restockItem) return;
-    try {
-      await addStock(restockItem._id, { quantity: restockQty, notes: restockNotes }, token);
-      showToast(`Restocked ${restockQty} ${restockItem.unit} to ${restockItem.name}`);
-      setRestockItem(null);
-      setRestockNotes("");
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to restock");
-    }
-  };
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!token) return;
-    if (!window.confirm(`Are you sure you want to delete "${name}" from master stock catalog?`)) return;
-    try {
-      await deleteStockItem(id, token);
-      showToast(`Deleted "${name}"`);
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete item");
-    }
-  };
-
-  const handleVerifyReturn = async () => {
-    if (!token || !verifyAllocation) return;
-    try {
-      await verifyStockReturn(
-        verifyAllocation._id,
-        {
-          approvedReturnedQuantity: verifyAllocation.returnedQuantity,
-          approvedDamagedQuantity: verifyAllocation.damagedQuantity,
-          approvedLostQuantity: verifyAllocation.lostQuantity,
-          managerNotes: verifyNotes,
-          verificationNotes: verifyNotes,
-        },
-        token
-      );
-      showToast("Stock return verified & inventory restocked");
-      setVerifyAllocation(null);
-      setVerifyNotes("");
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-    }
-  };
-
-  const handleReportDiscrepancy = async () => {
-    if (!token || !discrepancyAllocation) return;
-    try {
-      await reportDiscrepancy(discrepancyAllocation._id, { discrepancyNotes }, token);
-      showToast("Discrepancy recorded");
-      setDiscrepancyAllocation(null);
-      setDiscrepancyNotes("");
-      void loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record discrepancy");
+      showToast(err instanceof Error ? err.message : "Failed to create item");
+    } finally {
+      setCreateSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Toast */}
+    <div className="space-y-6 pb-12">
+      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 shadow-xl animate-in fade-in">
-          <CheckCircle2 size={16} className="text-emerald-600" />
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 pb-5">
+      {/* Top Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-[#9a6c37]">Operations & Logistics</p>
-          <h1 className="mt-1 text-2xl font-black tracking-tight text-[#29241f] sm:text-3xl">
+          <h1 className="text-2xl font-black tracking-tight text-[#29241f]">
             Stock & Equipment Management
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500">
-            Control master inventory, assign equipment to events, track staff handover, and verify returns.
+          <p className="mt-1 text-xs text-gray-500">
+            Master inventory catalog, active event rentals, and equipment availability tracking.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setCreateModalOpen(true)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-extrabold text-white shadow-sm transition hover:bg-black active:scale-95 cursor-pointer w-full sm:w-auto"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-4 text-xs font-extrabold text-white shadow-xs hover:bg-black transition active:scale-95 cursor-pointer"
         >
-          <Plus size={16} />
-          <span>Add Products </span>
+          <PackagePlus size={16} />
+          <span>New Stock Item</span>
         </button>
       </div>
 
-      {/* Error Notice */}
-      {error && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-800">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError("")} className="text-red-500 hover:text-red-800">
-            <X size={15} />
-          </button>
+      {/* Top KPI Summary Metrics Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Total Stock Items */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-xs">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Items</p>
+          <p className="mt-1 text-2xl font-black text-gray-900">{summary?.totalItems ?? items.length}</p>
+          <p className="mt-1 text-[11px] text-gray-500">Catalogued products</p>
         </div>
-      )}
 
+        {/* Available Units */}
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 shadow-xs">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Available Units</p>
+          <p className="mt-1 text-2xl font-black text-emerald-700">
+            {items.reduce((acc, curr) => acc + (curr.availableQuantity || 0), 0)}
+          </p>
+          <p className="mt-1 text-[11px] text-emerald-700 font-medium">Ready for allocation</p>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:mx-0 sm:px-0">
-        <button
-          type="button"
-          onClick={() => setActiveTab("inventory")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "inventory"
-              ? "border-[#9a6c37] text-[#9a6c37]"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
+        {/* Active Rentals / Allocations */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4 shadow-xs">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-800">In Use / Events</p>
+          <p className="mt-1 text-2xl font-black text-blue-700">
+            {summary?.activeAllocationsCount ?? 0}
+          </p>
+          <p className="mt-1 text-[11px] text-blue-700 font-medium">Active event rentals</p>
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div
+          onClick={() => setLowStockFilter(!lowStockFilter)}
+          className={`rounded-2xl border p-4 shadow-xs cursor-pointer transition ${
+            lowStockFilter
+              ? "border-rose-400 bg-rose-50"
+              : "border-gray-200 bg-white hover:border-gray-300"
+          }`}
         >
-          <Package size={16} />
-          <span>Master Inventory ({items.length})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("allocations")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "allocations"
-              ? "border-[#9a6c37] text-[#9a6c37]"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
-        >
-          <PackageCheck size={16} />
-          <span>Event Allocations ({summary?.activeAllocationsCount ?? 0})</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("returns")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "returns"
-              ? "border-[#9a6c37] text-[#9a6c37]"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
-        >
-          <RotateCcw size={16} />
-          <span>Returns & Verifications</span>
-          {(summary?.pendingReturnsCount ?? 0) > 0 && (
-            <span className="rounded-full bg-rose-500 px-1.5 py-0.2 text-[10px] font-black text-white">
-              {summary?.pendingReturnsCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("history")}
-          className={`flex items-center gap-2 border-b-2 px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${activeTab === "history"
-              ? "border-[#9a6c37] text-[#9a6c37]"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
-        >
-          <History size={16} />
-          <span>Audit History</span>
-        </button>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Low Stock Alerts</p>
+          <p className="mt-1 text-2xl font-black text-rose-700">{summary?.lowStockCount ?? 0}</p>
+          <p className="mt-1 text-[11px] text-rose-600 font-medium">
+            {lowStockFilter ? "Showing low stock only" : "Click to filter low stock"}
+          </p>
+        </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* TAB 1: MASTER INVENTORY */}
-      {/* ========================================================================= */}
-      {activeTab === "inventory" && (
-        <div className="space-y-4">
-          {/* Filter Bar */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between rounded-2xl border border-[#e8e1d8] bg-white p-3 sm:p-3.5 shadow-xs">
-            <div className="relative flex-1">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search stock by name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 w-full rounded-xl border border-gray-200 bg-[#fdfcfb] pl-9 pr-4 text-xs font-medium outline-none focus:border-[#9a6c37]"
-              />
-            </div>
+      {/* Search & Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-xs">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search stock by item name or location..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 w-full rounded-xl border border-gray-200 bg-[#fdfcfb] pl-9 pr-4 text-xs font-medium outline-none focus:border-[#9a6c37]"
+          />
+        </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="col-span-2 sm:col-span-1 h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
-              >
-                <option value="ALL">All Categories</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+        {/* Category Dropdown & Low Stock Toggle */}
+        <div className="flex items-center gap-2">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+          >
+            <option value="ALL">All Categories</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
 
-          
+          {lowStockFilter && (
+            <button
+              type="button"
+              onClick={() => setLowStockFilter(false)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-rose-50 border border-rose-200 px-3 text-xs font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
+            >
+              <span>Low Stock Only</span>
+              <X size={13} />
+            </button>
+          )}
+        </div>
+      </div>
 
-             
-            </div>
+      {/* Inventory Display: Mobile Cards + Desktop Table */}
+      {loading ? (
+        <div className="flex h-48 items-center justify-center rounded-2xl border border-gray-200 bg-white">
+          <Loader2 size={24} className="animate-spin text-[#9a6c37]" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center text-gray-500">
+          <Package size={36} className="mx-auto text-gray-300" />
+          <p className="mt-2 text-sm font-bold text-gray-900">No stock items found</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Create a new item using "+ New Stock Item" or adjust your search filter.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ========================================================================= */}
+          {/* MOBILE CARDS VIEW (md:hidden) */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:hidden">
+            {items.map((item) => {
+              const isLow = item.availableQuantity <= (item.minStockLevel || 10);
+              return (
+                <div
+                  key={`mobile-${item._id}`}
+                  className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs space-y-3 transition hover:border-[#9a6c37]/40"
+                >
+                  {/* Top Header Row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/manager/stock/${item._id}`}
+                        className="font-extrabold text-[#29241f] text-sm sm:text-base leading-snug hover:text-[#9a6c37] transition-colors block"
+                      >
+                        {item.name}
+                      </Link>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
+                        <span className="rounded-md bg-stone-100 px-2 py-0.5 font-bold text-stone-700">
+                          {item.category}
+                        </span>
+                        <span className="flex items-center gap-1 text-gray-400">
+                          <MapPin size={11} />
+                          <span>{item.location || "Warehouse"}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Rental Status Badge */}
+                    <div className="shrink-0 text-right">
+                      {item.isRentable !== false ? (
+                        <div className="inline-flex flex-col items-end">
+                          <span className="font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px]">
+                            ₹{item.rentalPrice || 0}/{item.unit || "unit"}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600 mt-0.5">For Rent</span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                          Internal Only
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quantities & Inventory Grid */}
+                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-[#faf8f5] p-2.5 text-xs">
+                    {/* Available Quantity */}
+                    <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Available</p>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span
+                          className={`text-base font-black ${
+                            isLow ? "text-rose-700" : "text-emerald-700"
+                          }`}
+                        >
+                          {item.availableQuantity}
+                        </span>
+                        <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
+                      </div>
+                      {isLow && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.2">
+                          <AlertTriangle size={9} /> Low Stock
+                        </span>
+                      )}
+                    </div>
+
+                    {/* In Use Quantity (unified) */}
+                    <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">In Use</p>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-black text-blue-800">
+                          {(item.inUseQuantity || 0) + (item.reservedQuantity || 0)}
+                        </span>
+                        <span className="text-[10px] font-semibold text-gray-500">{item.unit}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">At events</p>
+                    </div>
+
+                    {/* Total Quantity */}
+                    <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Stock</p>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-base font-black text-gray-900">{item.totalQuantity}</span>
+                        <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Min: {item.minStockLevel || 10}</p>
+                    </div>
+                  </div>
+
+                  {/* Actions Row: ONLY View Button Outside (No Edit, No Restock, No Delete) */}
+                  <div className="pt-1">
+                    <Link
+                      href={`/manager/stock/${item._id}`}
+                      className="w-full min-h-10 rounded-xl bg-[#29241f] px-4 text-xs font-bold text-white hover:bg-black transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Eye size={15} />
+                      <span>View Details & Allocations</span>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Items Display (Mobile Cards + Desktop Table) */}
-          {loading ? (
-            <div className="flex h-48 items-center justify-center rounded-2xl border border-gray-200 bg-white">
-              <Loader2 size={24} className="animate-spin text-[#9a6c37]" />
-            </div>
-          ) : items.length === 0 ? (
-            <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-              <Package size={32} className="mx-auto text-gray-300" />
-              <p className="mt-2 text-sm font-bold text-gray-900">No stock items found</p>
-              <p className="text-xs text-gray-500">Create a new item or adjust search filters.</p>
-            </div>
-          ) : (
-            <>
-              {/* MOBILE CARDS VIEW (md:hidden) */}
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 md:hidden">
-                {items.map((item) => {
-                  const isLow = item.availableQuantity <= (item.minStockLevel || 10);
-                  return (
-                    <div
-                      key={`mobile-${item._id}`}
-                      className="rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs space-y-3 transition hover:border-[#9a6c37]/30"
-                    >
-                      {/* Top Header Row */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-extrabold text-[#29241f] text-sm sm:text-base leading-snug">
+          {/* ========================================================================= */}
+          {/* DESKTOP TABLE VIEW (hidden md:block) */}
+          {/* ========================================================================= */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-[#e8e1d8] bg-white shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="border-b border-[#e8e1d8] bg-[#faf8f5] text-[11px] font-bold uppercase tracking-wider text-[#29241f]">
+                  <tr>
+                    <th className="px-4 py-3.5">Product Name & Category</th>
+                    <th className="px-4 py-3.5 text-center">Available</th>
+                    <th className="px-4 py-3.5 text-center">In Use</th>
+                    <th className="px-4 py-3.5 text-center">Total Stock</th>
+                    <th className="px-4 py-3.5 text-center">Rental Policy</th>
+                    <th className="px-4 py-3.5 text-center">Damaged / Lost</th>
+                    <th className="px-4 py-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f0ece6]">
+                  {items.map((item) => {
+                    const isLow = item.availableQuantity <= (item.minStockLevel || 10);
+                    return (
+                      <tr key={item._id} className="hover:bg-[#fcfaf7] transition">
+                        {/* Name & Location */}
+                        <td className="px-4 py-3.5">
+                          <Link
+                            href={`/manager/stock/${item._id}`}
+                            className="font-bold text-[#29241f] text-sm hover:text-[#9a6c37] transition-colors block"
+                          >
                             {item.name}
-                          </h3>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
-                            <span className="rounded-md bg-stone-100 px-2 py-0.5 font-bold text-stone-700">
+                          </Link>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500">
+                            <span className="font-bold text-stone-700 bg-stone-100 rounded px-1.5 py-0.2">
                               {item.category}
                             </span>
+                            <span>·</span>
                             <span className="flex items-center gap-1 text-gray-400">
                               <MapPin size={11} />
-                              <span>{item.location || "Warehouse"}</span>
+                              {item.location || "Warehouse"}
                             </span>
                           </div>
-                        </div>
+                        </td>
 
-                        {/* Rental Status Badge */}
-                        <div className="shrink-0 text-right">
+                        {/* Available */}
+                        <td className="px-4 py-3.5 text-center font-black">
+                          <span className={`text-sm ${isLow ? "text-rose-700" : "text-emerald-700"}`}>
+                            {item.availableQuantity}
+                          </span>{" "}
+                          <span className="text-[11px] font-medium text-gray-400">{item.unit}</span>
+                          {isLow && (
+                            <div className="mt-0.5">
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 rounded px-1">
+                                Low
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* In Use (combines in-use and reserved) */}
+                        <td className="px-4 py-3.5 text-center font-bold text-blue-700">
+                          {(item.inUseQuantity || 0) + (item.reservedQuantity || 0)} {item.unit}
+                        </td>
+
+                        {/* Total Stock */}
+                        <td className="px-4 py-3.5 text-center font-bold text-gray-900">
+                          {item.totalQuantity} <span className="text-[11px] font-medium text-gray-400">{item.unit}</span>
+                          <div className="text-[10px] text-gray-400 font-normal">Min: {item.minStockLevel || 10}</div>
+                        </td>
+
+                        {/* Rental Rate */}
+                        <td className="px-4 py-3.5 text-center">
                           {item.isRentable !== false ? (
-                            <div className="inline-flex flex-col items-end">
+                            <div className="inline-flex flex-col items-center">
                               <span className="font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px]">
                                 ₹{item.rentalPrice || 0}/{item.unit || "unit"}
                               </span>
-                              <span className="text-[10px] font-bold text-emerald-600 mt-0.5">For Rent</span>
+                              <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">Rentable</span>
                             </div>
                           ) : (
                             <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
                               Internal Only
                             </span>
                           )}
-                        </div>
-                      </div>
+                        </td>
 
-                      {/* Quantities & Inventory Grid */}
-                      <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#faf8f5] p-2.5 text-xs">
-                        {/* Available Quantity */}
-                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Available</p>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span
-                              className={`text-base font-black ${isLow ? "text-rose-700 animate-pulse" : "text-emerald-700"
-                                }`}
-                            >
-                              {item.availableQuantity}
-                            </span>
-                            <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
-                          </div>
-                          {isLow && (
-                            <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.2">
-                              <AlertTriangle size={9} /> Low Stock
-                            </span>
-                          )}
-                        </div>
+                        {/* Damaged / Lost */}
+                        <td className="px-4 py-3.5 text-center text-[11px]">
+                          <span className="text-amber-700 font-bold">{item.damagedQuantity || 0} dmg</span>
+                          <span className="text-gray-300 mx-1">/</span>
+                          <span className="text-rose-700 font-bold">{item.lostQuantity || 0} lost</span>
+                        </td>
 
-                        {/* Total Quantity */}
-                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Stock</p>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-base font-black text-gray-900">{item.totalQuantity}</span>
-                            <span className="text-[11px] font-semibold text-gray-500">{item.unit}</span>
-                          </div>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Min: {item.minStockLevel || 10}</p>
-                        </div>
-
-                        {/* Reserved */}
-                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Reserved</p>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-sm font-black text-amber-800">{item.reservedQuantity || 0}</span>
-                            <span className="text-[10px] font-semibold text-gray-500">{item.unit}</span>
-                          </div>
-                        </div>
-
-                        {/* In Use */}
-                        <div className="rounded-lg bg-white p-2 border border-gray-100 shadow-2xs">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-blue-700">In Use</p>
-                          <div className="flex items-baseline gap-1 mt-0.5">
-                            <span className="text-sm font-black text-blue-800">{item.inUseQuantity || 0}</span>
-                            <span className="text-[10px] font-semibold text-gray-500">{item.unit}</span>
-                          </div>
-                        </div>
-
-                        {/* Damaged / Lost Banner (if any) */}
-                        {((item.damagedQuantity || 0) > 0 || (item.lostQuantity || 0) > 0) && (
-                          <div className="col-span-2 flex items-center justify-between rounded-lg bg-rose-50/70 border border-rose-200/80 px-2.5 py-1 text-[11px] font-bold text-rose-800">
-                            <span>{item.damagedQuantity || 0} damaged</span>
-                            <span>·</span>
-                            <span>{item.lostQuantity || 0} lost</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Optional Description */}
-                      {item.description && (
-                        <p className="text-[11px] text-gray-500 line-clamp-2 italic bg-[#faf8f5] px-2.5 py-1.5 rounded-xl border border-gray-100">
-                          {item.description}
-                        </p>
-                      )}
-
-                      {/* Actions Row */}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditItem(item);
-                            setEditData({
-                              name: item.name,
-                              category: item.category,
-                              minStockLevel: item.minStockLevel,
-                              unit: item.unit,
-                              unitPrice: item.unitPrice,
-                              rentalPrice: item.rentalPrice || 0,
-                              isRentable: item.isRentable !== false,
-                              location: item.location,
-                              description: item.description || "",
-                            });
-                          }}
-                          className="flex-1 min-h-10 rounded-xl bg-amber-50 px-3 text-xs font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <span>Edit</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRestockItem(item);
-                            setRestockQty(10);
-                          }}
-                          className="flex-1 min-h-10 rounded-xl bg-emerald-700 px-3 text-xs font-extrabold text-white hover:bg-emerald-800 shadow-xs transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Plus size={14} />
-                          <span>Restock</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(item._id, item.name)}
-                          className="min-h-10 w-10 shrink-0 rounded-xl border border-gray-200 bg-white text-gray-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition active:scale-95 flex items-center justify-center cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* DESKTOP TABLE VIEW (hidden md:block) */}
-              <div className="hidden md:block overflow-hidden rounded-2xl border border-[#e8e1d8] bg-white shadow-xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-gray-700">
-                    <thead className="bg-[#f9f7f2] border-b border-[#e8e1d8] text-[10px] font-black uppercase tracking-wider text-gray-500">
-                      <tr>
-                        <th className="px-4 py-3">Item / Category</th>
-                        <th className="px-4 py-3 text-center">Total</th>
-                        <th className="px-4 py-3 text-center">Available</th>
-                        <th className="px-4 py-3 text-center">Rental Rate</th>
-                        <th className="px-4 py-3 text-center">Reserved</th>
-                        <th className="px-4 py-3 text-center">Damaged / Lost</th>
-                        <th className="px-4 py-3 text-right">Actions</th>
+                        {/* Action: ONLY View Button Outside (No Edit, No Restock, No Delete) */}
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                          <Link
+                            href={`/manager/stock/${item._id}`}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#9a6c37] transition shadow-2xs cursor-pointer active:scale-95"
+                          >
+                            <Eye size={13} />
+                            <span>View</span>
+                          </Link>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {items.map((item) => {
-                        const isLow = item.availableQuantity <= (item.minStockLevel || 10);
-                        return (
-                          <tr key={item._id} className="hover:bg-[#fdfcfb] transition">
-                            <td className="px-4 py-3.5 min-w-[180px]">
-                              <p className="font-extrabold text-[#29241f] text-sm">{item.name}</p>
-                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
-                                <span className="rounded-md bg-stone-100 px-1.5 py-0.2 font-semibold text-stone-700">
-                                  {item.category}
-                                </span>
-                                <span>·</span>
-                                <span>{item.location || "Warehouse"}</span>
-                              </div>
-                            </td>
-
-                              <td className="px-4 py-3.5 text-center font-black text-gray-900">
-                              {item.totalQuantity} {item.unit}
-                            </td>
-
-                            <td className="px-4 py-3.5 text-center">
-                              <span
-                                className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-black ${isLow
-                                    ? "bg-rose-100 text-rose-800 border border-rose-200 animate-pulse"
-                                    : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                  }`}
-                              >
-                                {item.availableQuantity} {item.unit}
-                              </span>
-                            </td>
-
-                            <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                              {item.isRentable !== false ? (
-                                <div className="inline-flex flex-col items-center">
-                                  <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg text-xs">
-                                    ₹{item.rentalPrice || 0} / {item.unit || "unit"}
-                                  </span>
-                                  <span className="text-[10px] font-semibold text-emerald-600 mt-0.5">Rentable</span>
-                                </div>
-                              ) : (
-                                <span className="inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
-                                  Internal Only
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-3.5 text-center font-bold text-amber-700">
-                              {item.reservedQuantity} {item.unit}
-                            </td>
-
-
-                            <td className="px-4 py-3.5 text-center text-[11px]">
-                              <span className="text-amber-700 font-bold">{item.damagedQuantity || 0} dmg</span>
-                              <span className="text-gray-300 mx-1">/</span>
-                              <span className="text-rose-700 font-bold">{item.lostQuantity || 0} lost</span>
-                            </td>
-
-                          {/* only need view button here and need to create a edit page  */}
-
-                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                              <div className="inline-flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditItem(item);
-                                    setEditData({
-                                      name: item.name,
-                                      category: item.category,
-                                      minStockLevel: item.minStockLevel,
-                                      unit: item.unit,
-                                      unitPrice: item.unitPrice,
-                                      rentalPrice: item.rentalPrice || 0,
-                                      isRentable: item.isRentable !== false,
-                                      location: item.location,
-                                      description: item.description || "",
-                                    });
-                                  }}
-                                  className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setRestockItem(item);
-                                    setRestockQty(10);
-                                  }}
-                                  className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
-                                >
-                                  + Restock
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(item._id, item.name)}
-                                  className="rounded-lg p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                  title="Delete Item"
-                                >
-                                  <X size={15} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 2: EVENT ALLOCATIONS */}
-      {/* ========================================================================= */}
-      {activeTab === "allocations" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs">
-            <h2 className="text-base font-extrabold text-[#29241f]">Active Event Stock Allocations</h2>
-            <p className="text-xs text-gray-500">Live equipment reserved and handed over to staff for upcoming and ongoing events.</p>
-
-            <div className="mt-4 space-y-3">
-              {(summary?.activeAllocations || []).length === 0 ? (
-                <p className="rounded-xl bg-[#fdfcfb] p-6 text-center text-xs text-gray-500">
-                  No active stock allocations right now.
-                </p>
-              ) : (
-                summary?.activeAllocations.map((alloc) => {
-                  const ev = typeof alloc.event === "object" ? alloc.event : null;
-                  return (
-                    <div
-                      key={alloc._id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl border border-gray-100 bg-[#fdfcfb] hover:border-[#9a6c37]/30 transition"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-extrabold text-sm text-[#29241f]">{alloc.stockItem?.name || "Equipment"}</span>
-                          <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-700">
-                            Qty: {alloc.takenQuantity || alloc.requiredQuantity} {alloc.stockItem?.unit}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${alloc.status === "TAKEN_BY_STAFF" ? "bg-emerald-100 text-emerald-800" :
-                              alloc.status === "READY_FOR_COLLECTION" ? "bg-amber-100 text-amber-800" :
-                                "bg-blue-100 text-blue-800"
-                            }`}>
-                            {alloc.status.replace(/_/g, " ")}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-0.5">
-                          <span className="flex items-center gap-1 font-semibold text-[#9a6c37]">
-                            <Calendar size={13} />
-                            {ev?.eventName || "Event"} ({ev?.eventDate ? new Date(ev.eventDate).toLocaleDateString() : ""})
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <User size={13} />
-                            Staff: {alloc.assignedStaff?.name || "Unassigned"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: RETURNS & VERIFICATIONS */}
-      {/* ========================================================================= */}
-      {activeTab === "returns" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/30 p-5 shadow-xs">
-            <div className="flex items-center gap-2 text-amber-900">
-              <RotateCcw size={18} />
-              <h2 className="text-base font-extrabold">Staff Returns Awaiting Manager Verification</h2>
-            </div>
-            <p className="mt-1 text-xs text-amber-800">
-              Review returned physical stock, damaged items, and loss reports submitted by staff before restock confirmation.
-            </p>
-
-            <div className="mt-4 space-y-3">
-              {(summary?.pendingReturns || []).length === 0 ? (
-                <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500">
-                  <CheckCircle2 size={32} className="mx-auto text-emerald-500" />
-                  <p className="mt-2 text-sm font-bold text-gray-900">All Returns Verified</p>
-                  <p className="text-xs text-gray-500">No stock returns pending verification at this time.</p>
-                </div>
-              ) : (
-                summary?.pendingReturns.map((alloc) => {
-                  const ev = typeof alloc.event === "object" ? alloc.event : null;
-                  return (
-                    <div
-                      key={alloc._id}
-                      className="rounded-2xl border border-amber-200 bg-white p-4 sm:p-5 shadow-sm space-y-3"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 border-b border-gray-100 pb-3">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-base font-black text-[#29241f]">{alloc.stockItem?.name}</h3>
-                            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-black text-amber-800 uppercase">
-                              {alloc.status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-[#9a6c37] font-semibold mt-0.5">
-                            Event: {ev?.eventName || "General Hold"} · Staff: {alloc.assignedStaff?.name || "Staff"} ({alloc.assignedStaff?.phone || "No phone"})
-                          </p>
-                        </div>
-
-                        <div className="text-xs text-left sm:text-right text-gray-400">
-                          Submitted: {alloc.returnedAt ? new Date(alloc.returnedAt).toLocaleString() : "Recently"}
-                        </div>
-                      </div>
-
-                      {/* Quantities Breakdown */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#faf8f5] p-3 rounded-xl text-xs">
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-gray-400">Taken</p>
-                          <p className="text-sm font-black text-gray-900">{alloc.takenQuantity} {alloc.stockItem?.unit}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-emerald-700">Returned Good</p>
-                          <p className="text-sm font-black text-emerald-700">{alloc.returnedQuantity} {alloc.stockItem?.unit}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-amber-700">Damaged</p>
-                          <p className="text-sm font-black text-amber-700">{alloc.damagedQuantity || 0} {alloc.stockItem?.unit}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-rose-700">Lost / Missing</p>
-                          <p className="text-sm font-black text-rose-700">{alloc.lostQuantity || 0} {alloc.stockItem?.unit}</p>
-                        </div>
-                      </div>
-
-                      {/* Reasons & Notes */}
-                      {(alloc.damagedReason || alloc.lostReason || alloc.returnNotes) && (
-                        <div className="space-y-1 text-xs text-gray-600 bg-stone-50 p-3 rounded-xl border border-stone-200/60">
-                          {alloc.damagedReason && (
-                            <p>
-                              <strong className="text-amber-800">Damage Explanation:</strong> {alloc.damagedReason}
-                            </p>
-                          )}
-                          {alloc.lostReason && (
-                            <p>
-                              <strong className="text-rose-800">Loss Explanation:</strong> {alloc.lostReason}
-                            </p>
-                          )}
-                          {alloc.returnNotes && (
-                            <p>
-                              <strong className="text-gray-700">Staff Return Note:</strong> {alloc.returnNotes}
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setDiscrepancyAllocation(alloc);
-                            setDiscrepancyNotes("");
-                          }}
-                          className="w-full sm:w-auto rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-50 transition cursor-pointer text-center"
-                        >
-                          Report Discrepancy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setVerifyAllocation(alloc);
-                            setVerifyNotes("");
-                          }}
-                          className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 transition active:scale-95 cursor-pointer text-center"
-                        >
-                          Verify & Restock ({alloc.returnedQuantity} {alloc.stockItem?.unit})
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 4: AUDIT TRANSACTION HISTORY */}
-      {/* ========================================================================= */}
-      {activeTab === "history" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs">
-            <h2 className="text-base font-extrabold text-[#29241f]">Immutable Stock Audit Trail</h2>
-            <p className="text-xs text-gray-500">Chronological history of all stock additions, event reservations, staff takings, returns, and damages.</p>
-
-            <div className="mt-4 space-y-2.5">
-              {transactions.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-6">No transaction logs found.</p>
-              ) : (
-                transactions.map((tx) => (
-                  <div
-                    key={tx._id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-3.5 rounded-xl border border-gray-100 bg-[#fdfcfb] text-xs"
-                  >
-                    <div className="flex items-start sm:items-center gap-3">
-                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase shrink-0 ${tx.type === "CREATED" || tx.type === "ADDED" ? "bg-emerald-100 text-emerald-800" :
-                          tx.type === "TAKEN" ? "bg-blue-100 text-blue-800" :
-                            tx.type === "RETURNED" || tx.type === "VERIFIED" ? "bg-teal-100 text-teal-800" :
-                              tx.type === "DAMAGED" || tx.type === "LOST" ? "bg-rose-100 text-rose-800" :
-                                "bg-amber-100 text-amber-800"
-                        }`}>
-                        {tx.type}
-                      </span>
-                      <div>
-                        <span className="font-extrabold text-[#29241f]">
-                          {typeof tx.stockItem === "object" ? tx.stockItem?.name : "Item"}
-                        </span>
-                        <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{tx.notes || "Transaction recorded"}</p>
-                      </div>
-                    </div>
-
-                    <div className="text-left sm:text-right text-[11px] text-gray-400 shrink-0 border-t border-gray-100 sm:border-0 pt-1.5 sm:pt-0">
-                      <p className="font-bold text-gray-700">By: {tx.performedBy?.name || "System"}</p>
-                      <p>{new Date(tx.createdAt).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: CREATE STOCK ITEM */}
+      {/* MODAL: CREATE MASTER STOCK ITEM */}
       {/* ========================================================================= */}
       {createModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-base font-black text-[#29241f]">Create Master Stock Item</h3>
-              <button type="button" onClick={() => setCreateModalOpen(false)} className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -916,10 +507,10 @@ export default function ManagerStockPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Dinner Plate, Wine Glass, Banquet Table"
+                  placeholder="e.g. Dinner Plate, Wine Glass, Banquet Table, Induction Cooktop"
                   value={newItem.name}
                   onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
@@ -929,7 +520,7 @@ export default function ManagerStockPage() {
                   <select
                     value={newItem.category}
                     onChange={(e) => setNewItem({ ...newItem, category: e.target.value as StockCategory })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
@@ -946,7 +537,7 @@ export default function ManagerStockPage() {
                     placeholder="pcs, sets, boxes"
                     value={newItem.unit}
                     onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
@@ -960,7 +551,7 @@ export default function ManagerStockPage() {
                     required
                     value={newItem.totalQuantity}
                     onChange={(e) => setNewItem({ ...newItem, totalQuantity: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
@@ -971,7 +562,7 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.minStockLevel}
                     onChange={(e) => setNewItem({ ...newItem, minStockLevel: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
 
@@ -982,7 +573,7 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.unitPrice}
                     onChange={(e) => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-medium outline-none focus:border-[#9a6c37]"
                   />
                 </div>
               </div>
@@ -995,10 +586,10 @@ export default function ManagerStockPage() {
                     min="0"
                     value={newItem.rentalPrice}
                     onChange={(e) => setNewItem({ ...newItem, rentalPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
                     placeholder="e.g. 150"
                   />
-                  <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
+                  <p className="mt-1 text-[10px] text-gray-400">Charged per unit when rented for events</p>
                 </div>
 
                 <div className="flex items-center gap-2 pt-1 sm:pt-4">
@@ -1022,7 +613,7 @@ export default function ManagerStockPage() {
                   placeholder="Warehouse A - Shelf 3"
                   value={newItem.location}
                   onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
@@ -1033,346 +624,29 @@ export default function ManagerStockPage() {
                   placeholder="Optional details or specifications for rental"
                   value={newItem.description}
                   onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
+                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-xs font-medium outline-none focus:border-[#9a6c37]"
                 />
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                  disabled={createSubmitting}
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:w-auto rounded-xl bg-[#29241f] px-5 py-2.5 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
+                  disabled={createSubmitting}
+                  className="rounded-xl bg-[#29241f] px-5 py-2 text-xs font-extrabold text-white hover:bg-black cursor-pointer flex items-center gap-2"
                 >
-                  Create Item
+                  {createSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
+                  <span>Create Item</span>
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: EDIT STOCK ITEM */}
-      {/* ========================================================================= */}
-      {editItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-black text-[#29241f]">Edit Item: {editItem.name}</h3>
-              <button
-                type="button"
-                onClick={() => setEditItem(null)}
-                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditItem} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-bold text-gray-700">Item Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={editData.name || ""}
-                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-gray-700">Category *</label>
-                  <select
-                    value={editData.category || "Crockery"}
-                    onChange={(e) => setEditData({ ...editData, category: e.target.value as StockCategory })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-bold text-gray-700">Unit of Measure</label>
-                  <input
-                    type="text"
-                    value={editData.unit || "pcs"}
-                    onChange={(e) => setEditData({ ...editData, unit: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-gray-700">Min Alert Level</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editData.minStockLevel ?? 10}
-                    onChange={(e) => setEditData({ ...editData, minStockLevel: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-gray-700">Internal Unit Cost (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editData.unitPrice ?? 0}
-                    onChange={(e) => setEditData({ ...editData, unitPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-gray-700">Rental Rate (₹ per {editData.unit || "unit"})</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editData.rentalPrice ?? 0}
-                    onChange={(e) => setEditData({ ...editData, rentalPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
-                  />
-                  <p className="mt-1 text-[10px] text-gray-400">Price charged per unit when rented to clients</p>
-                </div>
-
-                <div className="flex items-center gap-2 pt-1 sm:pt-4">
-                  <input
-                    type="checkbox"
-                    id="isRentableEdit"
-                    checked={editData.isRentable !== false}
-                    onChange={(e) => setEditData({ ...editData, isRentable: e.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                  />
-                  <label htmlFor="isRentableEdit" className="text-xs font-bold text-gray-700 cursor-pointer">
-                    Available for Client Rental
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-700">Storage Location</label>
-                <input
-                  type="text"
-                  value={editData.location || ""}
-                  onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-700">Description / Specs</label>
-                <textarea
-                  rows={2}
-                  value={editData.description || ""}
-                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm sm:text-xs font-medium outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setEditItem(null)}
-                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto rounded-xl bg-[#29241f] px-5 py-2.5 text-xs font-extrabold text-white hover:bg-black cursor-pointer"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: RESTOCK ITEM */}
-      {/* ========================================================================= */}
-      {restockItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-black text-[#29241f]">Restock: {restockItem.name}</h3>
-              <button
-                type="button"
-                onClick={() => setRestockItem(null)}
-                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p className="text-xs text-gray-500">Current available: {restockItem.availableQuantity} {restockItem.unit}</p>
-
-            <form onSubmit={handleRestock} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-bold text-gray-700">Quantity to Add ({restockItem.unit}) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={restockQty}
-                  onChange={(e) => setRestockQty(Number(e.target.value))}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-black text-emerald-800 outline-none focus:border-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-700">Restock Note / Invoice Reference</label>
-                <input
-                  type="text"
-                  placeholder="Purchased new batch / vendor receipt"
-                  value={restockNotes}
-                  onChange={(e) => setRestockNotes(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs font-medium outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setRestockItem(null)}
-                  className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 cursor-pointer"
-                >
-                  Confirm Restock
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: VERIFY RETURN */}
-      {/* ========================================================================= */}
-      {verifyAllocation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-black text-[#29241f]">Confirm Return Verification</h3>
-              <button
-                type="button"
-                onClick={() => setVerifyAllocation(null)}
-                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p className="text-xs text-gray-600">
-              Verifying return of <strong>{verifyAllocation.returnedQuantity} {verifyAllocation.stockItem?.unit}</strong> of{" "}
-              <strong>{verifyAllocation.stockItem?.name}</strong> back into warehouse available inventory.
-            </p>
-
-            <div className="bg-[#faf8f5] p-3 rounded-xl text-xs space-y-1">
-              <p>Damaged: <strong className="text-amber-800">{verifyAllocation.damagedQuantity || 0}</strong></p>
-              <p>Lost: <strong className="text-rose-800">{verifyAllocation.lostQuantity || 0}</strong></p>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-gray-700">Manager Verification Notes (Optional)</label>
-              <input
-                type="text"
-                placeholder="Inspected and restocked on shelf"
-                value={verifyNotes}
-                onChange={(e) => setVerifyNotes(e.target.value)}
-                className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-sm sm:text-xs outline-none"
-              />
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setVerifyAllocation(null)}
-                className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleVerifyReturn}
-                className="w-full sm:w-auto rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-800 cursor-pointer"
-              >
-                Approve & Restock
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL: REPORT DISCREPANCY */}
-      {/* ========================================================================= */}
-      {discrepancyAllocation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-3xl bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-black text-rose-900">Report Stock Return Discrepancy</h3>
-              <button
-                type="button"
-                onClick={() => setDiscrepancyAllocation(null)}
-                className="rounded-lg p-1 text-gray-400 hover:text-gray-700 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <p className="text-xs text-gray-600">
-              Explain why the physically counted items do not match what staff submitted for{" "}
-              <strong>{discrepancyAllocation.stockItem?.name}</strong>.
-            </p>
-
-            <div>
-              <label className="text-xs font-bold text-gray-700">Discrepancy Explanation *</label>
-              <textarea
-                rows={3}
-                required
-                placeholder="e.g. Box contained only 280 plates instead of 290 submitted. 10 plates missing from crate."
-                value={discrepancyNotes}
-                onChange={(e) => setDiscrepancyNotes(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-200 p-3 text-sm sm:text-xs outline-none focus:border-rose-500"
-              />
-            </div>
-
-            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setDiscrepancyAllocation(null)}
-                className="w-full sm:w-auto rounded-xl border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!discrepancyNotes.trim()}
-                onClick={handleReportDiscrepancy}
-                className="w-full sm:w-auto rounded-xl bg-rose-700 px-5 py-2.5 text-xs font-extrabold text-white hover:bg-rose-800 disabled:opacity-50 cursor-pointer"
-              >
-                Submit Discrepancy Flag
-              </button>
-            </div>
           </div>
         </div>
       )}

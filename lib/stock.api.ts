@@ -62,8 +62,18 @@ export async function getRentableStockItems(
 export async function getStockItemById(
   id: string,
   token?: string
-): Promise<{ data: StockItem; recentTransactions: StockTransaction[] }> {
-  return get<{ data: StockItem; recentTransactions: StockTransaction[] }>(`/stock/items/${id}`, token);
+): Promise<{
+  success?: boolean;
+  data: StockItem;
+  recentTransactions: StockTransaction[];
+  allocations?: EventStockAllocation[];
+}> {
+  return get<{
+    success?: boolean;
+    data: StockItem;
+    recentTransactions: StockTransaction[];
+    allocations?: EventStockAllocation[];
+  }>(`/stock/items/${id}`, token);
 }
 
 export async function createStockItem(
