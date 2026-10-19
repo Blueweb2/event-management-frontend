@@ -5,28 +5,20 @@ import { usePathname } from "next/navigation";
 
 import {
   X,
-  LayoutDashboard,
-  Users,
-  ClipboardList,
-  CalendarDays,
-  Clock3,
-  UserCheck,
-  CalendarCheck,
-  CalendarPlus,
-  FileText,
-  Utensils,
-  BriefcaseBusiness,
-  Wallet,
-  IndianRupee,
-  BarChart3,
-  Settings,
   LogOut,
   ChevronRight,
-  Package,
+  ChefHat,
+  Palette,
+  Camera,
   ShieldCheck,
+  User,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
+import {
+  getAuthorizedMenuItems,
+  getManagerScope,
+} from "@/lib/manager-navigation";
 
 // ==========================================
 // Props
@@ -37,78 +29,6 @@ interface ManagerMenuProps {
   onClose: () => void;
   onLogout?: () => void;
 }
-
-// ==========================================
-// Menu Items
-// ==========================================
-
-const menuItems = [
-  {
-    label: "Dashboard",
-    href: "/manager",
-    icon: LayoutDashboard,
-  },
-
-  // ==========================================
-  // Core Management & Operations
-  // ==========================================
-
-  {
-    label: "Events",
-    href: "/manager/events",
-    icon: CalendarCheck,
-  },
-  {
-    label: "Services",
-    href: "/manager/services",
-    icon: BriefcaseBusiness,
-  },
-  {
-    label: "Food Menu",
-    href: "/manager/food",
-    icon: Utensils,
-  },
-  {
-    label: "Stock & Equipment",
-    href: "/manager/stock",
-    icon: Package,
-  },
-
-  // ==========================================
-  // Staff & Team Management
-  // ==========================================
-
-  {
-    label: "Staff Members",
-    href: "/manager/staff",
-    icon: Users,
-  },
-
-  // ==========================================
-  // Finance and Reports
-  // ==========================================
-
-  {
-    label: "Expenses",
-    href: "/manager/expenses",
-    icon: Wallet,
-  },
-  {
-    label: "Reports",
-    href: "/manager/reports",
-    icon: BarChart3,
-  },
-
-  // ==========================================
-  // Settings
-  // ==========================================
-
-  {
-    label: "Settings",
-    href: "/manager/settings",
-    icon: Settings,
-  },
-];
 
 // ==========================================
 // Manager Menu
@@ -125,6 +45,9 @@ export default function ManagerMenu({
   if (!isOpen) {
     return null;
   }
+
+  const scope = getManagerScope(user);
+  const menuItems = getAuthorizedMenuItems(user);
 
   return (
     <div className="fixed inset-0 z-50">
@@ -155,65 +78,69 @@ export default function ManagerMenu({
 
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 px-5">
           <div className="flex min-w-0 items-center gap-3">
-            {/* Manager Avatar */}
-
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#6B5B95] text-sm font-semibold text-white">
-              {user?.name
-                ? user.name.charAt(0).toUpperCase()
-                : "M"}
-            </div>
+            {/* Scoped Manager Avatar */}
+            {scope.isChefManager ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-600 text-white shadow-sm ring-2 ring-amber-100">
+                <ChefHat size={22} strokeWidth={2.2} />
+              </div>
+            ) : scope.departmentType === "decoration" ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-100">
+                <Palette size={20} strokeWidth={2.2} />
+              </div>
+            ) : scope.departmentType === "photography" ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-sm ring-2 ring-sky-100">
+                <Camera size={20} strokeWidth={2.2} />
+              </div>
+            ) : scope.isSuperAdmin ? (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-sm ring-2 ring-rose-100">
+                <ShieldCheck size={22} strokeWidth={2.2} />
+              </div>
+            ) : (
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#6B5B95] text-sm font-semibold text-white shadow-sm">
+                {user?.name ? user.name.charAt(0).toUpperCase() : <User size={20} />}
+              </div>
+            )}
 
             {/* Manager Information */}
-
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900">
                 {user?.name || "Manager"}
               </p>
 
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 truncate">
-                  {user?.department || (user?.role === "superadmin" ? "Superadmin" : "Operations")}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold border truncate ${scope.badgeColor}`}
+                >
+                  {scope.roleTitle} · {scope.departmentDisplay}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Close Button */}
-
           <button
             type="button"
             onClick={onClose}
             aria-label="Close menu"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 active:scale-95"
           >
-            <X
-              size={22}
-              strokeWidth={2}
-            />
+            <X size={22} strokeWidth={2} />
           </button>
         </div>
 
         {/* ======================================
-            Navigation
+            Navigation (Role & Department Scoped)
         ====================================== */}
 
         <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Menu
-          </p>
-
-          {/* {user?.role === "superadmin" && (
-            <div className="mb-3 px-1">
-              <Link
-                href="/superadmin"
-                onClick={onClose}
-                className="flex items-center justify-between rounded-xl border border-amber-300 bg-linear-to-r from-amber-50 to-amber-100/60 p-3 text-xs font-bold text-[#84632a] shadow-xs transition hover:bg-amber-100"
-              >
-            
-                <ChevronRight size={15} />
-              </Link>
-            </div>
-          )} */}
+          <div className="mb-3 flex items-center justify-between px-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+              {scope.isChefManager ? "Chef & Kitchen Menus" : `${scope.roleTitle} Menus`}
+            </p>
+            <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
+              {menuItems.length} items
+            </span>
+          </div>
 
           <div className="space-y-1">
             {menuItems.map((item) => {
@@ -233,34 +160,44 @@ export default function ManagerMenu({
                     "flex min-h-12 items-center gap-3 rounded-xl px-3",
                     "text-sm font-medium transition",
                     isActive
-                      ? "bg-gray-900 text-white"
+                      ? "bg-gray-900 text-white shadow-xs"
                       : "text-gray-700 hover:bg-gray-100",
                   ].join(" ")}
                 >
                   {/* Icon */}
-
                   <Icon
                     size={20}
                     strokeWidth={2}
-                    className="shrink-0"
+                    className={`shrink-0 ${
+                      isActive
+                        ? scope.isChefManager
+                          ? "text-amber-400"
+                          : "text-[#9A7B4F]"
+                        : "text-gray-500"
+                    }`}
                   />
 
                   {/* Label */}
+                  <span className="flex-1">{item.label}</span>
 
-                  <span className="flex-1">
-                    {item.label}
-                  </span>
+                  {/* Badge */}
+                  {item.badge && (
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-amber-100 text-amber-900"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
 
                   {/* Arrow */}
-
                   <ChevronRight
                     size={17}
                     strokeWidth={2}
-                    className={
-                      isActive
-                        ? "text-white/70"
-                        : "text-gray-400"
-                    }
+                    className={isActive ? "text-white/70" : "text-gray-400"}
                   />
                 </Link>
               );
@@ -278,15 +215,8 @@ export default function ManagerMenu({
             onClick={onLogout}
             className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:scale-[0.99]"
           >
-            <LogOut
-              size={20}
-              strokeWidth={2}
-              className="shrink-0"
-            />
-
-            <span className="flex-1 text-left">
-              Logout
-            </span>
+            <LogOut size={20} strokeWidth={2} className="shrink-0" />
+            <span className="flex-1 text-left">Logout</span>
           </button>
         </div>
       </aside>

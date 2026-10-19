@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { ShieldAlert, LayoutDashboard } from "lucide-react";
 import ManagerHeader from "./ManagerHeader";
 import ManagerMenu from "./ManagerMenu";
 import ManagerBottomNav from "./ManagerBottomNav";
 import ManagerNotificationDrawer from "../notifications/ManagerNotificationDrawer";
 import { useAuth } from "@/hooks/useAuth";
 import { useManagerNotifications } from "@/hooks/useManagerNotifications";
+import {
+  isRouteAuthorizedForUser,
+  getManagerScope,
+} from "@/lib/manager-navigation";
 
 interface ManagerLayoutProps {
   children: React.ReactNode;
@@ -89,6 +95,9 @@ export default function ManagerLayout({
     );
   }
 
+  const scope = getManagerScope(user);
+  const routeAuth = isRouteAuthorizedForUser(pathname, user);
+
   return (
     <div className="min-h-screen bg-[#F8F7F3] text-[#1F1F1F]">
       {/* Header with Live Notifications Bell */}
@@ -121,7 +130,30 @@ export default function ManagerLayout({
       {/* Page Content */}
       <main className="min-h-[calc(100dvh-64px)] pb-28 sm:pb-12">
         <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
-          {children}
+          {!routeAuth.authorized ? (
+            <div className="mx-auto max-w-lg py-16 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs border border-amber-200">
+                <ShieldAlert size={32} />
+              </div>
+              <h2 className="mt-4 text-lg font-bold text-gray-900">
+                Menu Not Available for {scope.departmentDisplay}
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                {routeAuth.reason || "This menu is restricted to authorized departments."}
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/manager"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#252525] px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#1a1a1a] active:scale-95"
+                >
+                  <LayoutDashboard size={14} />
+                  <span>Return to {scope.roleTitle} Dashboard</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </div>
       </main>
 
