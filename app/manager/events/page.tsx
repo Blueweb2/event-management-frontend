@@ -19,7 +19,6 @@ import {
 } from "@/lib/estimates.api";
 
 import EventsHeader from "@/components/manager/events/EventsHeader";
-import EventsStats from "@/components/manager/events/EventStats";
 import EventFilters, { type EventFilterStatus } from "@/components/manager/events/EventFilters";
 import EventSearch from "@/components/manager/events/EventSearch";
 import EventList from "@/components/manager/events/EventList";
@@ -251,57 +250,6 @@ function ManagerEventsContent() {
     setEvents((prev) => prev.filter((e) => e._id !== eventId));
   };
 
-  const totalEvents = events.length;
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
-  const isCompletedEvent = (st?: string) => {
-    const s = (st || "").toLowerCase();
-    return (
-      s === "completed" ||
-      s === "settled" ||
-      s === "invoiced" ||
-      s === "cancelled"
-    );
-  };
-
-  const isTodayDate = (dateStr?: string) => {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    return (
-      !isNaN(d.getTime()) && d.toDateString() === new Date().toDateString()
-    );
-  };
-
-  const ongoingEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    if (isCompletedEvent(event.status)) return false;
-    return (
-      (s === "ongoing" || s === "in_progress") && isTodayDate(event.eventDate)
-    );
-  }).length;
-
-  const upcomingEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    if (isCompletedEvent(event.status)) return false;
-    if (
-      (s === "ongoing" || s === "in_progress") &&
-      isTodayDate(event.eventDate)
-    )
-      return false;
-    if (!event.eventDate) return false;
-    const d = new Date(event.eventDate);
-    if (isNaN(d.getTime())) return false;
-    const eventEnd = new Date(d);
-    eventEnd.setHours(23, 59, 59, 999);
-    return eventEnd.getTime() >= todayStart.getTime();
-  }).length;
-
-  const completedEvents = events.filter((event) => {
-    const s = (event.status || "").toLowerCase();
-    return s === "completed" || s === "settled" || s === "invoiced";
-  }).length;
-
   return (
     <div className="w-full space-y-6">
       <div className="w-full">
@@ -371,21 +319,8 @@ function ManagerEventsContent() {
           </div>
         )}
 
-        {/* Stats Overview */}
-        <section className="mt-5 max-w-7xl">
-          <EventsStats
-            total={totalEvents}
-            upcoming={upcomingEvents}
-            ongoing={ongoingEvents}
-            completed={completedEvents}
-            estimates={pendingEstimates.length}
-            onSelectEstimates={() => setStatus("Estimates")}
-            activeFilter={status}
-          />
-        </section>
-
         {/* Search */}
-        <section className="mt-6 max-w-7xl">
+        <section className="mt-5 max-w-7xl">
           <EventSearch
             value={search}
             onChange={setSearch}

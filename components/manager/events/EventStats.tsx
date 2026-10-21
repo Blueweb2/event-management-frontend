@@ -112,4 +112,4 @@ function StatCard({
   );
 
   return content;
-}
+}

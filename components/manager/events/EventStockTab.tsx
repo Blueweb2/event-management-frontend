@@ -469,19 +469,10 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition disabled:opacity-50"
             >
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-              Refresh
+             
             </button>
 
-            <button
-              type="button"
-              onClick={() => handleReserve()}
-              disabled={actionLoading || eventStocks.length === 0}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl transition disabled:opacity-50"
-              title="Automatically reserve unreserved required quantities from warehouse"
-            >
-              <Layers size={14} />
-              Auto-Reserve All
-            </button>
+          
 
             <button
               type="button"
@@ -519,65 +510,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
         )}
 
         {/* KPI Summary Cards */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-3.5">
-            <div className="text-[11px] font-bold uppercase text-gray-500">Total Required</div>
-            <div className="mt-1 text-xl font-extrabold text-gray-900">{totalRequired}</div>
-            <div className="text-[10px] text-gray-400">{eventStocks.length} allocated items</div>
-          </div>
-
-          <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-3.5">
-            <div className="text-[11px] font-bold uppercase text-blue-700">In Custody</div>
-            <div className="mt-1 text-xl font-extrabold text-blue-900">{totalTaken}</div>
-            <div className="text-[10px] text-blue-600">{inCustodyStocks.length} active handovers</div>
-          </div>
-
-          <div
-            onClick={() => setActiveQueueTab("pending")}
-            className={`rounded-2xl border p-3.5 cursor-pointer transition ${
-              pendingReturns.length > 0
-                ? "border-purple-300 bg-purple-50/60 shadow-2xs hover:bg-purple-100/60"
-                : "border-gray-200 bg-gray-50/50"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-[11px] font-bold uppercase text-purple-700">Pending Review</div>
-              {pendingReturns.length > 0 && (
-                <span className="h-2 w-2 rounded-full bg-purple-600 animate-ping" />
-              )}
-            </div>
-            <div className="mt-1 text-xl font-extrabold text-purple-900">{pendingReturns.length}</div>
-            <div className="text-[10px] text-purple-600">Awaiting return inspection</div>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-3.5">
-            <div className="text-[11px] font-bold uppercase text-emerald-700">Approved Good</div>
-            <div className="mt-1 text-xl font-extrabold text-emerald-900">{totalReturned}</div>
-            <div className="text-[10px] text-emerald-600">Restocked to warehouse</div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-3.5">
-            <div className="text-[11px] font-bold uppercase text-amber-700">Damaged Items</div>
-            <div className="mt-1 text-xl font-extrabold text-amber-900">{totalDamaged}</div>
-            <div className="text-[10px] text-amber-600">Logged in quarantine</div>
-          </div>
-
-          <div
-            className={`rounded-2xl border p-3.5 ${
-              overdueReturns.length > 0
-                ? "border-red-300 bg-red-50/50"
-                : "border-gray-200 bg-gray-50/50"
-            }`}
-          >
-            <div className="text-[11px] font-bold uppercase text-red-700">Overdue / Lost</div>
-            <div className="mt-1 text-xl font-extrabold text-red-900">
-              {totalLost} <span className="text-xs font-medium text-gray-500">lost</span>
-            </div>
-            <div className="text-[10px] text-red-600 font-medium">
-              {overdueReturns.length > 0 ? `${overdueReturns.length} overdue returns` : "No overdue items"}
-            </div>
-          </div>
-        </div>
+     
       </div>
 
       {/* Main Stock Table & Queue Section */}

@@ -272,6 +272,26 @@ export interface IngredientCalculationResult {
     category: string;
     reason: string;
   }>;
+  perItemCalculations?: Array<{
+    name: string;
+    category?: string;
+    hasRecipe?: boolean;
+    recipeId?: string;
+    yieldServings?: number;
+    ingredients: Array<{
+      name: string;
+      unit: string;
+      perGuestQuantity?: number;
+      baseQuantity?: number;
+      wastagePercent?: number;
+      requiredQuantity: number;
+      availableQuantity?: number | null;
+      shortageQuantity?: number | null;
+      hasShortage?: boolean;
+      status?: string;
+      notes?: string;
+    }>;
+  }>;
   aggregatedIngredients: CalculatedIngredient[];
   shortages: CalculatedIngredient[];
   hasAnyShortage: boolean;

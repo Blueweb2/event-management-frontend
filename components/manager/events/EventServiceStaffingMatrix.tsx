@@ -28,13 +28,16 @@ import {
   Palette,
   Volume2,
   Camera,
-  
+  ChefHat,
   BellRing,
   Settings,
 } from "lucide-react";
 
 import {
   getEventStaffingRequirements,
+  calculateKitchenIngredients,
+  getKitchenPurchaseRequests,
+  type IngredientCalculationResult,
   EventStaffingResponse,
   StaffingStream,
   DepartmentStaffMember,
@@ -84,6 +87,49 @@ export default function EventServiceStaffingMatrix({
   // Managing Sub-duties Checklist Modal State
   const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
 
+  // Collapsible Catering Menu & Chef Ingredients State
+  const [cateringMenuExpanded, setCateringMenuExpanded] = useState(false);
+  const [cateringCalcResult, setCateringCalcResult] = useState<IngredientCalculationResult | null>(null);
+  const [chefPurchaseItems, setChefPurchaseItems] = useState<any[]>([]);
+  const [cateringIngredientsLoading, setCateringIngredientsLoading] = useState(false);
+
+  const loadCateringChefData = async () => {
+    if (!eventId) return;
+    try {
+      setCateringIngredientsLoading(true);
+      const [calcRes, reqsRes] = await Promise.all([
+        calculateKitchenIngredients(eventId, 5, token).catch(() => ({ data: null })),
+        getKitchenPurchaseRequests("", token).catch(() => ({ data: [] })),
+      ]);
+
+      if (calcRes?.data) {
+        setCateringCalcResult(calcRes.data);
+      }
+
+      if (Array.isArray(reqsRes?.data)) {
+        const eventRequests = reqsRes.data.filter(
+          (pr: any) =>
+            (pr.event?._id && String(pr.event._id) === String(eventId)) ||
+            (pr.event && typeof pr.event === "string" && String(pr.event) === String(eventId))
+        );
+        const eventItems = eventRequests.flatMap((pr: any) =>
+          (pr.items || []).map((it: any) => ({
+            name: it.itemName,
+            requiredQuantity: it.requiredQuantity,
+            unit: it.unit || "pcs",
+            notes: it.notes || pr.notes || "",
+            isGroceryRequest: true,
+          }))
+        );
+        setChefPurchaseItems(eventItems);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setCateringIngredientsLoading(false);
+    }
+  };
+
   const loadMatrix = async () => {
     try {
       setLoading(true);
@@ -92,6 +138,7 @@ export default function EventServiceStaffingMatrix({
       if (res.data) {
         setData(res.data);
       }
+      void loadCateringChefData();
     } catch (err) {
       setError(
         err instanceof Error
@@ -278,101 +325,10 @@ export default function EventServiceStaffingMatrix({
       )}
 
       {/* Header Banner */}
-      <section className="rounded-3xl border border-[#e8e1d8] bg-gradient-to-br from-[#29241f] via-[#383129] to-[#1c1916] p-6 text-white shadow-md">
-        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300/90">
-              <Sparkles size={14} />
-              <span>Event Duty</span>
-            </div>
-            <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">
-              {data.event.eventName}
-            </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-300">
-              <span className="flex items-center gap-1">
-                <Calendar size={13} className="text-amber-400" />
-                {new Date(data.targetDate).toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock size={13} className="text-amber-400" />
-                {formatTime24to12(data.event.eventTime)}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users size={13} className="text-amber-400" />
-                {data.event.guests} Guests
-              </span>
-              {data.event.hasCatering && (
-                <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 font-bold text-amber-200">
-                  🍽️ Catering Included
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats Summary */}
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400">
-                Active Events
-              </p>
-              <p className="text-lg font-black text-amber-300">
-                {data.staffingStreams.length}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-center">
-              <p className="text-[10px] uppercase font-bold text-gray-400">
-                Available Staff
-              </p>
-              <p className="text-lg font-black text-emerald-300">
-                {data.allStaffPool.filter((s) => s.isAvailable).length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs by Service */}
-        <div className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-4">
-          <button
-            type="button"
-            onClick={() => setSelectedStreamId("all")}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
-              selectedStreamId === "all"
-                ? "bg-[#b8894b] text-white shadow-sm"
-                : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white"
-            }`}
-          >
-            All Required Services ({data.staffingStreams.length})
-          </button>
-
-          {data.staffingStreams.map((stream) => {
-            const StreamIcon = getStreamIcon(stream.category);
-            return (
-              <button
-                key={stream.streamId}
-                type="button"
-                onClick={() => setSelectedStreamId(stream.streamId)}
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
-                  selectedStreamId === stream.streamId
-                    ? "bg-[#b8894b] text-white shadow-sm"
-                    : "bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white"
-                }`}
-              >
-                <StreamIcon size={14} />
-                <span>{stream.title}</span>
-                <span className="ml-1 rounded-full bg-black/30 px-1.5 py-0.2 text-[10px]">
-                  {stream.allocatedCount}/{stream.recommendedStaffCount}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+<h2 className="text-lg font-black text-[#29241f] flex items-center gap-2">
+        <Layers size={16} className="text-[#9a6c37]" />
+        Event Service 
+      </h2>
 
       {/* Dynamic Service Streams Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -380,6 +336,44 @@ export default function EventServiceStaffingMatrix({
           const isFullyAllocated =
             stream.allocatedCount >= stream.recommendedStaffCount;
           const StreamIcon = getStreamIcon(stream.category);
+
+          const isCateringStream =
+            stream.streamType === "CATERING" ||
+            stream.streamId === "catering" ||
+            stream.department?.toLowerCase().includes("cater");
+
+          const cateringMenuItems = isCateringStream
+            ? ((stream.specDetails?.items && stream.specDetails.items.length > 0
+                ? stream.specDetails.items
+                : data?.event?.foodMenu?.items) || [])
+            : [];
+
+          const servingType = isCateringStream
+            ? (stream.specDetails?.servingType || data?.event?.foodMenu?.servingType || "")
+            : "";
+
+          const guestCount = isCateringStream
+            ? (stream.specDetails?.guests || data?.event?.guests || 0)
+            : 0;
+
+          const foodNotes = isCateringStream
+            ? (data?.event?.foodMenu?.notes || "")
+            : "";
+
+          const dishesWithIngredients = isCateringStream
+            ? (cateringCalcResult?.perItemCalculations?.filter(
+                (dish) => Array.isArray(dish.ingredients) && dish.ingredients.length > 0
+              ) || [])
+            : [];
+
+          const aggregatedList = isCateringStream
+            ? (cateringCalcResult?.aggregatedIngredients || [])
+            : [];
+
+          const hasAnyChefIngredients =
+            dishesWithIngredients.length > 0 ||
+            aggregatedList.length > 0 ||
+            chefPurchaseItems.length > 0;
 
           return (
             <div
@@ -490,8 +484,8 @@ export default function EventServiceStaffingMatrix({
                                   <span>
                                     Manage Subtasks
                                     {checklistCount > 0
-                                      ? ` · ${completedCount > 0 ? `${completedCount}/` : ""}${checklistCount}`
-                                      : ""}
+                                      ? ` · ${completedCount}/${checklistCount} completed`
+                                      : " (+ Add)"}
                                   </span>
                                 </button>
                               ) : (
@@ -615,18 +609,252 @@ export default function EventServiceStaffingMatrix({
                     )}
                   </div>
                 </div>
+
+                {/* Collapsible Catering Menu & Chef-Added Ingredients Section */}
+                {isCateringStream && (
+                  <div className="mt-4 border-t border-[#f1ece5] pt-3">
+                    {/* Compact Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCateringMenuExpanded((prev) => !prev);
+                        if (!cateringCalcResult && !cateringIngredientsLoading) {
+                          void loadCateringChefData();
+                        }
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl border border-[#ede5d8] bg-[#faf8f5] px-3.5 py-2 text-xs font-bold text-[#785122] transition hover:bg-[#f3ede4] hover:border-[#dfd3c3] active:scale-[0.99] cursor-pointer"
+                      aria-expanded={cateringMenuExpanded}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span>{cateringMenuExpanded ? "▲ Hide Catering Menu" : "▼ Show Catering Menu"}</span>
+                        {cateringMenuItems.length > 0 && (
+                          <span className="rounded-full bg-amber-100 border border-amber-300/70 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-900">
+                            {cateringMenuItems.length}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#9a6c37]">
+                        {cateringMenuExpanded ? "Click to collapse" : "Menus & Ingredients"}
+                      </span>
+                    </button>
+
+                    {/* Collapsible Expanded Content */}
+                    {cateringMenuExpanded && (
+                      <div className="mt-2.5 space-y-4 rounded-2xl border border-[#ede5d8] bg-[#fdfcf9] p-3 text-xs animate-in fade-in duration-200">
+                        {/* 1. Client-Selected Catering Menus */}
+                        <div>
+                          <div className="flex items-center justify-between border-b border-[#f1ece5] pb-2 mb-2">
+                            <div className="flex items-center gap-1.5 font-bold text-[#29241f]">
+                              <Utensils size={13} className="text-[#9a6c37]" />
+                              <span>Client-Selected Catering Menus</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                              {servingType && (
+                                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700 capitalize">
+                                  Serving: {servingType}
+                                </span>
+                              )}
+                              {guestCount > 0 && (
+                                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700">
+                                  {guestCount} Guests
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {cateringMenuItems.length === 0 ? (
+                            <p className="text-xs text-gray-500 italic py-1">
+                              No catering menus selected for this event.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {cateringMenuItems.map((item, idx) => (
+                                  <div
+                                    key={item.name + idx}
+                                    className="flex flex-col justify-between rounded-xl border border-[#ede5d8] bg-white p-2.5 shadow-2xs"
+                                  >
+                                    <div>
+                                      <div className="flex items-start justify-between gap-1.5">
+                                        <span className="font-bold text-[#29241f] leading-snug">
+                                          {item.name}
+                                        </span>
+                                        {item.dietary && (
+                                          <span
+                                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase ${
+                                              item.dietary === "VEG"
+                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                                : item.dietary === "NON_VEG"
+                                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                                            }`}
+                                          >
+                                            {item.dietary}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="mt-1 text-[11px] font-medium text-gray-500 capitalize">
+                                        Category: {item.category || "General"}
+                                      </p>
+                                    </div>
+                                    {(item.quantity || guestCount > 0) && (
+                                      <div className="mt-1.5 flex items-center justify-between border-t border-gray-100 pt-1 text-[10px] text-gray-500">
+                                        <span>Quantity / Servings:</span>
+                                        <span className="font-semibold text-gray-800">
+                                          {item.quantity ? `${item.quantity} portions` : `${guestCount} guests`}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {foodNotes && (
+                                <div className="rounded-xl bg-amber-50/70 border border-amber-200/60 p-2.5 text-[11px] text-amber-900">
+                                  <span className="font-bold">Client Notes & Customizations: </span>
+                                  <span>{foodNotes}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 2. Chef-Added Ingredients */}
+                        <div className="border-t border-[#f1ece5] pt-3">
+                          <div className="flex items-center justify-between pb-2">
+                            <div className="flex items-center gap-1.5 font-bold text-[#29241f]">
+                              <ChefHat size={13} className="text-[#9a6c37]" />
+                              <span>Chef-Added Ingredients</span>
+                            </div>
+                            {cateringIngredientsLoading && (
+                              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                                <Loader2 size={11} className="animate-spin text-[#9a6c37]" />
+                                <span>Loading...</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {cateringIngredientsLoading && !hasAnyChefIngredients ? (
+                            <div className="flex items-center justify-center py-3 text-xs text-gray-400">
+                              <Loader2 size={14} className="animate-spin mr-1.5 text-[#9a6c37]" />
+                              Loading event ingredients...
+                            </div>
+                          ) : !hasAnyChefIngredients ? (
+                            <p className="text-xs text-gray-500 italic py-1">
+                              No ingredients added by the chef yet.
+                            </p>
+                          ) : (
+                            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+                              {/* Grouped by Dish when perItemCalculations exists */}
+                              {dishesWithIngredients.length > 0 ? (
+                                dishesWithIngredients.map((dish, dIdx) => (
+                                  <div
+                                    key={dish.name + dIdx}
+                                    className="rounded-xl border border-[#ede5d8] bg-white p-2.5 shadow-2xs"
+                                  >
+                                    <div className="flex items-center justify-between border-b border-gray-100 pb-1.5 mb-1.5">
+                                      <span className="font-bold text-xs text-[#29241f] flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-[#9a6c37]" />
+                                        {dish.name}
+                                      </span>
+                                      {dish.category && (
+                                        <span className="text-[10px] text-gray-400 font-medium capitalize">
+                                          {dish.category}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="grid gap-1.5 sm:grid-cols-2">
+                                      {dish.ingredients.map((ing, iIdx) => (
+                                        <div
+                                          key={ing.name + iIdx}
+                                          className="flex items-center justify-between rounded-lg bg-[#faf8f5] px-2 py-1 text-[11px]"
+                                        >
+                                          <div className="truncate pr-2">
+                                            <span className="font-medium text-gray-800">{ing.name}</span>
+                                            {ing.notes && (
+                                              <span className="block text-[9px] text-gray-400 italic truncate">
+                                                {ing.notes}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <span className="shrink-0 font-bold text-[#785122]">
+                                            {ing.requiredQuantity} {ing.unit}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : aggregatedList.length > 0 ? (
+                                <div className="rounded-xl border border-[#ede5d8] bg-white p-2.5">
+                                  <div className="grid gap-1.5 sm:grid-cols-2">
+                                    {aggregatedList.map((ing, idx) => (
+                                      <div
+                                        key={ing.name + idx}
+                                        className="flex items-center justify-between rounded-lg bg-[#faf8f5] px-2.5 py-1.5 text-[11px]"
+                                      >
+                                        <span className="font-medium text-gray-800">{ing.name}</span>
+                                        <span className="shrink-0 font-bold text-[#785122]">
+                                          {ing.requiredQuantity} {ing.unit}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {/* Additional Event-Specific Chef Grocery Requests */}
+                              {chefPurchaseItems.length > 0 && (
+                                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-2.5">
+                                  <div className="flex items-center justify-between border-b border-amber-200/50 pb-1 mb-1.5">
+                                    <span className="font-bold text-xs text-amber-900">
+                                      Event Grocery & Special Requests
+                                    </span>
+                                    <span className="text-[10px] text-amber-700 font-medium">
+                                      {chefPurchaseItems.length} items
+                                    </span>
+                                  </div>
+                                  <div className="grid gap-1.5 sm:grid-cols-2">
+                                    {chefPurchaseItems.map((item, pIdx) => (
+                                      <div
+                                        key={item.name + pIdx}
+                                        className="flex items-center justify-between rounded-lg bg-white/90 px-2 py-1 text-[11px] border border-amber-100"
+                                      >
+                                        <div className="truncate pr-2">
+                                          <span className="font-medium text-gray-800">{item.name}</span>
+                                          {item.notes && (
+                                            <span className="block text-[9px] text-gray-400 italic truncate">
+                                              {item.notes}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className="shrink-0 font-bold text-amber-800">
+                                          {item.requiredQuantity} {item.unit}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Bottom Quick Button */}
               <div className="mt-3.5 border-t border-[#f1ece5] pt-2.5">
-                <button
+                {/* <button
                   type="button"
                   onClick={() => openAllocateModal(stream)}
                   className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#9a6c37]/50 bg-white py-1.5 text-xs font-bold text-[#9a6c37] transition hover:bg-[#faf6f0]"
                 >
                   <Plus size={13} />
                   <span>Assign Duty for {stream.title}</span>
-                </button>
+                </button> */}
               </div>
             </div>
           );

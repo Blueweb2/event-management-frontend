@@ -28,6 +28,7 @@ export default function ManagerLayout({
     pathname === "/manager/booking" || pathname?.startsWith("/manager/booking");
   const { user, token, loading, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [isNotifsOpen, setIsNotifsOpen] = useState(false);
 
   const {
@@ -56,8 +57,12 @@ export default function ManagerLayout({
     }
   }, [loading, token, user, router]);
 
-  const openMenu = () => {
-    setIsMenuOpen(true);
+  const toggleMenu = () => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      setIsDesktopSidebarOpen((prev) => !prev);
+    } else {
+      setIsMenuOpen((prev) => !prev);
+    }
   };
 
   const closeMenu = () => {
@@ -100,62 +105,71 @@ export default function ManagerLayout({
 
   return (
     <div className="min-h-screen bg-[#F8F7F3] text-[#1F1F1F]">
-      {/* Header with Live Notifications Bell */}
-      <ManagerHeader
-        onMenuClick={openMenu}
-        onNotificationClick={() => setIsNotifsOpen(true)}
-        unreadCount={unreadCount}
-      />
-
-      {/* Side Menu / Drawer */}
+      {/* Side Menu / Sidebar (Always open on desktop) */}
       <ManagerMenu
         isOpen={isMenuOpen}
+        isDesktopOpen={isDesktopSidebarOpen}
         onClose={closeMenu}
         onLogout={handleLogout}
       />
 
-      {/* Slide-over Notifications Drawer */}
-      <ManagerNotificationDrawer
-        open={isNotifsOpen}
-        onClose={() => setIsNotifsOpen(false)}
-        notifications={notifications}
-        unreadCount={unreadCount}
-        loading={notifsLoading}
-        onMarkAsRead={markAsRead}
-        onMarkAllAsRead={markAllAsRead}
-        onDismiss={dismissNotification}
-        onRefresh={refreshNotifs}
-      />
+      {/* Main Content Area: offset by sidebar width on desktop */}
+      <div
+        className={`flex min-h-screen flex-col transition-[padding] duration-200 ${
+          isDesktopSidebarOpen ? "lg:pl-64" : "lg:pl-0"
+        }`}
+      >
+        {/* Header with Live Notifications Bell */}
+        <ManagerHeader
+          onMenuClick={toggleMenu}
+          onNotificationClick={() => setIsNotifsOpen(true)}
+          unreadCount={unreadCount}
+          isDesktopSidebarOpen={isDesktopSidebarOpen}
+        />
 
-      {/* Page Content */}
-      <main className="min-h-[calc(100dvh-64px)] pb-28 sm:pb-12">
-        <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
-          {!routeAuth.authorized ? (
-            <div className="mx-auto max-w-lg py-16 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs border border-amber-200">
-                <ShieldAlert size={32} />
+        {/* Slide-over Notifications Drawer */}
+        <ManagerNotificationDrawer
+          open={isNotifsOpen}
+          onClose={() => setIsNotifsOpen(false)}
+          notifications={notifications}
+          unreadCount={unreadCount}
+          loading={notifsLoading}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onDismiss={dismissNotification}
+          onRefresh={refreshNotifs}
+        />
+
+        {/* Page Content */}
+        <main className="flex-1 pb-28 sm:pb-12">
+          <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 sm:py-6 lg:px-8">
+            {!routeAuth.authorized ? (
+              <div className="mx-auto max-w-lg py-16 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 shadow-xs border border-amber-200">
+                  <ShieldAlert size={32} />
+                </div>
+                <h2 className="mt-4 text-lg font-bold text-gray-900">
+                  Menu Not Available for {scope.departmentDisplay}
+                </h2>
+                <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                  {routeAuth.reason || "This menu is restricted to authorized departments."}
+                </p>
+                <div className="mt-6">
+                  <Link
+                    href="/manager"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#252525] px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#1a1a1a] active:scale-95"
+                  >
+                    <LayoutDashboard size={14} />
+                    <span>Return to {scope.roleTitle} Dashboard</span>
+                  </Link>
+                </div>
               </div>
-              <h2 className="mt-4 text-lg font-bold text-gray-900">
-                Menu Not Available for {scope.departmentDisplay}
-              </h2>
-              <p className="mt-2 text-xs leading-relaxed text-gray-600">
-                {routeAuth.reason || "This menu is restricted to authorized departments."}
-              </p>
-              <div className="mt-6">
-                <Link
-                  href="/manager"
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#252525] px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#1a1a1a] active:scale-95"
-                >
-                  <LayoutDashboard size={14} />
-                  <span>Return to {scope.roleTitle} Dashboard</span>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            children
-          )}
-        </div>
-      </main>
+            ) : (
+              children
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <ManagerBottomNav />

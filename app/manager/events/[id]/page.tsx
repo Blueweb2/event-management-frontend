@@ -18,14 +18,12 @@ import ErrorMessage from "@/components/common/ErrorMessage";
 import EventServiceStaffingMatrix from "@/components/manager/events/EventServiceStaffingMatrix";
 import EventProfitabilityCard from "@/components/manager/events/EventProfitabilityCard";
 import EventStaffAttendanceCard from "@/components/manager/events/EventStaffAttendanceCard";
-import EventTaskProgressCard from "@/components/manager/events/EventTaskProgressCard";
 import EventActivityTimelineCard from "@/components/manager/events/EventActivityTimelineCard";
 import EventStockTab from "@/components/manager/events/EventStockTab";
 import EventClientPaymentCard from "@/components/manager/events/EventClientPaymentCard";
 import EditEventModal from "@/components/manager/events/EditEventModal";
 import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import { getEventStaffAttendance } from "@/lib/attendance.api";
-import { getEventTaskProgress } from "@/lib/assignment.api";
 import { getEventActivityTimeline } from "@/lib/event.api";
 import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
 import {
@@ -112,10 +110,6 @@ export default function ManagerEventDetailsPage() {
   });
 
   const [attendanceTrackingData, setAttendanceTrackingData] = useState<any[]>([]);
-  const [taskProgressData, setTaskProgressData] = useState<{ tasks: any[]; summary: any }>({
-    tasks: [],
-    summary: { totalTasks: 0, completedCount: 0, inProgressCount: 0, pendingCount: 0, overdueCount: 0, progressPercentage: 0 },
-  });
   const [activitiesData, setActivitiesData] = useState<any[]>([]);
   const [monitoringLoading, setMonitoringLoading] = useState(false);
 
@@ -123,13 +117,11 @@ export default function ManagerEventDetailsPage() {
     if (!token || !eventId) return;
     try {
       setMonitoringLoading(true);
-      const [attendanceRes, taskRes, activityRes] = await Promise.all([
+      const [attendanceRes, activityRes] = await Promise.all([
         getEventStaffAttendance(token, eventId).catch(() => []),
-        getEventTaskProgress(eventId, token).catch(() => ({ tasks: [], summary: {} })),
         getEventActivityTimeline(eventId, token).catch(() => ({ success: false, data: { activities: [] } })),
       ]);
       setAttendanceTrackingData(attendanceRes);
-      setTaskProgressData(taskRes);
       if (activityRes?.data?.activities) {
         setActivitiesData(activityRes.data.activities);
       }
@@ -623,15 +615,7 @@ export default function ManagerEventDetailsPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             {/* Create Estimate / Booking Button */}
-            <button
-              type="button"
-              onClick={() => router.push("/manager/booking")}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border border-[#d8cfc4] bg-[#faf8f5] px-3.5 py-2 text-xs font-bold text-[#29241f] shadow-xs hover:bg-[#eee8de] transition active:scale-95"
-              title="Create a new estimate or booking proposal"
-            >
-              <Plus size={14} className="text-[#9a6c37]" />
-              <span>Create Estimate</span>
-            </button>
+           
 
             {/* Accept / Confirm Action if Pending */}
             {(event.status || "").toLowerCase() === "pending" && (
@@ -716,18 +700,7 @@ export default function ManagerEventDetailsPage() {
             )}
 
             {/* Record Payment Trigger */}
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById("payments");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
-            >
-              <CreditCard size={14} />
-              <span>Record Payment</span>
-            </button>
-
+          
             {/* 3-Dots More Options Menu for Edit & Delete */}
             <div className="relative">
               <button
@@ -962,192 +935,22 @@ export default function ManagerEventDetailsPage() {
           />
         </section>
 
-        {/* ======================================
-            Task Execution Progress Tracker
-        ====================================== */}
-        <section className="mt-6">
-          <EventTaskProgressCard
-            taskProgress={taskProgressData}
-            loading={monitoringLoading}
-            isCompleted={
-              event?.status === "COMPLETED" ||
-              event?.status === "Completed" ||
-              event?.status === "Settled" ||
-              event?.status === "Invoiced"
-            }
-            onRefresh={fetchMonitoringData}
-          />
-        </section>
 
         {/* ======================================
             Operational Activity Audit Log
         ====================================== */}
-        <section className="mt-6">
+        {/* <section className="mt-6">
           <EventActivityTimelineCard
             activities={activitiesData}
             loading={monitoringLoading}
             onRefresh={fetchMonitoringData}
           />
-        </section>
+        </section> */}
 
         {/* ======================================
             Staff Assignments
         ====================================== */}
 
-        <section className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F4EBDD] text-[#9A7B4F]">
-              <UserPlus size={18} />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[#252525]">
-                Assign Staff
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Assign staff members one at a time for this event.
-              </p>
-            </div>
-          </div>
-
-          {(assignmentError || assignmentsError || staffError) && (
-            <div className="mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {assignmentError || assignmentsError || staffError}
-            </div>
-          )}
-
-          {isEventClosed ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-xs font-semibold text-amber-900 flex items-center gap-2">
-              <span>This event is currently {event?.status}. New staff duty assignments are closed for completed or cancelled events.</span>
-            </div>
-          ) : (
-            <form onSubmit={handleAssignStaff} className="mt-5 space-y-4">
-              <div>
-                <label htmlFor="event-assignment-staff" className="mb-1.5 block text-xs font-medium text-gray-700">
-                  Staff member
-                </label>
-                <select
-                  id="event-assignment-staff"
-                  value={assignmentForm.staff}
-                  onChange={(formEvent) => handleAssignmentChange("staff", formEvent.target.value)}
-                  disabled={staffLoading || assignmentsLoading}
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-[#252525] outline-none focus:border-[#B89563] focus:ring-2 focus:ring-[#B89563]/10"
-                >
-                  <option value="">{staffLoading ? "Loading staff..." : "Select a staff member"}</option>
-                  {staff.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} · {member.department}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <input
-                  aria-label="Duty title"
-                  value={assignmentForm.dutyTitle}
-                  onChange={(formEvent) => handleAssignmentChange("dutyTitle", formEvent.target.value)}
-                  placeholder="Duty title"
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-                <input
-                  aria-label="Role"
-                  value={assignmentForm.role}
-                  onChange={(formEvent) => handleAssignmentChange("role", formEvent.target.value)}
-                  placeholder="Role (optional)"
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-                <input
-                  aria-label="Duty date"
-                  type="date"
-                  value={assignmentForm.dutyDate || event?.eventDate.slice(0, 10) || ""}
-                  onChange={(formEvent) => handleAssignmentChange("dutyDate", formEvent.target.value)}
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-                <input
-                  aria-label="Start time"
-                  type="time"
-                  value={assignmentForm.startTime || event?.eventTime || ""}
-                  onChange={(formEvent) => handleAssignmentChange("startTime", formEvent.target.value)}
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-                <input
-                  aria-label="End time"
-                  type="time"
-                  value={assignmentForm.endTime}
-                  onChange={(formEvent) => handleAssignmentChange("endTime", formEvent.target.value)}
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-                <input
-                  aria-label="Assignment notes"
-                  value={assignmentForm.notes}
-                  onChange={(formEvent) => handleAssignmentChange("notes", formEvent.target.value)}
-                  placeholder="Notes (optional)"
-                  className="h-11 rounded-xl border border-gray-200 px-3 text-sm outline-none focus:border-[#B89563]"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={assignmentsLoading || staffLoading}
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#252525] px-5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {assignmentsLoading && <Loader2 size={16} className="animate-spin" />}
-                {assignmentsLoading ? "Assigning..." : "Assign Staff Member"}
-              </button>
-            </form>
-          )}
-
-          {assignmentsLoading && assignments.length === 0 && (
-            <p className="mt-5 text-sm text-gray-500">
-              Loading assigned staff...
-            </p>
-          )}
-
-          {!assignmentsLoading && assignments.length === 0 && (
-            <p className="mt-5 rounded-xl bg-[#F8F7F3] px-3 py-3 text-sm text-gray-500">
-              No staff members are assigned to this event yet.
-            </p>
-          )}
-
-          {assignedStaff.length > 0 && (
-            <div className="mt-6 border-t border-gray-100 pt-5">
-              <h3 className="text-sm font-semibold text-[#252525]">
-                Assigned staff ({assignedStaff.length})
-              </h3>
-              <div className="mt-3 space-y-2">
-                {assignedStaff.map((member) => (
-                  <div key={member.id} className="rounded-xl bg-[#F8F7F3] px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-[#252525]">
-                        {member.name}
-                      </p>
-                      {member.department && (
-                        <p className="mt-0.5 truncate text-xs text-gray-500">
-                          {member.department}
-                        </p>
-                      )}
-                      <div className="mt-2 space-y-1">
-                        {member.assignments.map((assignment) => (
-                          <div
-                            key={assignment._id}
-                            className="flex items-center justify-between gap-3 text-xs text-gray-500"
-                          >
-                            <span className="truncate">
-                              {assignment.dutyTitle} · {assignment.startTime} - {assignment.endTime}
-                            </span>
-                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase text-gray-500">
-                              {assignment.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
 
         {/* ======================================
             Actions

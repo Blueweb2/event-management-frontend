@@ -149,9 +149,7 @@ export default function ManagerStockPage() {
           <h1 className="text-2xl font-black tracking-tight text-[#29241f]">
             Stock & Equipment Management
           </h1>
-          <p className="mt-1 text-xs text-gray-500">
-            Master inventory catalog, active event rentals, and equipment availability tracking.
-          </p>
+       
         </div>
 
         <button

@@ -26,6 +26,7 @@ import {
 
 interface ManagerMenuProps {
   isOpen: boolean;
+  isDesktopOpen?: boolean;
   onClose: () => void;
   onLogout?: () => void;
 }
@@ -36,13 +37,15 @@ interface ManagerMenuProps {
 
 export default function ManagerMenu({
   isOpen,
+  isDesktopOpen = true,
   onClose,
   onLogout,
 }: ManagerMenuProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  if (!isOpen) {
+  // If closed on mobile and closed on desktop, do not render
+  if (!isOpen && !isDesktopOpen) {
     return null;
   }
 
@@ -50,26 +53,32 @@ export default function ManagerMenu({
   const menuItems = getAuthorizedMenuItems(user);
 
   return (
-    <div className="fixed inset-0 z-50">
+    <>
       {/* ======================================
-          Background Overlay
+          Mobile Background Overlay (Hidden on desktop)
       ====================================== */}
-
-      <button
-        type="button"
-        aria-label="Close menu"
-        onClick={onClose}
-        className="absolute inset-0 bg-black/40"
-      />
+      {isOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={onClose}
+          className="fixed inset-0 z-50 bg-black/40 lg:hidden animate-in fade-in"
+        />
+      )}
 
       {/* ======================================
-          Mobile Drawer
+          Sidebar / Drawer
+          - On mobile: slide-over drawer when isOpen
+          - On desktop: always opened docked sidebar on left
       ====================================== */}
-
       <aside
-        className="relative flex h-full w-[85%] max-w-sm flex-col bg-white shadow-xl"
+        className={`fixed inset-y-0 left-0 z-50 flex h-full flex-col bg-white transition-[width,transform] duration-200 lg:z-30 lg:border-r lg:border-gray-200 lg:shadow-none ${
+          isDesktopOpen ? "lg:flex lg:w-64" : "lg:hidden"
+        } ${
+          isOpen ? "flex w-[85%] max-w-sm shadow-xl" : "hidden"
+        }`}
         role="dialog"
-        aria-modal="true"
+        aria-modal={isOpen ? "true" : undefined}
         aria-label="Manager navigation menu"
       >
         {/* ======================================
@@ -118,11 +127,12 @@ export default function ManagerMenu({
           </div>
 
           {/* Close Button */}
+          {/* Close Button (Mobile Only) */}
           <button
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 active:scale-95 lg:hidden cursor-pointer"
           >
             <X size={22} strokeWidth={2} />
           </button>
@@ -155,7 +165,11 @@ export default function ManagerMenu({
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={onClose}
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                      onClose();
+                    }
+                  }}
                   className={[
                     "flex min-h-12 items-center gap-3 rounded-xl px-3",
                     "text-sm font-medium transition",
@@ -213,13 +227,13 @@ export default function ManagerMenu({
           <button
             type="button"
             onClick={onLogout}
-            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:scale-[0.99]"
+            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:scale-[0.99] cursor-pointer"
           >
             <LogOut size={20} strokeWidth={2} className="shrink-0" />
             <span className="flex-1 text-left">Logout</span>
           </button>
         </div>
       </aside>
-    </div>
+    </>
   );
 }
