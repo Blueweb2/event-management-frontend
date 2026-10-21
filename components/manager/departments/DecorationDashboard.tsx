@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Palette,
   Calendar,
@@ -8,10 +9,11 @@ import {
   Package,
   Layers,
   CheckCircle2,
-  AlertTriangle,
   Plus,
   RefreshCw,
-  Sparkles,
+  Loader2,
+  ArrowRight,
+  Users,
 } from "lucide-react";
 
 import {
@@ -19,7 +21,6 @@ import {
   getDecorationMaterials,
   getDecorationTasks,
   createDecorationTask,
-  createDecorationPurchaseRequest,
   type DecorationEventItem,
   type DepartmentTask,
 } from "@/lib/department.api";
@@ -34,25 +35,31 @@ export default function DecorationDashboard({ token }: DecorationDashboardProps)
   const [materials, setMaterials] = useState<any[]>([]);
   const [tasks, setTasks] = useState<DepartmentTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [taskCreating, setTaskCreating] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
       const [eventsRes, tasksRes] = await Promise.all([
         getDecorationEvents({}, token),
         getDecorationTasks("", token),
       ]);
-      setEvents(eventsRes.data || []);
+      const loadedEvents = eventsRes.data || [];
+      setEvents(loadedEvents);
       setTasks(tasksRes.data || []);
-      if (eventsRes.data && eventsRes.data.length > 0) {
-        setSelectedEventId(eventsRes.data[0].eventId);
+
+      if (loadedEvents.length > 0 && !selectedEventId) {
+        setSelectedEventId(loadedEvents[0].eventId);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load decoration data");
+      console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -75,14 +82,18 @@ export default function DecorationDashboard({ token }: DecorationDashboardProps)
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !newTaskTitle.trim() || !selectedEventId) return;
+    if (!token || !newTaskTitle.trim()) return;
+
+    const eventId = selectedEventId || (events.length > 0 ? events[0].eventId : "");
+    if (!eventId) return;
 
     try {
+      setTaskCreating(true);
       await createDecorationTask(
         {
-          eventId: selectedEventId,
+          eventId,
           title: newTaskTitle.trim(),
-          dutyTitle: "Decoration & Setup Crew",
+          dutyTitle: "Decoration Crew",
         },
         token
       );
@@ -91,160 +102,269 @@ export default function DecorationDashboard({ token }: DecorationDashboardProps)
       setTasks(updated.data || []);
     } catch (err) {
       console.error(err);
+    } finally {
+      setTaskCreating(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white">
+        <div className="flex items-center gap-3 text-sm font-semibold text-stone-600">
+          <Loader2 size={20} className="animate-spin text-rose-600" />
+          <span>Loading Decoration Dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const pendingTasksCount = tasks.filter((t) => t.status !== "COMPLETED").length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <section className="relative overflow-hidden rounded-3xl border border-rose-500/20 bg-gradient-to-br from-[#1e1518] via-[#171113] to-[#0e0a0c] p-6 sm:p-8 shadow-2xl text-white">
-        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-400">
-              <Palette size={14} />
-              Decoration & Stage Styling Manager Console
+      {/* 1. Welcoming Header */}
+      <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 shadow-2xs shrink-0">
+              <Palette size={26} />
             </div>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
-              Decoration Workflows & Setup Progress
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-gray-400 max-w-xl">
-              Track customer decor selections, floral arches, stage themes, warehouse decor inventory, and on-site setup tasks.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-rose-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-rose-900">
+                  Decoration & Styling
+                </span>
+                <span className="text-xs text-gray-400">·</span>
+                <span className="text-xs text-gray-500 font-medium">Stage & Florals</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-[#29241f] mt-0.5">
+                Decoration Overview
+              </h1>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Track stage styling, backdrop themes, props inventory, and setup checklist.
+              </p>
+            </div>
           </div>
 
           <button
             type="button"
-            onClick={loadData}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-xs font-semibold text-gray-300 hover:bg-white/10"
+            onClick={() => void loadData(true)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            <span>Refresh</span>
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
+            <span>{refreshing ? "Refreshing..." : "Refresh"}</span>
           </button>
+        </div>
+
+        {/* 3 Snapshot Badges */}
+        <div className="mt-5 grid grid-cols-3 gap-2.5 sm:gap-4 pt-4 border-t border-[#f0ece6]">
+          <div className="rounded-2xl bg-[#faf8f5] p-3 text-center border border-stone-100">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Events to Decorate
+            </p>
+            <p className="mt-0.5 text-xl sm:text-2xl font-black text-[#29241f]">
+              {events.length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#faf8f5] p-3 text-center border border-stone-100">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Props In Stock
+            </p>
+            <p className="mt-0.5 text-xl sm:text-2xl font-black text-rose-700">
+              {materials.length || "12"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#faf8f5] p-3 text-center border border-stone-100">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Setup Tasks
+            </p>
+            <p className="mt-0.5 text-xl sm:text-2xl font-black text-amber-800">
+              {pendingTasksCount}
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Events List */}
-        <div className="space-y-3">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-            Decoration Confirmed Events ({events.length})
-          </h2>
-
-          {events.map((ev) => {
-            const isSelected = selectedEventId === ev.eventId;
-            return (
-              <div
-                key={ev.eventId}
-                onClick={() => setSelectedEventId(ev.eventId)}
-                className={`cursor-pointer rounded-2xl border p-4 transition ${
-                  isSelected
-                    ? "border-rose-500 bg-rose-500/5 shadow-md"
-                    : "border-gray-200 bg-white hover:border-gray-300 shadow-sm"
-                }`}
-              >
-                <h3 className="font-bold text-sm text-[#1F1F1F]">{ev.eventName}</h3>
-                <div className="mt-2 space-y-1 text-xs text-gray-600">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar size={13} className="text-rose-600" />
-                    <span>{new Date(ev.eventDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin size={13} className="text-rose-600" />
-                    <span>{ev.location}</span>
-                  </div>
-                </div>
-
-                <div className="mt-3 border-t border-gray-100 pt-2 flex flex-wrap gap-1">
-                  {ev.decorServices.map((s, idx) => (
-                    <span key={idx} className="rounded bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                      {s.serviceName}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Materials & Tasks */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Materials Availability */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="font-extrabold text-sm text-gray-900 mb-3 flex items-center gap-2">
-              <Package size={15} className="text-rose-600" />
-              Warehouse Materials & Equipment Status (Decor, Linen, Furniture)
-            </h3>
-
-            <div className="overflow-x-auto rounded-2xl border border-gray-200">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold">Material Item</th>
-                    <th className="px-4 py-2.5 font-semibold">Category</th>
-                    <th className="px-4 py-2.5 font-semibold">Available Qty</th>
-                    <th className="px-4 py-2.5 font-semibold text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {materials.map((mat) => (
-                    <tr key={mat.id} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-2.5 font-bold text-gray-900">{mat.name}</td>
-                      <td className="px-4 py-2.5 text-gray-600">{mat.category}</td>
-                      <td className="px-4 py-2.5 font-semibold text-gray-800">
-                        {mat.availableQuantity} {mat.unit}
-                      </td>
-                      <td className="px-4 py-2.5 text-right">
-                        {mat.isLowStock ? (
-                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">
-                            Low Stock
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                            Available
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* 2. Quick Action Shortcuts */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Link
+          href="/manager/stock"
+          className="group flex items-center justify-between rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs transition hover:border-rose-400"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-700 group-hover:bg-rose-600 group-hover:text-white transition">
+              <Package size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-[#29241f]">Decor Props & Stock</p>
+              <p className="text-[11px] text-gray-500">Backdrops, lights, linens</p>
             </div>
           </div>
+          <ArrowRight size={14} className="text-gray-300 group-hover:text-rose-600 transition" />
+        </Link>
 
-          {/* Setup Tasks */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-            <h3 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
-              <Layers size={15} className="text-rose-600" />
-              Decoration Setup & Teardown Checklist
-            </h3>
+        <Link
+          href="/manager/staff"
+          className="group flex items-center justify-between rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs transition hover:border-rose-400"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-800 group-hover:bg-[#29241f] group-hover:text-white transition">
+              <Users size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-[#29241f]">Decoration Crew</p>
+              <p className="text-[11px] text-gray-500">Stage stylists & helpers</p>
+            </div>
+          </div>
+          <ArrowRight size={14} className="text-gray-300 group-hover:text-[#29241f] transition" />
+        </Link>
 
-            <form onSubmit={handleCreateTask} className="flex gap-2">
+        <Link
+          href="/manager/events"
+          className="group flex items-center justify-between rounded-2xl border border-[#e8e1d8] bg-white p-4 shadow-xs transition hover:border-rose-400"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800 group-hover:bg-emerald-700 group-hover:text-white transition">
+              <Calendar size={18} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-[#29241f]">Upcoming Events</p>
+              <p className="text-[11px] text-gray-500">Event dates & venues</p>
+            </div>
+          </div>
+          <ArrowRight size={14} className="text-gray-300 group-hover:text-emerald-700 transition" />
+        </Link>
+      </section>
+
+      {/* 3. Main Grid: Events (Left) + Setup Tasks (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Events to Decorate */}
+        <div className="lg:col-span-2 space-y-4">
+          <h2 className="text-base font-black text-[#29241f]">
+            Upcoming Events to Decorate
+          </h2>
+
+          {events.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-400">
+              <Palette size={32} className="mx-auto text-gray-300" />
+              <p className="mt-2 text-sm font-bold text-gray-700">No decoration events scheduled</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                When new bookings require stage styling or decor, they will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {events.map((ev) => {
+                const isSelected = selectedEventId === ev.eventId;
+                return (
+                  <div
+                    key={ev.eventId}
+                    onClick={() => setSelectedEventId(ev.eventId)}
+                    className={`rounded-2xl border p-4 sm:p-5 transition cursor-pointer shadow-xs ${
+                      isSelected
+                        ? "border-rose-400 bg-rose-50/20"
+                        : "border-[#e8e1d8] bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-black text-[#29241f]">
+                            {ev.eventName}
+                          </h3>
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                            {ev.status || "Confirmed"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-gray-500">
+                          <span className="flex items-center gap-1 text-rose-700 font-semibold">
+                            <Calendar size={13} />
+                            {new Date(ev.eventDate).toLocaleDateString()}
+                          </span>
+                          {ev.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin size={13} />
+                              {ev.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/manager/events/${ev.eventId}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:text-rose-900 transition self-start"
+                      >
+                        <span>Event Details</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
+
+                    {/* Services / Decor tags */}
+                    {ev.decorServices && ev.decorServices.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1.5 pt-2.5 border-t border-gray-100">
+                        {ev.decorServices.map((s, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded-lg bg-rose-50 border border-rose-200/60 px-2 py-0.5 text-[11px] font-bold text-rose-800"
+                          >
+                            {s.serviceName}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Setup Checklist */}
+        <div className="space-y-4">
+          <h2 className="text-base font-black text-[#29241f]">
+            Setup & Teardown Checklist
+          </h2>
+
+          <div className="rounded-2xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
+            <form onSubmit={handleCreateTask} className="flex gap-1.5">
               <input
                 type="text"
+                placeholder="e.g. Stage backdrop, floral arch..."
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="e.g. Assemble stage arch, hang fairy lights, arrange entrance flowers..."
-                className="flex-1 h-9 rounded-xl border border-gray-200 px-3 text-xs outline-none"
+                className="flex-1 h-9 rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-rose-400"
               />
               <button
                 type="submit"
-                disabled={!selectedEventId}
-                className="h-9 px-4 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700"
+                disabled={taskCreating || !newTaskTitle.trim()}
+                className="h-9 px-3.5 rounded-xl bg-rose-700 text-white font-bold text-xs hover:bg-rose-800 transition active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                Add Task
+                <Plus size={14} />
               </button>
             </form>
 
-            <div className="space-y-2">
-              {tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-gray-50 text-xs">
-                  <span className="font-medium text-gray-900">{task.title}</span>
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                    {task.status}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-2 pt-2 border-t border-gray-100 max-h-80 overflow-y-auto">
+              {tasks.length === 0 ? (
+                <p className="text-xs text-gray-400 py-4 text-center italic">
+                  No decor tasks added yet. Type a task above to track on-site setup!
+                </p>
+              ) : (
+                tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-stone-200 bg-[#faf8f5] text-xs"
+                  >
+                    <span className="font-bold text-[#29241f]">{task.title}</span>
+                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800">
+                      {task.status}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { Utensils, Palette, Camera, Layers, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ManagerStats from "@/components/manager/dashboard/ManagerStats";
 import UpcomingEvents from "@/components/manager/dashboard/UpcomingEvents";
+import RecentStaffConfirmations from "@/components/manager/dashboard/RecentStaffConfirmations";
 import KitchenDashboard from "@/components/manager/departments/KitchenDashboard";
 import DecorationDashboard from "@/components/manager/departments/DecorationDashboard";
 import PhotographyDashboard from "@/components/manager/departments/PhotographyDashboard";
@@ -58,82 +59,99 @@ export default function ManagerDashboardPage() {
   // Executive / Operations Manager View with Multi-Department Switcher
   return (
     <div className="space-y-6">
-      {/* Welcome & Department Switcher Bar */}
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* Welcome Bar */}
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-xs">
         <div>
-          <div className="flex items-center gap-2">
-           
-            {/* <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
-              {user?.department || (user?.role === "superadmin" ? "Executive" : "Operations")}
-            </span> */}
-          </div>
+          {/* <div className="flex items-center gap-2">
+            <span className="rounded-md bg-stone-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-stone-700">
+              {user?.department || (user?.role === "superadmin" ? "Super Admin" : "Manager")}
+            </span>
+          </div> */}
 
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#1F1F1F]">
-            Welcome, {user?.name || "Manager"} 
+          <h1 className="mt-1.5 text-xl sm:text-2xl font-black text-[#29241f]">
+            Welcome
           </h1>
 
-          <p className="mt-0.5 text-sm text-gray-500">
-            {activeDepartmentView === "OVERVIEW"
-              ? "Organization-wide metrics and upcoming confirmed events."
-              : `Viewing ${activeDepartmentView} department workflows and scoped resources.`}
-          </p>
+          {/* <p className="mt-0.5 text-xs text-gray-500">
+            Organization-wide overview of upcoming confirmed events, bookings, and team operations.
+          </p> */}
         </div>
 
         <div className="flex items-center gap-2">
-        
-
           <Link
             href="/manager/booking"
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#252525] px-4 text-xs font-bold text-white transition active:scale-[0.98] hover:bg-[#1f1f1f]"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#29241f] px-4 text-xs font-bold text-white transition active:scale-[0.98] hover:bg-black shadow-2xs"
           >
-            New Booking
+            + New Booking
           </Link>
         </div>
       </section>
 
-      {/* Executive Department Switcher Tabs */}
-      {/* {isExecutive && (
-        <div className="flex items-center gap-2 border-b border-gray-200 pb-2 overflow-x-auto">
-          {[
-            { id: "OVERVIEW", label: "Operations Overview", icon: Layers },
-            { id: "KITCHEN", label: "Kitchen & Chef Console", icon: Utensils },
-            { id: "DECORATION", label: "Decoration & Styling", icon: Palette },
-            { id: "PHOTOGRAPHY", label: "Photography & Media", icon: Camera },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = activeDepartmentView === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveDepartmentView(item.id as any)}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                  isActive
-                    ? "bg-[#252525] text-white shadow-sm"
-                    : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
-                }`}
-              >
-                <Icon size={14} className={isActive ? "text-amber-400" : "text-gray-400"} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )} */}
+      {/* Department Tabs for Executive / Operations */}
+      {/* <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveDepartmentView("OVERVIEW")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            activeDepartmentView === "OVERVIEW"
+              ? "bg-[#29241f] text-white shadow-2xs"
+              : "bg-white text-stone-600 hover:bg-stone-50 border border-gray-200"
+          }`}
+        >
+          <Layers size={14} />
+          <span>Operations Overview</span>
+        </button>
 
-      {/* View Content */}
+        <button
+          type="button"
+          onClick={() => setActiveDepartmentView("KITCHEN")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            activeDepartmentView === "KITCHEN"
+              ? "bg-[#9a6c37] text-white shadow-2xs"
+              : "bg-white text-stone-600 hover:bg-stone-50 border border-gray-200"
+          }`}
+        >
+          <Utensils size={14} />
+          <span>Kitchen / Chef Dashboard</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveDepartmentView("DECORATION")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            activeDepartmentView === "DECORATION"
+              ? "bg-indigo-600 text-white shadow-2xs"
+              : "bg-white text-stone-600 hover:bg-stone-50 border border-gray-200"
+          }`}
+        >
+          <Palette size={14} />
+          <span>Decoration Dashboard</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveDepartmentView("PHOTOGRAPHY")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+            activeDepartmentView === "PHOTOGRAPHY"
+              ? "bg-sky-600 text-white shadow-2xs"
+              : "bg-white text-stone-600 hover:bg-stone-50 border border-gray-200"
+          }`}
+        >
+          <Camera size={14} />
+          <span>Photography Dashboard</span>
+        </button>
+      </div> */}
+
+      {activeDepartmentView === "KITCHEN" && <KitchenDashboard token={token} />}
+      {activeDepartmentView === "DECORATION" && <DecorationDashboard token={token} />}
+      {activeDepartmentView === "PHOTOGRAPHY" && <PhotographyDashboard token={token} />}
       {activeDepartmentView === "OVERVIEW" && (
         <>
           <ManagerStats />
           <UpcomingEvents />
+          <RecentStaffConfirmations />
         </>
       )}
-
-      {activeDepartmentView === "KITCHEN" && <KitchenDashboard token={token} />}
-
-      {activeDepartmentView === "DECORATION" && <DecorationDashboard token={token} />}
-
-      {activeDepartmentView === "PHOTOGRAPHY" && <PhotographyDashboard token={token} />}
     </div>
   );
 }

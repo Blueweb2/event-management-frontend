@@ -43,12 +43,12 @@ import {
 import type { ManagerItem, CreateManagerPayload, UpdateManagerPayload } from "@/types/auth";
 
 const DEPARTMENT_OPTIONS = [
-  { label: "Kitchen / Chef", value: "Kitchen", icon: Utensils, color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
-  { label: "Decoration", value: "Decoration", icon: Palette, color: "text-rose-400 border-rose-500/30 bg-rose-500/10" },
-  { label: "Photography & Media", value: "Photography", icon: Camera, color: "text-sky-400 border-sky-500/30 bg-sky-500/10" },
-  { label: "Sound & Lighting", value: "Sound & Lighting", icon: Music, color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
-  { label: "Catering Service", value: "Catering", icon: Coffee, color: "text-orange-400 border-orange-500/30 bg-orange-500/10" },
-  { label: "General Operations", value: "Operations", icon: Layers, color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
+  { label: "Kitchen / Chef", value: "Kitchen", icon: Utensils, color: "text-amber-800 border-amber-200 bg-amber-50" },
+  { label: "Decoration", value: "Decoration", icon: Palette, color: "text-rose-800 border-rose-200 bg-rose-50" },
+  { label: "Photography & Media", value: "Photography", icon: Camera, color: "text-sky-800 border-sky-200 bg-sky-50" },
+  { label: "Sound & Lighting", value: "Sound & Lighting", icon: Music, color: "text-purple-800 border-purple-200 bg-purple-50" },
+  { label: "Catering Service", value: "Catering", icon: Coffee, color: "text-orange-800 border-orange-200 bg-orange-50" },
+  { label: "General Operations", value: "Operations", icon: Layers, color: "text-emerald-800 border-emerald-200 bg-emerald-50" },
 ];
 
 const PERMISSION_OPTIONS = [
@@ -368,7 +368,7 @@ export default function SuperadminManagersPage() {
       label: dept || "Operations",
       value: dept,
       icon: Layers,
-      color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10",
+      color: "text-emerald-800 border-emerald-200 bg-emerald-50",
     };
   };
 
@@ -377,21 +377,19 @@ export default function SuperadminManagersPage() {
       {/* =========================================================
           PAGE HEADER & METRICS
       ========================================================= */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#18181b] via-[#121214] to-[#09090b] p-6 sm:p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-[#9A7B4F]/10 blur-3xl pointer-events-none" />
-
+      <section className="relative overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white p-6 sm:p-8 shadow-xs">
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#9A7B4F]/30 bg-[#9A7B4F]/10 px-3 py-1 text-xs font-semibold text-[#D2B47A]">
-              <ShieldCheck size={14} />
-              Executive System Administration & Department Scoping
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900">
+              <ShieldCheck size={14} className="text-[#9A7B4F]" />
+              Superadmin Console & Department Scoping
             </div>
 
-            <h1 className="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            <h1 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-[#29241f]">
               Department Managers & Access Control
             </h1>
 
-            <p className="mt-1.5 text-sm text-gray-400 max-w-2xl leading-relaxed">
+            <p className="mt-1.5 text-sm text-gray-600 max-w-2xl leading-relaxed">
               Create, configure, and isolate department managers across Kitchen, Decoration, Photography, Sound, and Operations. Department managers only access workflows and inventory within their assigned boundary.
             </p>
           </div>
@@ -401,9 +399,9 @@ export default function SuperadminManagersPage() {
               type="button"
               onClick={fetchManagersList}
               disabled={loading}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 text-xs font-semibold text-gray-200 transition hover:bg-white/10 hover:text-white disabled:opacity-50"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 text-xs font-bold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+              <RefreshCw size={14} className={loading ? "animate-spin text-[#9A7B4F]" : "text-gray-500"} />
               <span>Refresh</span>
             </button>
 
@@ -413,43 +411,43 @@ export default function SuperadminManagersPage() {
                 setModalError(null);
                 setIsModalOpen(true);
               }}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9A7B4F] to-[#D2B47A] px-5 text-xs font-bold text-black shadow-lg shadow-[#9A7B4F]/20 transition hover:scale-[1.02] active:scale-95"
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#29241f] hover:bg-black px-5 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
             >
-              <UserPlus size={16} />
+              <UserPlus size={16} className="text-amber-300" />
               <span>Create Department Manager</span>
             </button>
           </div>
         </div>
 
         {/* Metric Cards */}
-        <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-white/10 pt-6">
-          <div className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#9A7B4F]/20 text-[#D2B47A]">
+        <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 pt-6">
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-200/80 bg-[#FAF8F5] p-4 shadow-2xs">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-900 border border-amber-200">
               <Users size={22} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400">Total Managers</p>
-              <p className="text-2xl font-bold text-white mt-0.5">{stats.total}</p>
+              <p className="text-xs font-bold text-gray-500">Total Managers</p>
+              <p className="text-2xl font-black text-[#29241f] mt-0.5">{stats.total}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-200/80 bg-[#FAF8F5] p-4 shadow-2xs">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200">
               <CheckCircle2 size={22} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400">Active Operational Accounts</p>
-              <p className="text-2xl font-bold text-emerald-400 mt-0.5">{stats.active}</p>
+              <p className="text-xs font-bold text-gray-500">Active Operational Accounts</p>
+              <p className="text-2xl font-black text-emerald-700 mt-0.5">{stats.active}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400">
+          <div className="flex items-center gap-4 rounded-2xl border border-gray-200/80 bg-[#FAF8F5] p-4 shadow-2xs">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-800 border border-rose-200">
               <XCircle size={22} />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-400">Suspended Accounts</p>
-              <p className="text-2xl font-bold text-rose-400 mt-0.5">{stats.suspended}</p>
+              <p className="text-xs font-bold text-gray-500">Suspended Accounts</p>
+              <p className="text-2xl font-black text-rose-700 mt-0.5">{stats.suspended}</p>
             </div>
           </div>
         </div>
@@ -459,15 +457,15 @@ export default function SuperadminManagersPage() {
           ALERTS
       ========================================================= */}
       {successMessage && (
-        <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs font-medium text-emerald-300">
+        <div className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 size={18} className="shrink-0 text-emerald-400" />
+            <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
             <span>{successMessage}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessMessage(null)}
-            className="text-emerald-400 hover:text-emerald-200"
+            className="text-emerald-700 hover:text-emerald-950 cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -475,15 +473,15 @@ export default function SuperadminManagersPage() {
       )}
 
       {error && (
-        <div className="flex items-center justify-between rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs font-medium text-rose-300">
+        <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <AlertCircle size={18} className="shrink-0 text-rose-400" />
+            <AlertCircle size={18} className="shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
           <button
             type="button"
             onClick={() => setError(null)}
-            className="text-rose-400 hover:text-rose-200"
+            className="text-rose-700 hover:text-rose-950 cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -497,14 +495,14 @@ export default function SuperadminManagersPage() {
         <div className="relative flex-1 max-w-md">
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
           />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name, email, department, location..."
-            className="h-11 w-full rounded-2xl border border-white/10 bg-white/5 pl-10 pr-4 text-xs text-white placeholder-gray-500 outline-none transition focus:border-[#D2B47A] focus:ring-1 focus:ring-[#D2B47A]"
+            className="h-11 w-full rounded-2xl border border-gray-200 bg-white pl-10 pr-4 text-xs text-gray-900 placeholder:text-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] shadow-2xs"
           />
         </div>
 
@@ -513,7 +511,7 @@ export default function SuperadminManagersPage() {
           <select
             value={departmentFilter}
             onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="h-10 rounded-xl border border-white/10 bg-[#141417] px-3 text-xs text-white outline-none focus:border-[#D2B47A]"
+            className="h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-700 outline-none focus:border-[#9A7B4F] shadow-2xs cursor-pointer"
           >
             <option value="ALL">All Departments</option>
             <option value="Kitchen">Kitchen / Chef</option>
@@ -530,13 +528,13 @@ export default function SuperadminManagersPage() {
               key={filter}
               type="button"
               onClick={() => setStatusFilter(filter)}
-              className={`h-10 rounded-xl px-3.5 text-xs font-semibold transition ${
+              className={`h-10 rounded-xl px-3.5 text-xs font-bold transition cursor-pointer ${
                 statusFilter === filter
-                  ? "bg-[#D2B47A] text-black shadow-md shadow-[#D2B47A]/20"
-                  : "border border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                  ? "bg-[#29241f] text-white shadow-2xs"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
               }`}
             >
-              {filter === "ALL" ? "All Status" : filter}
+              {filter === "ALL" ? "All Status" : filter === "ACTIVE" ? "Active" : "Suspended"}
             </button>
           ))}
         </div>
@@ -547,16 +545,16 @@ export default function SuperadminManagersPage() {
       ========================================================= */}
       <section>
         {loading ? (
-          <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-white/5 bg-white/[0.02]">
-            <Loader2 size={32} className="animate-spin text-[#D2B47A]" />
-            <p className="mt-3 text-xs font-medium text-gray-400">
+          <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white shadow-xs">
+            <Loader2 size={32} className="animate-spin text-[#9A7B4F]" />
+            <p className="mt-3 text-xs font-medium text-gray-500">
               Loading managers directory...
             </p>
           </div>
         ) : filteredManagers.length === 0 ? (
-          <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-white/[0.02] text-center p-6">
-            <Users size={32} className="text-gray-600 mb-2" />
-            <p className="text-sm font-semibold text-gray-300">No managers found</p>
+          <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-white text-center p-6 shadow-xs">
+            <Users size={32} className="text-gray-400 mb-2" />
+            <p className="text-sm font-bold text-gray-800">No managers found</p>
             <p className="text-xs text-gray-500 mt-1 max-w-sm">
               {searchQuery || statusFilter !== "ALL" || departmentFilter !== "ALL"
                 ? "Try adjusting your search criteria or filters."
@@ -572,20 +570,20 @@ export default function SuperadminManagersPage() {
               return (
                 <div
                   key={m.id}
-                  className="group relative flex flex-col justify-between rounded-3xl border border-white/10 bg-gradient-to-b from-[#18181b]/80 to-[#121214]/80 p-5 shadow-xl transition-all duration-300 hover:border-[#D2B47A]/40 hover:shadow-2xl hover:shadow-[#D2B47A]/5"
+                  className="group relative flex flex-col justify-between rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-xs transition-all duration-300 hover:border-[#9a6c37] hover:shadow-md"
                 >
                   <div>
                     {/* Top Row: User Avatar & Department Badge */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-sm font-bold text-black shadow-md">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-sm font-black text-white shadow-xs">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h3 className="font-bold text-white text-sm group-hover:text-[#D2B47A] transition truncate">
+                          <h3 className="font-bold text-[#29241f] text-sm group-hover:text-[#9A7B4F] transition truncate">
                             {m.name}
                           </h3>
-                          <p className="text-xs text-gray-400">@{m.username}</p>
+                          <p className="text-xs text-gray-500">@{m.username}</p>
                         </div>
                       </div>
 
@@ -598,22 +596,22 @@ export default function SuperadminManagersPage() {
                     </div>
 
                     {/* Metadata fields */}
-                    <div className="mt-4 space-y-2 border-t border-white/5 pt-3 text-xs text-gray-300">
-                      <div className="flex items-center gap-2 text-gray-400 truncate">
-                        <Mail size={13} className="shrink-0 text-[#D2B47A]" />
+                    <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 truncate">
+                        <Mail size={13} className="shrink-0 text-[#9A7B4F]" />
                         <span className="truncate">{m.email}</span>
                       </div>
 
                       {m.phone && (
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <Phone size={13} className="shrink-0 text-[#D2B47A]" />
+                        <div className="flex items-center gap-2">
+                          <Phone size={13} className="shrink-0 text-[#9A7B4F]" />
                           <span>{m.phone}</span>
                         </div>
                       )}
 
                       {m.location && (
-                        <div className="flex items-center gap-2 text-gray-400 truncate">
-                          <MapPin size={13} className="shrink-0 text-[#D2B47A]" />
+                        <div className="flex items-center gap-2 truncate">
+                          <MapPin size={13} className="shrink-0 text-[#9A7B4F]" />
                           <span className="truncate">{m.location}</span>
                         </div>
                       )}
@@ -625,16 +623,16 @@ export default function SuperadminManagersPage() {
                         m.permissions.slice(0, 3).map((p) => (
                           <span
                             key={p}
-                            className="rounded-md bg-white/5 px-2 py-0.5 text-[9px] font-medium text-gray-300 border border-white/5"
+                            className="rounded-md bg-stone-100 px-2 py-0.5 text-[9px] font-semibold text-stone-700 border border-stone-200"
                           >
                             {p.replace(/_/g, " ")}
                           </span>
                         ))
                       ) : (
-                        <span className="text-[10px] text-gray-500 italic">Default permissions</span>
+                        <span className="text-[10px] text-gray-400 italic">Default permissions</span>
                       )}
                       {m.permissions && m.permissions.length > 3 && (
-                        <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-[9px] font-bold text-[#D2B47A]">
+                        <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-[#9A7B4F] border border-amber-200">
                           +{m.permissions.length - 3} more
                         </span>
                       )}
@@ -642,23 +640,23 @@ export default function SuperadminManagersPage() {
                   </div>
 
                   {/* Bottom Row: Actions */}
-                  <div className="mt-5 border-t border-white/10 pt-3 flex items-center justify-between gap-2">
+                  <div className="mt-5 border-t border-gray-100 pt-3 flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => openEditModal(m)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-gray-200 transition hover:bg-white/10 hover:text-white"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-white hover:border-[#9A7B4F] hover:text-[#29241f] shadow-2xs"
                     >
-                      <Edit size={12} className="text-[#D2B47A]" />
+                      <Edit size={12} className="text-[#9A7B4F]" />
                       <span>Edit Access</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(m)}
-                      className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${
+                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
                         m.isActive
-                          ? "text-rose-400 hover:bg-rose-500/10"
-                          : "text-emerald-400 hover:bg-emerald-500/10"
+                          ? "text-rose-600 hover:bg-rose-50 border border-rose-200/60"
+                          : "text-emerald-700 hover:bg-emerald-50 border border-emerald-200/60"
                       }`}
                     >
                       {m.isActive ? "Suspend" : "Reactivate"}
@@ -678,25 +676,25 @@ export default function SuperadminManagersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div
             onClick={() => !isSubmitting && setIsModalOpen(false)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
           />
 
           <div
             role="dialog"
             aria-modal="true"
-            className="relative z-10 w-full max-w-xl rounded-3xl border border-white/15 bg-[#141417] p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-gray-100 max-h-[90vh] overflow-y-auto"
+            className="relative z-10 w-full max-w-xl rounded-3xl border border-[#e8e1d8] bg-white p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-[#29241f] max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
-            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+            <div className="flex items-start justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-black">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-white shadow-xs">
                   <UserPlus size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-lg font-bold text-[#29241f]">
                     Create Department Manager
                   </h2>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Assign role, operational department, and scoped system permissions.
                   </p>
                 </div>
@@ -705,15 +703,15 @@ export default function SuperadminManagersPage() {
               <button
                 type="button"
                 onClick={() => !isSubmitting && setIsModalOpen(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             {modalError && (
-              <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+              <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                <AlertCircle size={16} className="shrink-0 text-rose-600" />
                 <span>{modalError}</span>
               </div>
             )}
@@ -721,7 +719,7 @@ export default function SuperadminManagersPage() {
             <form onSubmit={handleCreateManager} className="mt-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                  <label className="mb-1.5 block text-xs font-bold text-gray-700">
                     Full Name *
                   </label>
                   <input
@@ -731,12 +729,12 @@ export default function SuperadminManagersPage() {
                     onChange={(e) => handleInputChange("name", e.target.value)}
                     onBlur={handleNameBlur}
                     placeholder="e.g. Marco Silva"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white placeholder-gray-500 outline-none transition focus:border-[#D2B47A] focus:ring-1 focus:ring-[#D2B47A]"
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                  <label className="mb-1.5 block text-xs font-bold text-gray-700">
                     Username *
                   </label>
                   <input
@@ -745,14 +743,14 @@ export default function SuperadminManagersPage() {
                     value={formData.username}
                     onChange={(e) => handleInputChange("username", e.target.value)}
                     placeholder="e.g. marco_chef"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white placeholder-gray-500 outline-none transition focus:border-[#D2B47A] focus:ring-1 focus:ring-[#D2B47A]"
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                  <label className="mb-1.5 block text-xs font-bold text-gray-700">
                     Email Address *
                   </label>
                   <input
@@ -761,12 +759,12 @@ export default function SuperadminManagersPage() {
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     placeholder="marco@eventmanagement.com"
-                    className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white placeholder-gray-500 outline-none transition focus:border-[#D2B47A] focus:ring-1 focus:ring-[#D2B47A]"
+                    className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                  <label className="mb-1.5 block text-xs font-bold text-gray-700">
                     Initial Password *
                   </label>
                   <div className="relative">
@@ -776,12 +774,12 @@ export default function SuperadminManagersPage() {
                       value={formData.password}
                       onChange={(e) => handleInputChange("password", e.target.value)}
                       placeholder="Minimum 6 characters"
-                      className="h-10 w-full rounded-xl border border-white/10 bg-white/5 pl-3 pr-10 text-xs text-white placeholder-gray-500 outline-none transition focus:border-[#D2B47A] focus:ring-1 focus:ring-[#D2B47A]"
+                      className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-3 pr-10 text-xs text-gray-900 placeholder-gray-400 outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
                     >
                       {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
@@ -791,7 +789,7 @@ export default function SuperadminManagersPage() {
 
               {/* Department Selection */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                <label className="mb-1.5 block text-xs font-bold text-gray-700">
                   Assigned Operational Department *
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -805,11 +803,11 @@ export default function SuperadminManagersPage() {
                         onClick={() => handleInputChange("department", dept.value)}
                         className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-semibold transition ${
                           isSelected
-                            ? "border-[#D2B47A] bg-[#D2B47A]/15 text-white"
-                            : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                            ? "border-[#9A7B4F] bg-amber-50 text-amber-950 font-bold shadow-xs"
+                            : "border-gray-200 bg-stone-50/60 text-gray-600 hover:bg-stone-100 hover:text-gray-900"
                         }`}
                       >
-                        <Icon size={14} className={isSelected ? "text-[#D2B47A]" : "text-gray-500"} />
+                        <Icon size={14} className={isSelected ? "text-[#9A7B4F]" : "text-gray-400"} />
                         <span className="truncate">{dept.label}</span>
                       </button>
                     );
@@ -819,22 +817,22 @@ export default function SuperadminManagersPage() {
 
               {/* Scoped Permissions Checklist */}
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                <label className="mb-1.5 block text-xs font-bold text-gray-700">
                   Granted Department Permissions
                 </label>
-                <div className="max-h-40 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 bg-stone-50/60 p-3 space-y-2">
                   {PERMISSION_OPTIONS.map((perm) => {
                     const isChecked = (formData.permissions || []).includes(perm.id);
                     return (
                       <label
                         key={perm.id}
-                        className="flex items-center gap-2.5 text-xs text-gray-300 cursor-pointer hover:text-white"
+                        className="flex items-center gap-2.5 text-xs text-gray-700 cursor-pointer hover:text-gray-900"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handlePermissionToggle(perm.id)}
-                          className="rounded border-white/20 bg-black text-[#D2B47A] focus:ring-[#D2B47A]"
+                          className="rounded border-gray-300 text-[#9A7B4F] focus:ring-[#9A7B4F]"
                         />
                         <span>{perm.label}</span>
                       </label>
@@ -844,12 +842,12 @@ export default function SuperadminManagersPage() {
               </div>
 
               {/* Actions */}
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-gray-300 transition hover:bg-white/10 hover:text-white disabled:opacity-50"
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -857,7 +855,7 @@ export default function SuperadminManagersPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9A7B4F] to-[#D2B47A] px-5 py-2 text-xs font-bold text-black shadow-lg shadow-[#9A7B4F]/20 transition hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#29241f] hover:bg-black px-5 py-2 text-xs font-bold text-white shadow-md shadow-gray-900/10 transition hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                   <span>{isSubmitting ? "Creating..." : "Provision Manager Account"}</span>
@@ -875,24 +873,24 @@ export default function SuperadminManagersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           <div
             onClick={() => !isSubmitting && setIsEditModalOpen(false)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
           />
 
           <div
             role="dialog"
             aria-modal="true"
-            className="relative z-10 w-full max-w-xl rounded-3xl border border-white/15 bg-[#141417] p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-gray-100 max-h-[90vh] overflow-y-auto"
+            className="relative z-10 w-full max-w-xl rounded-3xl border border-[#e8e1d8] bg-white p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-[#29241f] max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-start justify-between border-b border-white/10 pb-4">
+            <div className="flex items-start justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D2B47A]/20 text-[#D2B47A]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-[#9A7B4F] shadow-xs">
                   <Edit size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-lg font-bold text-[#29241f]">
                     Edit Department & Scoped Permissions
                   </h2>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     Modifying {editingManager.name} (@{editingManager.username})
                   </p>
                 </div>
@@ -901,34 +899,34 @@ export default function SuperadminManagersPage() {
               <button
                 type="button"
                 onClick={() => !isSubmitting && setIsEditModalOpen(false)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             {modalError && (
-              <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
-                <AlertCircle size={16} className="shrink-0 text-rose-400" />
+              <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                <AlertCircle size={16} className="shrink-0 text-rose-600" />
                 <span>{modalError}</span>
               </div>
             )}
 
             <form onSubmit={handleUpdateManager} className="mt-6 space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                <label className="mb-1.5 block text-xs font-bold text-gray-700">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={editFormData.name}
                   onChange={(e) => handleEditInputChange("name", e.target.value)}
-                  className="h-10 w-full rounded-xl border border-white/10 bg-white/5 px-3 text-xs text-white outline-none focus:border-[#D2B47A]"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-900 outline-none focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F]"
                 />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                <label className="mb-1.5 block text-xs font-bold text-gray-700">
                   Change Operational Department
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -942,11 +940,11 @@ export default function SuperadminManagersPage() {
                         onClick={() => handleEditInputChange("department", dept.value)}
                         className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-semibold transition ${
                           isSelected
-                            ? "border-[#D2B47A] bg-[#D2B47A]/15 text-white"
-                            : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                            ? "border-[#9A7B4F] bg-amber-50 text-amber-950 font-bold shadow-xs"
+                            : "border-gray-200 bg-stone-50/60 text-gray-600 hover:bg-stone-100 hover:text-gray-900"
                         }`}
                       >
-                        <Icon size={14} className={isSelected ? "text-[#D2B47A]" : "text-gray-500"} />
+                        <Icon size={14} className={isSelected ? "text-[#9A7B4F]" : "text-gray-400"} />
                         <span className="truncate">{dept.label}</span>
                       </button>
                     );
@@ -955,22 +953,22 @@ export default function SuperadminManagersPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-300">
+                <label className="mb-1.5 block text-xs font-bold text-gray-700">
                   Scoped Permissions
                 </label>
-                <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-stone-50/60 p-3 space-y-2">
                   {PERMISSION_OPTIONS.map((perm) => {
                     const isChecked = (editFormData.permissions || []).includes(perm.id);
                     return (
                       <label
                         key={perm.id}
-                        className="flex items-center gap-2.5 text-xs text-gray-300 cursor-pointer hover:text-white"
+                        className="flex items-center gap-2.5 text-xs text-gray-700 cursor-pointer hover:text-gray-900"
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleEditPermissionToggle(perm.id)}
-                          className="rounded border-white/20 bg-black text-[#D2B47A] focus:ring-[#D2B47A]"
+                          className="rounded border-gray-300 text-[#9A7B4F] focus:ring-[#9A7B4F]"
                         />
                         <span>{perm.label}</span>
                       </label>
@@ -979,12 +977,12 @@ export default function SuperadminManagersPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center justify-end gap-3 border-t border-white/10 pt-4">
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setIsEditModalOpen(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-gray-300 transition hover:bg-white/10"
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -992,7 +990,7 @@ export default function SuperadminManagersPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9A7B4F] to-[#D2B47A] px-5 py-2 text-xs font-bold text-black shadow-lg shadow-[#9A7B4F]/20 transition hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#29241f] hover:bg-black px-5 py-2 text-xs font-bold text-white shadow-md shadow-gray-900/10 transition hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                   <span>{isSubmitting ? "Saving..." : "Save Changes"}</span>

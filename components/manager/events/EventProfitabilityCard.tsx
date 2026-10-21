@@ -142,16 +142,7 @@ export default function EventProfitabilityCard({
     }
   };
 
-  const handleDeleteExpense = async (expenseId: string) => {
-    if (!confirm("Delete this expense record?")) return;
-    try {
-      await deleteExpense(expenseId);
-      await loadProfitability();
-      showToast("Expense removed.");
-    } catch (err) {
-      console.warn("Failed to delete expense", err);
-    }
-  };
+
 
   if (loading) {
     return (
@@ -202,7 +193,7 @@ export default function EventProfitabilityCard({
           <div>
            
             <h3 className="mt-1 text-xl font-black tracking-tight text-[#29241f]">
-              Cost & Profit
+             Expense
             </h3>
           </div>
 
@@ -256,102 +247,8 @@ export default function EventProfitabilityCard({
       
         </div>
 
-        {/* Catering vs. Services Streams Comparison */}
-        <div className="grid gap-4 border-t border-[#f1ece5] p-5 sm:grid-cols-2 sm:p-6">
-          {/* Catering Stream Financials */}
-          <div className="rounded-2xl border border-[#ede6dc] bg-[#faf8f5] p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-base">
-                  🍽️
-                </span>
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase text-[#29241f]">
-                    Catering 
-                  </h4>
-                  <p className="text-[11px] text-gray-500">
-                    Food & Beverage Menu Stream
-                  </p>
-                </div>
-              </div>
+  
 
-              <span className="rounded-md bg-white px-2 py-0.5 text-xs font-black text-[#9a6c37] border border-[#ede6dc]">
-                {profitability.cateringMargin}% Margin
-              </span>
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-200/60 pt-3 text-center">
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Invoiced</p>
-                <p className="mt-0.5 text-xs font-extrabold text-[#29241f]">
-                  ₹{revenue.cateringRevenue.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Food Cost</p>
-                <p className="mt-0.5 text-xs font-extrabold text-red-600">
-                  ₹{expenses.cateringExpenses.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Net Profit</p>
-                <p className="mt-0.5 text-xs font-extrabold text-emerald-600">
-                  ₹{profitability.cateringProfit.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Production Services Stream Financials */}
-          <div className="rounded-2xl border border-[#ede6dc] bg-[#faf8f5] p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-100 text-base">
-                  🎨
-                </span>
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase text-[#29241f]">
-                    Services 
-                  </h4>
-                  <p className="text-[11px] text-gray-500">
-                    Decor, AV, Sound, Media & Logistics
-                  </p>
-                </div>
-              </div>
-
-              <span className="rounded-md bg-white px-2 py-0.5 text-xs font-black text-[#9a6c37] border border-[#ede6dc]">
-                {profitability.servicesMargin}% Margin
-              </span>
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-200/60 pt-3 text-center">
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Invoiced</p>
-                <p className="mt-0.5 text-xs font-extrabold text-[#29241f]">
-                  ₹{revenue.servicesRevenue.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Prod. Cost</p>
-                <p className="mt-0.5 text-xs font-extrabold text-red-600">
-                  ₹{expenses.servicesExpenses.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-bold text-gray-400">Net Profit</p>
-                <p className="mt-0.5 text-xs font-extrabold text-emerald-600">
-                  ₹{profitability.servicesProfit.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Expense Category Distribution Bar */}
      
 
         {/* Automatic Staff Duty Payroll Deductions */}
@@ -363,11 +260,9 @@ export default function EventProfitabilityCard({
                   <Users size={14} />
                 </span>
                 <h4 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
-                  Auto-Deducted Staff Duty Payroll ({data.staffPayroll.count} Crew Shifts)
+                  Staff
                 </h4>
-                <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-800">
-                  ⚡ Auto-Synced from Duties
-                </span>
+             
               </div>
 
               <div className="text-[11px] font-extrabold text-[#29241f]">
@@ -479,14 +374,7 @@ export default function EventProfitabilityCard({
                       {expense.status}
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteExpense(expense.id)}
-                      className="text-gray-400 hover:text-red-600 transition"
-                      aria-label="Delete expense"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                   
                   </div>
                 </div>
               ))}

@@ -325,3 +325,68 @@ export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
     balanceDue: eventBalance,
   };
 }
+
+export function buildDocumentDataFromEstimate(estimate: any): ClientDocumentData {
+  const estTotal = Number(estimate.total || 0);
+
+  return {
+    documentType: "ESTIMATE",
+    documentNumber:
+      estimate.estimateNumber ||
+      `EST-${String(estimate._id || "").slice(-6).toUpperCase()}`,
+    date: estimate.createdAt
+      ? new Date(estimate.createdAt).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+    status: estimate.status || "DRAFT",
+    company: defaultCompanyDetails,
+    client: {
+      name: estimate.client?.name || "Valued Client",
+      phone: estimate.client?.phone || "",
+      email: estimate.client?.email || "",
+      address: estimate.client?.address,
+    },
+    event: {
+      name: estimate.eventName || "Event",
+      type: estimate.eventType || "Event",
+      date: estimate.eventDate || new Date().toISOString(),
+      time: formatTime24to12(estimate.eventTime) || estimate.eventTime || "",
+      guests: Number(estimate.guests || 0),
+      location: estimate.location || "",
+      description: estimate.description || "",
+    },
+    services:
+      Array.isArray(estimate.items) && estimate.items.length > 0
+        ? estimate.items.map((item: any, idx: number) => ({
+            id: item._id || item.serviceId || String(idx),
+            name: item.serviceName || item.name || "Service",
+            category: item.category,
+            quantity: item.quantity || 1,
+            unitLabel: item.unitLabel,
+            unitPrice: Number(item.unitPrice || 0),
+            total: Number(item.total || 0),
+          }))
+        : [],
+    catering:
+      estimate.foodMenu && estimate.foodMenu.included
+        ? {
+            included: true,
+            servingType: estimate.foodMenu.servingType,
+            ratePerGuest: estimate.foodMenu.ratePerGuest,
+            totalFoodAmount: Number(estimate.foodMenu.totalFoodAmount || 0),
+            guestCount: Number(estimate.guests || 0),
+            notes: estimate.foodMenu.notes,
+            items: estimate.foodMenu.items,
+          }
+        : undefined,
+    subtotal: Number(estimate.subtotal || estTotal),
+    discount: Number(estimate.discount || estimate.discountAmount || 0),
+    additionalCharges: Number(estimate.additionalCharges || 0),
+    gstRate: Number(estimate.gstRate || 0),
+    gstAmount: Number(estimate.gstAmount || 0),
+    total: estTotal,
+    currency: estimate.currency || "INR",
+    paidAmount: 0,
+    balanceDue: estTotal,
+  };
+}
+

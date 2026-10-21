@@ -184,10 +184,11 @@ export class ApiError extends Error {
 
 export async function api<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  token?: string
 ): Promise<T> {
-  let activeToken: string | undefined = undefined;
-  if (typeof window !== "undefined") {
+  let activeToken: string | undefined = token;
+  if (!activeToken && typeof window !== "undefined") {
     activeToken = getAuthToken();
   }
 
@@ -242,11 +243,12 @@ export async function api<T>(
 // ==========================================
 
 export const get = <T>(
-  endpoint: string
+  endpoint: string,
+  token?: string
 ): Promise<T> => {
   return api<T>(endpoint, {
     method: "GET",
-  });
+  }, token);
 };
 
 // ==========================================
@@ -255,7 +257,8 @@ export const get = <T>(
 
 export const post = <T>(
   endpoint: string,
-  body?: unknown
+  body?: unknown,
+  token?: string
 ): Promise<T> => {
   return api<T>(endpoint, {
     method: "POST",
@@ -263,7 +266,7 @@ export const post = <T>(
       body !== undefined
         ? JSON.stringify(body)
         : undefined,
-  });
+  }, token);
 };
 
 // ==========================================
@@ -272,7 +275,8 @@ export const post = <T>(
 
 export const put = <T>(
   endpoint: string,
-  body?: unknown
+  body?: unknown,
+  token?: string
 ): Promise<T> => {
   return api<T>(endpoint, {
     method: "PUT",
@@ -280,7 +284,7 @@ export const put = <T>(
       body !== undefined
         ? JSON.stringify(body)
         : undefined,
-  });
+  }, token);
 };
 
 // ==========================================
@@ -289,7 +293,8 @@ export const put = <T>(
 
 export const patch = <T>(
   endpoint: string,
-  body?: unknown
+  body?: unknown,
+  token?: string
 ): Promise<T> => {
   return api<T>(endpoint, {
     method: "PATCH",
@@ -297,7 +302,7 @@ export const patch = <T>(
       body !== undefined
         ? JSON.stringify(body)
         : undefined,
-  });
+  }, token);
 };
 
 // ==========================================
@@ -339,7 +344,8 @@ export const getEstimates = async (
     status?: EstimateStatus;
     page?: number;
     limit?: number;
-  }
+  },
+  token?: string
 ): Promise<EstimatesResponse> => {
   const searchParams =
     new URLSearchParams();
@@ -371,7 +377,8 @@ export const getEstimates = async (
   return get<EstimatesResponse>(
     `/estimates${
       query ? `?${query}` : ""
-    }`
+    }`,
+    token
   );
 };
 
@@ -381,7 +388,8 @@ export const getEstimates = async (
 // ==========================================
 
 export const getEstimateById = async (
-  id: string
+  id: string,
+  token?: string
 ): Promise<Estimate> => {
   if (!id) {
     throw new Error(
@@ -391,7 +399,8 @@ export const getEstimateById = async (
 
   const result =
     await get<ApiResponse<Estimate>>(
-      `/estimates/${id}`
+      `/estimates/${id}`,
+      token
     );
 
   return result.data;
@@ -405,7 +414,8 @@ export const getEstimateById = async (
 export const updateEstimateStatus =
   async (
     id: string,
-    status: EstimateStatus
+    status: EstimateStatus,
+    token?: string
   ): Promise<Estimate> => {
     if (!id) {
       throw new Error(
@@ -418,7 +428,8 @@ export const updateEstimateStatus =
         `/estimates/${id}/status`,
         {
           status,
-        }
+        },
+        token
       );
 
     return result.data;
@@ -431,7 +442,8 @@ export const updateEstimateStatus =
 
 export const updateEstimate = async (
   id: string,
-  payload: Partial<CreateEstimatePayload>
+  payload: Partial<CreateEstimatePayload>,
+  token?: string
 ): Promise<Estimate> => {
   if (!id) {
     throw new Error(
@@ -441,7 +453,8 @@ export const updateEstimate = async (
 
   const result = await put<ApiResponse<Estimate>>(
     `/estimates/${id}`,
-    payload
+    payload,
+    token
   );
 
   return result.data;
@@ -475,15 +488,18 @@ export type ConvertEstimateData = {
 };
 
 export const convertEstimateToBooking = async (
-  id: string
+  id: string,
+  token?: string
 ): Promise<ConvertEstimateData> => {
   if (!id) {
     throw new Error("Estimate ID is required");
   }
 
   const result = await post<ApiResponse<ConvertEstimateData>>(
-    `/estimates/${id}/convert`
+    `/estimates/${id}/convert`,
+    undefined,
+    token
   );
 
   return result.data;
-};
+};

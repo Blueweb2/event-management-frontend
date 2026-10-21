@@ -176,22 +176,7 @@ export default function EventClientPaymentCard({
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Status Badge */}
-          {isSettled ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-extrabold text-emerald-700 shadow-2xs">
-              <CheckCircle2 size={13} className="text-emerald-600" />
-              <span>PAID IN FULL</span>
-            </span>
-          ) : isPartiallyPaid ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-extrabold text-amber-700 shadow-2xs">
-              <Clock size={13} className="text-amber-600" />
-              <span>PARTIALLY PAID ({paymentPercentage}%)</span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-extrabold text-red-700 shadow-2xs">
-              <AlertCircle size={13} className="text-red-600" />
-              <span>PAYMENT PENDING</span>
-            </span>
-          )}
+       
 
           {/* Action Triggers */}
           {eventPaid === 0 && (

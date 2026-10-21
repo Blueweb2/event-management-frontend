@@ -243,7 +243,7 @@ export default function EventServiceStaffingMatrix({
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300/90">
               <Sparkles size={14} />
-              <span>Event-Driven Dynamic Staff Allocation</span>
+              <span>Event Duty</span>
             </div>
             <h2 className="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">
               {data.event.eventName}
@@ -278,7 +278,7 @@ export default function EventServiceStaffingMatrix({
           <div className="flex flex-wrap gap-2 sm:gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-center">
               <p className="text-[10px] uppercase font-bold text-gray-400">
-                Active Services
+                Active Events
               </p>
               <p className="text-lg font-black text-amber-300">
                 {data.staffingStreams.length}
@@ -382,40 +382,7 @@ export default function EventServiceStaffingMatrix({
                 </div>
 
                 {/* Client's Requirement Specs */}
-                <div className="mt-3.5 rounded-2xl bg-[#fdfbf9] border border-[#f0ebe3] p-3 text-xs">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#91887e]">
-                    Client Booking Requirement
-                  </p>
-                  <p className="mt-0.5 text-[#3b342e] font-medium">
-                    {stream.description}
-                  </p>
-
-                  {/* Catering Menu Items Snapshot */}
-                  {stream.streamType === "CATERING" &&
-                    stream.specDetails.items &&
-                    stream.specDetails.items.length > 0 && (
-                      <div className="mt-2.5 border-t border-[#f0ebe3] pt-2">
-                        <p className="text-[10px] font-bold text-gray-500">
-                          Menu Items ({stream.specDetails.items.length}):
-                        </p>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {stream.specDetails.items.slice(0, 5).map((item, idx) => (
-                            <span
-                              key={idx}
-                              className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-semibold text-gray-700 border border-gray-200 shadow-2xs"
-                            >
-                              {item.dietary === "non-veg" ? "🍗" : "🥗"} {item.name}
-                            </span>
-                          ))}
-                          {stream.specDetails.items.length > 5 && (
-                            <span className="rounded-lg bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
-                              +{stream.specDetails.items.length - 5} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                </div>
+          
 
                 {/* Currently Assigned Duties */}
                 {stream.assignedDuties.length > 0 && (
@@ -425,7 +392,7 @@ export default function EventServiceStaffingMatrix({
                     </p>
                     <div className="mt-2 space-y-2">
                       {stream.assignedDuties.map((duty) => {
-                        const isAccepted = duty.status === "ACCEPTED";
+                        const isAccepted = ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status);
                         const isRejected = duty.status === "REJECTED";
                         const checklistCount = (duty as any).checklist?.length || 0;
                         const completedCount = ((duty as any).checklist || []).filter(
@@ -605,7 +572,7 @@ export default function EventServiceStaffingMatrix({
                               {staffMember.status === "ASSIGNED_THIS_EVENT" && (
                                 <span className="flex items-center gap-1 font-bold text-purple-600">
                                   <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-                                  Already Assigned to Event
+                                  Assigned
                                 </span>
                               )}
                             </div>

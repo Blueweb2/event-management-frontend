@@ -20,6 +20,7 @@ export default function ManagerStats() {
     upcomingEvents: 0,
     availableStaff: 0,
     pendingTasks: 0,
+    confirmedDuties: 0,
     totalRevenue: 0,
     pendingEstimates: 0,
     totalStaffHours: 0,
@@ -40,7 +41,7 @@ export default function ManagerStats() {
         const [eventsRes, staffRes, assignmentsRes, estimatesRes, analyticsRes] = await Promise.allSettled([
           api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/events", { token }),
           api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/users/staff", { token }),
-          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments", { token }),
+          api<{ success: boolean; data?: any[]; pagination?: { total?: number } }>("/assignments?limit=200", { token }),
           api<{ success: boolean; data?: any[] }>("/estimates", { token }),
           api<{ success: boolean; data?: { totalStaffHours?: number; totalRevenue?: number } }>("/reports/analytics", { token }),
         ]);
@@ -48,6 +49,7 @@ export default function ManagerStats() {
         let eventCount = 0;
         let staffCount = 0;
         let assignmentCount = 0;
+        let confirmedDutiesCount = 0;
         let pendingEstCount = 0;
         let revenue = 0;
         let staffHours = 0;
@@ -76,15 +78,28 @@ export default function ManagerStats() {
         }
 
         if (assignmentsRes.status === "fulfilled" && assignmentsRes.value) {
+          const assignmentsList = Array.isArray(assignmentsRes.value.data) ? assignmentsRes.value.data : [];
           assignmentCount =
-            assignmentsRes.value.pagination?.total ??
-            (Array.isArray(assignmentsRes.value.data) ? assignmentsRes.value.data.length : 0);
+            assignmentsRes.value.pagination?.total ?? assignmentsList.length;
+          confirmedDutiesCount = assignmentsList.filter((d: any) =>
+            ["ACCEPTED", "IN_PROGRESS"].includes(d.status)
+          ).length;
         }
 
         if (estimatesRes.status === "fulfilled" && estimatesRes.value && Array.isArray(estimatesRes.value.data)) {
-          pendingEstCount = estimatesRes.value.data.filter((e: any) =>
-            ["DRAFT", "SENT", "VIEWED"].includes(e.status)
-          ).length;
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          pendingEstCount = estimatesRes.value.data.filter((e: any) => {
+            if (!["DRAFT", "SENT", "VIEWED"].includes(e.status)) return false;
+            if (e.convertedToEvent) return false;
+            if (!e.eventDate) return false;
+            const d = new Date(e.eventDate);
+            if (isNaN(d.getTime())) return false;
+            const end = new Date(d);
+            end.setHours(23, 59, 59, 999);
+            return end.getTime() >= todayStart.getTime();
+          }).length;
         }
 
         if (analyticsRes.status === "fulfilled" && analyticsRes.value?.data) {
@@ -100,6 +115,7 @@ export default function ManagerStats() {
             upcomingEvents: eventCount,
             availableStaff: Math.max(staffCount - assignmentCount, 0),
             pendingTasks: assignmentCount,
+            confirmedDuties: confirmedDutiesCount,
             totalRevenue: revenue,
             pendingEstimates: pendingEstCount,
             totalStaffHours: staffHours,
@@ -111,10 +127,12 @@ export default function ManagerStats() {
       }
     }
 
-    fetchStats();
+    void fetchStats();
+    const interval = setInterval(fetchStats, 4500);
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -129,16 +147,22 @@ export default function ManagerStats() {
       description: "Paid amount from clients",
     },
     {
+      label: "Staff on Duty",
+      value: counts.loaded ? String(counts.confirmedDuties) : "...",
+      icon: UserCheck,
+      description: `${counts.confirmedDuties} accepted & active shifts`,
+    },
+    {
+      label: "Events",
+      value: counts.loaded ? String(counts.upcomingEvents) : "...",
+      icon: CalendarDays,
+      description: "Active event pipeline",
+    },
+    {
       label: "Pending Proposals",
       value: counts.loaded ? String(counts.pendingEstimates) : "...",
       icon: FileText,
       description: "Awaiting client response",
-    },
-    {
-      label: "Event",
-      value: counts.loaded ? String(counts.upcomingEvents) : "...",
-      icon: CalendarDays,
-      description: "Total events in pipeline",
     },
     {
       label: "Total Staff",
@@ -159,11 +183,11 @@ export default function ManagerStats() {
         </h2>
 
         <p className="mt-0.5 text-xs text-gray-500">
-          Your event management summary
+          Your live event and staffing management summary
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <ManagerStatCard
             key={stat.label}

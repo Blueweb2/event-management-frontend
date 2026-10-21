@@ -54,6 +54,17 @@ export default function EventCard({
     return !isNaN(d.getTime()) && d.toDateString() === now.toDateString();
   })();
 
+  const isDateOver = (() => {
+    if (!event.eventDate) return false;
+    const d = new Date(event.eventDate);
+    if (isNaN(d.getTime())) return false;
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return end.getTime() < today.getTime();
+  })();
+
   const isOngoing =
     !isCompleted &&
     isToday &&
@@ -287,8 +298,8 @@ export default function EventCard({
               </span>
             )}
 
-            {/* Accept Action if Pending */}
-            {onAccept && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
+            {/* Accept Action if Pending and date not passed */}
+            {onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
               <button
                 type="button"
                 onClick={(e) => {

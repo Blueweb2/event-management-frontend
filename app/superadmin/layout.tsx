@@ -55,15 +55,15 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
 
   if (loading || !token || (user && user.role !== "superadmin")) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0D0D0D]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F8F7F3]">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] p-0.5 shadow-xl shadow-[#9A7B4F]/20">
-            <div className="flex h-full w-full items-center justify-center rounded-2xl bg-[#141414]">
-              <ShieldCheck className="h-7 w-7 text-[#D2B47A] animate-pulse" />
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] p-0.5 shadow-md shadow-[#9A7B4F]/20">
+            <div className="flex h-full w-full items-center justify-center rounded-2xl bg-white">
+              <ShieldCheck className="h-7 w-7 text-[#9A7B4F] animate-pulse" />
             </div>
           </div>
           <div>
-            <p className="text-sm font-bold text-white tracking-wide">
+            <p className="text-sm font-black text-[#29241f] tracking-wide">
               AUTHENTICATING SUPERADMIN CONSOLE
             </p>
             <p className="mt-1 text-xs text-gray-500">
@@ -76,9 +76,9 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-100 antialiased selection:bg-[#9A7B4F]/30 selection:text-white">
-      {/* Top Luxury Navigation Header */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0F0F11]/90 backdrop-blur-md">
+    <div className="min-h-screen bg-[#F8F7F3] text-[#29241f] antialiased">
+      {/* Top Navigation Header */}
+      <header className="sticky top-0 z-40 border-b border-[#e8e1d8] bg-white/95 backdrop-blur-md shadow-2xs">
         <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand & Superadmin Badge */}
           <div className="flex items-center gap-4">
@@ -86,31 +86,31 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
               href="/superadmin"
               className="flex items-center gap-3 transition-opacity hover:opacity-90"
             >
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] p-0.5 shadow-md shadow-[#9A7B4F]/20">
-                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-[#141414]">
-                  <ShieldCheck className="h-5 w-5 text-[#D2B47A]" />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] p-0.5 shadow-sm shadow-[#9A7B4F]/20">
+                <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-white">
+                  <ShieldCheck className="h-5 w-5 text-[#9A7B4F]" />
                 </div>
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-extrabold tracking-wider text-white uppercase">
+                  <span className="text-sm font-black tracking-wider text-[#29241f] uppercase">
                     Eventeo
                   </span>
-                  <span className="rounded-md bg-[#9A7B4F]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#D2B47A] border border-[#9A7B4F]/30">
+                  <span className="rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-black text-amber-900 border border-amber-200">
                     SUPERADMIN
                   </span>
                 </div>
-                <p className="text-[11px] text-gray-400">
+                <p className="text-[11px] text-gray-500">
                   System Administration Console
                 </p>
               </div>
             </Link>
 
             {/* Breadcrumb separator on desktop */}
-            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-white/10 text-xs text-gray-400">
-              <span className="flex items-center gap-1 font-medium text-gray-300">
-                <Users size={14} className="text-[#D2B47A]" />
-                Executive Managers Directory
+            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-gray-200 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5 font-bold text-gray-700">
+                <Users size={14} className="text-[#9A7B4F]" />
+                Managers & Access Control
               </span>
             </div>
           </div>
@@ -121,23 +121,23 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
             <Link
               href="/manager"
               title="Open Manager Operations Hub"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-gray-300 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 shadow-2xs transition hover:bg-gray-50 hover:text-black active:scale-95"
             >
-              <LayoutDashboard size={14} className="text-[#D2B47A]" />
+              <LayoutDashboard size={14} className="text-[#9A7B4F]" />
               <span className="hidden sm:inline">Operations Hub</span>
-              <ExternalLink size={12} className="opacity-60" />
+              <ExternalLink size={12} className="opacity-50" />
             </Link>
 
             {/* Superadmin Profile pill */}
-            <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-[11px] font-black text-black">
+            <div className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 shadow-2xs">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-[#9A7B4F] to-[#D2B47A] text-[11px] font-black text-white">
                 {user?.name ? user.name.charAt(0).toUpperCase() : "S"}
               </div>
               <div className="hidden lg:block text-left">
-                <p className="text-xs font-bold leading-none text-white truncate max-w-[140px]">
-                  {user?.name || "Superadmin"}
+                <p className="text-xs font-black leading-none text-[#29241f] truncate max-w-[140px]">
+                  {user?.name?.replace(/^Executive\s+/i, "") || "Superadmin"}
                 </p>
-                <p className="text-[10px] text-[#D2B47A] leading-none mt-1 font-medium">
+                <p className="text-[10px] text-[#9A7B4F] leading-none mt-1 font-bold">
                   Root Authority
                 </p>
               </div>
@@ -148,7 +148,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
               type="button"
               onClick={handleLogout}
               title="Sign Out"
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-400 transition hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400 active:scale-95"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 shadow-2xs transition hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 active:scale-95 cursor-pointer"
             >
               <LogOut size={16} />
             </button>

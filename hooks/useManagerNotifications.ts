@@ -96,6 +96,18 @@ export function useManagerNotifications() {
               read: false,
               priority: "MEDIUM",
             });
+          } else if (duty.status === "ACCEPTED") {
+            items.push({
+              id: `duty-accepted-${duty._id}`,
+              category: "STAFF",
+              title: `✅ Shift Confirmed: ${staffName}`,
+              message: `${staffName} accepted duty "${duty.dutyTitle}" for ${eventName}. Ready for event duty!`,
+              timestamp: duty.respondedAt || duty.updatedAt || duty.dutyDate,
+              timeAgo: "Confirmed on duty",
+              link: staffId ? `/manager/staff/${staffId}?tab=schedule` : "/manager/duties",
+              read: false,
+              priority: "MEDIUM",
+            });
           }
         });
       }
@@ -145,11 +157,21 @@ export function useManagerNotifications() {
         });
       }
 
-      // 3. New Estimates in DRAFT or SENT stage
+      // 3. New Estimates in DRAFT or SENT stage (excluding date-over proposals)
       if (estimatesRes.status === "fulfilled" && estimatesRes.value?.data) {
-        const activeEstimates = estimatesRes.value.data.filter(
-          (est) => est.status === "DRAFT" || est.status === "SENT"
-        );
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const activeEstimates = estimatesRes.value.data.filter((est) => {
+          if (est.status !== "DRAFT" && est.status !== "SENT") return false;
+          if (est.convertedToEvent) return false;
+          if (!est.eventDate) return false;
+          const d = new Date(est.eventDate);
+          if (isNaN(d.getTime())) return false;
+          const end = new Date(d);
+          end.setHours(23, 59, 59, 999);
+          return end.getTime() >= todayStart.getTime();
+        });
         activeEstimates.slice(0, 5).forEach((est) => {
           items.push({
             id: `est-review-${est._id}`,

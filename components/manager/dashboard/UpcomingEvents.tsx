@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronRight, Clock3, MapPin, Plus } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock3, MapPin, Plus, UserCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAuthToken } from "@/lib/auth-storage";
 import { formatTime24to12 } from "@/lib/time-utils";
@@ -15,6 +15,7 @@ interface EventItem {
   location: string;
   guests?: number;
   status: string;
+  booking?: string | { _id: string };
 }
 
 const statusStyles: Record<string, string> = {
@@ -28,6 +29,7 @@ const statusStyles: Record<string, string> = {
 
 export default function UpcomingEvents() {
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [staffStats, setStaffStats] = useState<Record<string, { total: number; confirmed: number }>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,15 +43,22 @@ export default function UpcomingEvents() {
           return;
         }
 
-        const res = await api<{ success: boolean; data: EventItem[] }>(
-          "/events?status=Upcoming&limit=10",
-          { token }
-        );
-        if (isMounted && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        const [eventsRes, assignmentsRes] = await Promise.allSettled([
+          api<{ success: boolean; data: EventItem[] }>(
+            "/events?status=Upcoming&limit=15",
+            { token }
+          ),
+          api<{ success: boolean; data: any[] }>(
+            "/assignments?limit=250",
+            { token }
+          ),
+        ]);
+
+        if (isMounted && eventsRes.status === "fulfilled" && eventsRes.value.success && Array.isArray(eventsRes.value.data)) {
           const todayStart = new Date();
           todayStart.setHours(0, 0, 0, 0);
 
-          const sorted = res.data
+          const sorted = eventsRes.value.data
             .filter((evt) => {
               if (!evt.eventDate) return false;
               const d = new Date(evt.eventDate);
@@ -63,6 +72,23 @@ export default function UpcomingEvents() {
             );
           setEvents(sorted.slice(0, 4));
         }
+
+        if (isMounted && assignmentsRes.status === "fulfilled" && assignmentsRes.value?.data && Array.isArray(assignmentsRes.value.data)) {
+          const statsMap: Record<string, { total: number; confirmed: number }> = {};
+          assignmentsRes.value.data.forEach((duty: any) => {
+            const evtId = typeof duty.event === "object" && duty.event ? duty.event._id : duty.event;
+            if (!evtId) return;
+            const strId = String(evtId);
+            if (!statsMap[strId]) {
+              statsMap[strId] = { total: 0, confirmed: 0 };
+            }
+            statsMap[strId].total += 1;
+            if (["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status)) {
+              statsMap[strId].confirmed += 1;
+            }
+          });
+          setStaffStats(statsMap);
+        }
       } catch (err) {
         console.warn("Could not load upcoming events from API", err);
       } finally {
@@ -70,10 +96,12 @@ export default function UpcomingEvents() {
       }
     }
 
-    loadEvents();
+    void loadEvents();
+    const interval = setInterval(loadEvents, 5000);
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -191,6 +219,32 @@ export default function UpcomingEvents() {
                         <span className="truncate">{event.location}</span>
                       </div>
                     )}
+
+                    {/* Staff Acceptance & Confirmation Status */}
+                    {(() => {
+                      const bId = typeof event.booking === "object" && event.booking ? event.booking._id : event.booking;
+                      const eventStat = staffStats[event._id] || (bId ? staffStats[String(bId)] : null);
+
+                      return (
+                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                          {eventStat && eventStat.confirmed > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                              <UserCheck size={11} className="text-emerald-700" />
+                              <span>{eventStat.confirmed} Staff Confirmed</span>
+                            </span>
+                          ) : eventStat && eventStat.total > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
+                              <Clock3 size={11} className="text-amber-700" />
+                              <span>{eventStat.total} Awaiting Staff Acceptance</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-600 border border-stone-200">
+                              <span>No Staff Assigned</span>
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Status */}
                     <div className="mt-2.5 flex items-center justify-between">

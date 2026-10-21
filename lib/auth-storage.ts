@@ -39,6 +39,10 @@ function readFromStorage(storage: AuthStorage | null) {
   if (storedUser) {
     try {
       user = JSON.parse(storedUser) as AuthUser;
+      if (user && user.name && /executive\s+superadmin/i.test(user.name)) {
+        user.name = user.name.replace(/executive\s+/i, "");
+        storage.setItem(USER_KEY, JSON.stringify(user));
+      }
     } catch {
       user = null;
     }

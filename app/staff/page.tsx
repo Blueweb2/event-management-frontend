@@ -6,7 +6,6 @@ import StaffHeader from "@/components/staff/StaffHeader";
 import StaffStats from "@/components/staff/StaffStats";
 import UpcomingEvents from "@/components/staff/UpcomingEvents";
 import HeroActiveShiftWidget from "@/components/staff/shift/HeroActiveShiftWidget";
-import StaffStockWidget from "@/components/staff/StaffStockWidget";
 import { useAuth } from "@/hooks/useAuth";
 import { getAssignments } from "@/lib/assignment.api";
 import { getAttendance } from "@/lib/attendance.api";
@@ -152,9 +151,6 @@ export default function StaffHomePage() {
 
           {/* Quick Stats Bar */}
           <StaffStats assignments={assignments} attendance={attendance} />
-
-          {/* Stock & Equipment Widget */}
-          <StaffStockWidget />
 
           {/* Upcoming Events / Schedule */}
           <div id="upcoming-events">

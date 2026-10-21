@@ -223,13 +223,20 @@ export default function ManagerEventDetailsPage() {
     void fetchEvent();
     void fetchMonitoringData();
 
-    // Auto-poll live staff attendance & monitoring data every 4 seconds
+    // Auto-poll live staff attendance, duties & monitoring data every 4 seconds
     const interval = setInterval(() => {
       void fetchMonitoringData();
+      if (token && eventId) {
+        void fetchAssignments({
+          event: eventId,
+          page: 1,
+          limit: 100,
+        });
+      }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [fetchEvent, fetchMonitoringData]);
+  }, [fetchEvent, fetchMonitoringData, fetchAssignments, token, eventId]);
 
   useEffect(() => {
     if (!token || !eventId) return;
@@ -257,6 +264,17 @@ export default function ManagerEventDetailsPage() {
       socket.emit("join:event", eventId);
     };
 
+    const handleRealtimeDutyUpdate = () => {
+      if (token && eventId) {
+        void fetchAssignments({
+          event: eventId,
+          page: 1,
+          limit: 100,
+        });
+        void fetchEvent();
+      }
+    };
+
     const onConnect = () => {
       console.log(`🔌 Manager Socket connected: ${socket.id}`);
       joinRoom();
@@ -282,16 +300,22 @@ export default function ManagerEventDetailsPage() {
 
     socket.on("connect", onConnect);
     socket.on("event:joined", onEventJoined);
+    socket.on("duty:updated", handleRealtimeDutyUpdate);
+    socket.on("duty:refresh", handleRealtimeDutyUpdate);
+    socket.on("attendance:updated", handleRealtimeDutyUpdate);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("event:joined", onEventJoined);
+      socket.off("duty:updated", handleRealtimeDutyUpdate);
+      socket.off("duty:refresh", handleRealtimeDutyUpdate);
+      socket.off("attendance:updated", handleRealtimeDutyUpdate);
       socket.off("disconnect", onDisconnect);
       socket.off("connect_error", onConnectError);
     };
-  }, [eventId]);
+  }, [eventId, token, fetchAssignments, fetchEvent]);
 
   const handleAssignmentChange = (
     field: keyof typeof assignmentForm,
@@ -791,7 +815,7 @@ export default function ManagerEventDetailsPage() {
                 <span className="text-gray-400">Venue:</span>
                 <span className="font-bold text-[#252525] truncate max-w-[150px]">{event.location}</span>
               </div>
-              <div className="flex justify-between border-t border-dashed border-gray-100 pt-2">
+              {/* <div className="flex justify-between border-t border-dashed border-gray-100 pt-2">
                 <span className="text-gray-400">Client Payments:</span>
                 <span className="font-bold text-[#252525]">
                   <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
@@ -800,7 +824,7 @@ export default function ManagerEventDetailsPage() {
                     ₹{eventBalance.toLocaleString("en-IN")} bal
                   </span>
                 </span>
-              </div>
+              </div> */}
             </div>
           </section>
 
