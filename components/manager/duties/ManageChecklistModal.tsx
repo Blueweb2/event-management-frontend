@@ -16,6 +16,8 @@ import {
   Clock3,
   AlertCircle,
   Lock,
+  Edit2,
+  Check,
 } from "lucide-react";
 import type { Duty } from "./constants";
 import { formatTime24to12 } from "@/lib/duty-mapper";
@@ -76,11 +78,17 @@ export default function ManageChecklistModal({
   onSaveChecklist,
   isCompleted = false,
 }: ManageChecklistModalProps) {
-  const isLocked = isCompleted || duty?.status === "COMPLETED";
+  const isLocked =
+    isCompleted ||
+    (duty?.status as string) === "COMPLETED" ||
+    (duty?.status as string) === "Completed" ||
+    (duty?.status as string) === "Settled";
   const [items, setItems] = useState<
     Array<{ _id?: string; text: string; completed: boolean }>
   >([]);
   const [newTaskText, setNewTaskText] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [activeTemplateTab, setActiveTemplateTab] = useState<string>("catering");
 
@@ -89,6 +97,8 @@ export default function ManageChecklistModal({
   useEffect(() => {
     if (duty) {
       setError(null);
+      setEditingIndex(null);
+      setEditingText("");
       setItems(duty.checklist ? [...duty.checklist] : []);
       // auto-detect template from department
       const dept = (duty.department || duty.serviceName || "").toLowerCase();
@@ -132,7 +142,33 @@ export default function ManageChecklistModal({
 
   const handleDeleteItem = (index: number) => {
     if (isLocked) return;
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setEditingText("");
+    }
     setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleStartEdit = (index: number, text: string) => {
+    if (isLocked) return;
+    setEditingIndex(index);
+    setEditingText(text);
+  };
+
+  const handleSaveEdit = (index: number) => {
+    if (!editingText.trim()) return;
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, text: editingText.trim() } : item
+      )
+    );
+    setEditingIndex(null);
+    setEditingText("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditingText("");
   };
 
   const handleSave = async () => {
@@ -140,13 +176,24 @@ export default function ManageChecklistModal({
       onClose();
       return;
     }
+
+    let finalItems = items;
+    if (editingIndex !== null && editingText.trim()) {
+      finalItems = items.map((item, i) =>
+        i === editingIndex ? { ...item, text: editingText.trim() } : item
+      );
+      setItems(finalItems);
+      setEditingIndex(null);
+      setEditingText("");
+    }
+
     setSaving(true);
     setError(null);
     try {
-      await onSaveChecklist(duty.id, items);
+      await onSaveChecklist(duty.id, finalItems);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save checklist");
+      setError(err instanceof Error ? err.message : "Failed to save subtasks");
     } finally {
       setSaving(false);
     }
@@ -374,62 +421,132 @@ export default function ManageChecklistModal({
               </div>
             ) : (
               <div className="space-y-2">
-                {items.map((item, index) => (
-                  <div
-                    key={item._id || index}
-                    className={`group flex items-center justify-between gap-3 rounded-xl border p-3 text-xs transition ${
-                      item.completed
-                        ? "border-emerald-200 bg-emerald-50/40 text-gray-500"
-                        : isLocked
-                        ? "border-gray-200 bg-gray-50/60 text-[#29241f]"
-                        : "border-gray-200 bg-white text-[#29241f] hover:border-[#a7773f]"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleToggleItem(index)}
-                      disabled={isLocked}
-                      className={`flex flex-1 items-start gap-2.5 text-left ${
-                        isLocked ? "cursor-default" : "cursor-pointer"
+                {items.map((item, index) => {
+                  const isEditing = editingIndex === index;
+
+                  return (
+                    <div
+                      key={item._id || index}
+                      className={`group flex items-center justify-between gap-3 rounded-xl border p-3 text-xs transition ${
+                        item.completed
+                          ? "border-emerald-200 bg-emerald-50/40 text-gray-500"
+                          : isLocked
+                          ? "border-gray-200 bg-gray-50/60 text-[#29241f]"
+                          : isEditing
+                          ? "border-[#a7773f] bg-[#faf8f5] ring-2 ring-[#a7773f]/10"
+                          : "border-gray-200 bg-white text-[#29241f] hover:border-[#a7773f]"
                       }`}
                     >
-                      <span className="mt-0.5 shrink-0 text-emerald-600">
-                        {item.completed ? (
-                          <CheckCircle2 size={16} />
-                        ) : (
-                          <Circle size={16} className={isLocked ? "text-gray-300" : "text-gray-400 group-hover:text-[#a7773f]"} />
-                        )}
-                      </span>
-                      <div>
-                        <p
-                          className={`font-semibold ${
-                            item.completed ? "line-through text-gray-400" : "text-[#29241f]"
-                          }`}
-                        >
-                          {item.text}
-                        </p>
-                        <span className="text-[10px] font-bold">
-                          {item.completed ? (
-                            <span className="text-emerald-700">✓ Completed by Staff</span>
-                          ) : (
-                            <span className="text-amber-700">● Pending Execution</span>
-                          )}
-                        </span>
-                      </div>
-                    </button>
+                      {isEditing ? (
+                        <div className="flex flex-1 items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleSaveEdit(index);
+                              } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                handleCancelEdit();
+                              }
+                            }}
+                            autoFocus
+                            placeholder="Edit subtask instruction..."
+                            className="flex-1 rounded-lg border border-[#a7773f] bg-white px-3 py-1.5 text-xs text-[#29241f] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEdit(index)}
+                            disabled={!editingText.trim()}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:opacity-40"
+                            title="Save change"
+                          >
+                            <Check size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 transition"
+                            title="Cancel editing"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleItem(index)}
+                            disabled={isLocked}
+                            className={`flex flex-1 items-start gap-2.5 text-left ${
+                              isLocked ? "cursor-default" : "cursor-pointer"
+                            }`}
+                          >
+                            <span className="mt-0.5 shrink-0 text-emerald-600">
+                              {item.completed ? (
+                                <CheckCircle2 size={16} />
+                              ) : (
+                                <Circle
+                                  size={16}
+                                  className={
+                                    isLocked
+                                      ? "text-gray-300"
+                                      : "text-gray-400 group-hover:text-[#a7773f]"
+                                  }
+                                />
+                              )}
+                            </span>
+                            <div>
+                              <p
+                                className={`font-semibold ${
+                                  item.completed
+                                    ? "line-through text-gray-400"
+                                    : "text-[#29241f]"
+                                }`}
+                              >
+                                {item.text}
+                              </p>
+                              <span className="text-[10px] font-bold">
+                                {item.completed ? (
+                                  <span className="text-emerald-700">
+                                    ✓ Completed by Staff
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700">
+                                    ● Pending Execution
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </button>
 
-                    {!isLocked && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteItem(index)}
-                        title="Remove Subtask"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                          {!isLocked && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(index, item.text)}
+                                title="Edit Subtask Title / Instruction"
+                                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-amber-50 hover:text-amber-700"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(index)}
+                                title="Remove Subtask"
+                                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

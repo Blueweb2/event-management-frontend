@@ -1,43 +1,16 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
-  ArrowDownRight,
-  ArrowUpRight,
-  CheckCircle2,
-  Clock,
-  Layers,
   Loader2,
-  PieChart,
-  Plus,
-  Receipt,
-  Sparkles,
-  Tag,
-  Trash2,
-  TrendingUp,
-  Users,
-  UserCheck,
-  Utensils,
-  Wallet,
-  X,
 } from "lucide-react";
 import {
   getEventProfitability,
-  createExpense,
-  deleteExpense,
-  toggleExpenseStatus,
   type EventProfitabilityData,
 } from "@/lib/expense.api";
-import {
-  expenseCategories,
-  paymentMethods,
-  type Expense,
-  type ExpenseCategory,
-  type PaymentMethod,
-} from "@/components/manager/expenses/constants";
 import { useAuth } from "@/hooks/useAuth";
-import { formatTime24to12 } from "@/lib/time-utils";
+import UnifiedExpensesSection from "@/components/manager/expenses/UnifiedExpensesSection";
 
 interface EventProfitabilityCardProps {
   eventId: string;
@@ -52,19 +25,6 @@ export default function EventProfitabilityCard({
   const [data, setData] = useState<EventProfitabilityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Modal State for Logging Event Expense
-  const [modalOpen, setModalOpen] = useState(false);
-  const [expTitle, setExpTitle] = useState("");
-  const [expCategory, setExpCategory] = useState<ExpenseCategory>("Food");
-  const [expAmount, setExpAmount] = useState<number | "">("");
-  const [expPaymentMethod, setExpPaymentMethod] = useState<PaymentMethod>("UPI");
-  const [expStatus, setExpStatus] = useState<"Paid" | "Pending">("Paid");
-  const [expDescription, setExpDescription] = useState("");
-  const [expDate, setExpDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [submitting, setSubmitting] = useState(false);
-  const [modalError, setModalError] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
 
   const loadProfitability = async () => {
     try {
@@ -89,62 +49,7 @@ export default function EventProfitabilityCard({
     }
   }, [eventId, token]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(""), 4000);
-  };
-
-  const handleCreateExpenseSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!expTitle.trim() || !expAmount || Number(expAmount) <= 0) {
-      setModalError("Please provide a valid title and expense amount.");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      setModalError("");
-
-      await createExpense({
-        title: expTitle.trim(),
-        category: expCategory,
-        amount: Number(expAmount),
-        event: eventName,
-        eventId,
-        date: expDate,
-        paymentMethod: expPaymentMethod,
-        status: expStatus,
-        description: expDescription.trim(),
-      });
-
-      showToast("Expense logged successfully!");
-      setModalOpen(false);
-      setExpTitle("");
-      setExpAmount("");
-      setExpDescription("");
-      await loadProfitability();
-    } catch (err) {
-      setModalError(
-        err instanceof Error ? err.message : "Failed to log expense."
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleToggleStatus = async (expenseId: string) => {
-    try {
-      await toggleExpenseStatus(expenseId);
-      await loadProfitability();
-      showToast("Payment status updated!");
-    } catch (err) {
-      console.warn("Failed to toggle status", err);
-    }
-  };
-
-
-
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white p-8">
         <Loader2 className="h-7 w-7 animate-spin text-[#9a6c37]" />
@@ -155,7 +60,7 @@ export default function EventProfitabilityCard({
     );
   }
 
-  if (error || !data) {
+  if (error && !data) {
     return (
       <div className="rounded-3xl border border-red-100 bg-red-50 p-6 text-center text-xs text-red-700">
         <AlertCircle className="mx-auto mb-2 h-6 w-6 text-red-500" />
@@ -171,50 +76,30 @@ export default function EventProfitabilityCard({
     );
   }
 
-  const { revenue, expenses, profitability } = data;
-  const isHealthy = profitability.healthStatus === "HEALTHY";
-  const isModerate = profitability.healthStatus === "MODERATE";
-  const isRisk = profitability.healthStatus === "RISK";
+  const expenses = data?.expenses || { total: 0, count: 0 };
+  const profitability = data?.profitability || { netProfit: 0 };
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800 shadow-xl animate-in fade-in">
-          <CheckCircle2 size={16} className="text-emerald-600" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Main Financial Analytics Card */}
       <section className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm">
         {/* Header */}
-        <div className="flex flex-col gap-4 border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-           
-            <h3 className="mt-1 text-xl font-black tracking-tight text-[#29241f]">
-             Expense
-            </h3>
-          </div>
-
-          <div className="flex items-center gap-3">
-          
-
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#29241f] px-4 text-xs font-bold text-white shadow-xs transition hover:bg-black"
-            >
-              <Plus size={14} />
-              Add Expense
-            </button>
+        <div className="border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-5 sm:p-6">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+             
+              <h3 className="text-lg font-black tracking-tight text-[#29241f] sm:text-xl">
+                Event Expenses
+              </h3>
+            </div>
+            <p className="text-xs text-[#756d64]">
+              Scope: <strong className="text-[#29241f]">{eventName}</strong>
+            </p>
           </div>
         </div>
 
-        {/* 4 Main KPI Cards */}
+        {/* 2 Main KPI Cards */}
         <div className="grid grid-cols-1 gap-px bg-[#f1ece5] sm:grid-cols-2">
-         
-
           <div className="bg-white p-5 text-center sm:text-left">
             <p className="text-[10px] font-extrabold uppercase text-gray-400">
               Total Direct Costs
@@ -223,7 +108,7 @@ export default function EventProfitabilityCard({
               ₹{expenses.total.toLocaleString()}
             </p>
             <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-              {expenses.count} logged expenses
+              {expenses.count} logged operational expense{expenses.count !== 1 ? "s" : ""}
             </p>
           </div>
 
@@ -240,341 +125,23 @@ export default function EventProfitabilityCard({
               {profitability.netProfit.toLocaleString()}
             </p>
             <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-              Revenue - Costs
+              Revenue - All Operating Costs
             </p>
           </div>
-
-      
         </div>
 
-  
-
-     
-
-        {/* Automatic Staff Duty Payroll Deductions */}
-        {data?.staffPayroll && data.staffPayroll.count > 0 && (
-          <div className="border-t border-[#f1ece5] p-5 sm:p-6 bg-[#faf8f5]/60">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
-                  <Users size={14} />
-                </span>
-                <h4 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
-                  Staff
-                </h4>
-             
-              </div>
-
-              <div className="text-[11px] font-extrabold text-[#29241f]">
-                Total Staff Cost: <span className="text-red-600 font-black">₹{data.staffPayroll.total.toLocaleString()}</span>
-                <span className="ml-2 text-gray-500 font-semibold">
-                  (₹{data.staffPayroll.paid.toLocaleString()} Paid · ₹{data.staffPayroll.pending.toLocaleString()} Pending)
-                </span>
-              </div>
-            </div>
-
-            <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-[#eee7dc] bg-white">
-              {data.staffPayroll.duties.map((duty) => (
-                <div
-                  key={duty.id}
-                  className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between transition hover:bg-[#faf8f5]"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-[#29241f] truncate">
-                        {duty.staffName}
-                      </span>
-                      <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
-                        {duty.role}
-                      </span>
-                      {duty.department && (
-                        <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
-                          {duty.department}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="mt-0.5 text-[11px] text-gray-400">
-                      {duty.startTime && duty.endTime ? `${formatTime24to12(duty.startTime)} - ${formatTime24to12(duty.endTime)} · ` : ""}
-                      {duty.hours > 0 ? `${duty.hours} hrs` : ""}
-                      {duty.hourlyRate > 0 ? ` @ ₹${duty.hourlyRate}/hr` : ""}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-red-600">
-                      -₹{duty.amount.toLocaleString()}
-                    </span>
-
-                    <span
-                      className={`rounded-lg px-2 py-0.5 text-[10px] font-extrabold ${
-                        duty.paymentStatus === "PAID"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-amber-50 text-amber-700 border border-amber-200"
-                      }`}
-                    >
-                      {duty.paymentStatus}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Logged Expenses Table */}
+        {/* Unified Department-wise Operational Expenses Section (Includes Automated Staff Duty Payroll) */}
         <div className="border-t border-[#f1ece5] p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
-              Logged Vendor & Operational Expenses ({expenses.list.length})
-            </h4>
-          </div>
-
-          {expenses.list.length === 0 ? (
-            <p className="rounded-2xl bg-[#faf8f5] p-4 text-center text-xs text-gray-500">
-              No manual vendor expenses recorded for this event yet. Tap <strong>Log Expense</strong> to track supplier invoices, decoration bills, or venue rentals.
-            </p>
-          ) : (
-            <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-[#eee7dc]">
-              {expenses.list.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex flex-col gap-2 bg-white p-3 sm:flex-row sm:items-center sm:justify-between transition hover:bg-[#faf8f5]"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-[#29241f] truncate">
-                        {expense.title}
-                      </span>
-                      <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
-                        {expense.category}
-                      </span>
-                    </div>
-
-                    <p className="mt-0.5 text-[11px] text-gray-400">
-                      {expense.date} · via {expense.paymentMethod}
-                      {expense.description ? ` · ${expense.description}` : ""}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-black text-red-600">
-                      -₹{Number(expense.amount).toLocaleString()}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(expense.id)}
-                      className={`rounded-lg px-2 py-0.5 text-[10px] font-extrabold transition ${
-                        expense.status === "Paid"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                          : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                      }`}
-                    >
-                      {expense.status}
-                    </button>
-
-                   
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <UnifiedExpensesSection
+            eventId={eventId}
+            eventName={eventName}
+            staffPayroll={data?.staffPayroll}
+            onExpenseChange={loadProfitability}
+            showHeader={false}
+            showStats={false}
+          />
         </div>
       </section>
-
-      {/* Log Event Expense Modal */}
-      {modalOpen && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9a6c37]">
-                  Cost Center · {eventName}
-                </p>
-                <h3 className="text-lg font-black text-[#29241f]">
-                  Record Event Expense
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700 border border-red-200">
-                <AlertCircle size={15} />
-                <span>{modalError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleCreateExpenseSubmit} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700">
-                  Expense Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Fresh Flowers & Stage Backdrop Bill"
-                  value={expTitle}
-                  onChange={(e) => setExpTitle(e.target.value)}
-                  className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Category *
-                  </label>
-                  <select
-                    value={expCategory}
-                    onChange={(e) => setExpCategory(e.target.value as ExpenseCategory)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  >
-                    {expenseCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Amount (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    placeholder="e.g. 15000"
-                    value={expAmount}
-                    onChange={(e) =>
-                      setExpAmount(e.target.value ? Number(e.target.value) : "")
-                    }
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Payment Method
-                  </label>
-                  <select
-                    value={expPaymentMethod}
-                    onChange={(e) =>
-                      setExpPaymentMethod(e.target.value as PaymentMethod)
-                    }
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  >
-                    {paymentMethods.map((pm) => (
-                      <option key={pm} value={pm}>
-                        {pm}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Status
-                  </label>
-                  <select
-                    value={expStatus}
-                    onChange={(e) =>
-                      setExpStatus(e.target.value as "Paid" | "Pending")
-                    }
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  >
-                    <option value="Paid">Paid</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700">
-                    Expense Date
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={expDate}
-                    onChange={(e) => setExpDate(e.target.value)}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-gray-200 px-3 text-xs outline-none focus:border-[#9a6c37]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700">
-                  Notes / Vendor Details (optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Vendor name, bill number, receipt notes..."
-                  value={expDescription}
-                  onChange={(e) => setExpDescription(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-gray-200 p-3 text-xs outline-none focus:border-[#9a6c37]"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="h-11 flex-1 rounded-xl border border-gray-200 font-bold text-xs text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#29241f] font-bold text-xs text-white hover:bg-black disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Plus size={16} />
-                  )}
-                  {submitting ? "Saving..." : "Save Expense"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
-}
-
-function getCategoryColor(category = "") {
-  switch (category) {
-    case "Food":
-      return "bg-amber-500";
-    case "Decoration":
-      return "bg-purple-500";
-    case "Equipment":
-      return "bg-blue-500";
-    case "Staff":
-      return "bg-emerald-500";
-    case "Transport":
-      return "bg-indigo-500";
-    case "Venue":
-      return "bg-rose-500";
-    default:
-      return "bg-gray-400";
-  }
 }

@@ -8,18 +8,32 @@ export type PaymentMethod =
   | "Other";
 
 export type ExpenseCategory =
-  | "Food"
-  | "Decoration"
   | "Staff"
   | "Transport"
+  | "Decoration"
+  | "Catering"
+  | "Equipment Rental"
   | "Venue"
+  | "Cleaning"
+  | "Miscellaneous"
+  | "Food"
   | "Equipment"
   | "Other";
+
+export interface ExpenseCreator {
+  _id?: string;
+  id?: string;
+  name: string;
+  username?: string;
+  email?: string;
+  role?: string;
+  department?: string;
+}
 
 export interface Expense {
   id: string;
   title: string;
-  category: ExpenseCategory;
+  category: ExpenseCategory | string;
   amount: number;
   event: string;
   eventId?: string;
@@ -27,17 +41,63 @@ export interface Expense {
   paymentMethod: PaymentMethod;
   status: ExpenseStatus;
   description: string;
+  vendorName?: string;
+  receiptPath?: string;
+  receiptOriginalName?: string;
+  receiptMimeType?: string;
+  receiptSize?: number;
+  hasReceipt?: boolean;
+  createdBy?: ExpenseCreator | string;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isAutomatedPayroll?: boolean;
+  staffName?: string;
+  dutyRole?: string;
+  department?: string;
+  startTime?: string;
+  endTime?: string;
+  hours?: number;
+  hourlyRate?: number;
+  dutyId?: string;
 }
 
 export const expenseCategories: ExpenseCategory[] = [
-  "Food",
-  "Decoration",
   "Staff",
   "Transport",
+  "Decoration",
+  "Catering",
+  "Equipment Rental",
   "Venue",
-  "Equipment",
-  "Other",
+  "Cleaning",
+  "Miscellaneous",
 ];
+
+export const matchesExpenseCategory = (
+  expenseCatRaw?: string,
+  filterCatRaw?: string
+): boolean => {
+  if (!filterCatRaw || filterCatRaw === "All" || filterCatRaw === "All Categories") {
+    return true;
+  }
+  const expenseCat = (expenseCatRaw || "").toLowerCase().trim();
+  const filterCat = (filterCatRaw || "").toLowerCase().trim();
+
+  if (expenseCat === filterCat) return true;
+
+  if (
+    (filterCat === "catering" && expenseCat === "food") ||
+    (filterCat === "food" && expenseCat === "catering") ||
+    (filterCat === "equipment rental" && expenseCat === "equipment") ||
+    (filterCat === "equipment" && expenseCat === "equipment rental") ||
+    (filterCat === "miscellaneous" && expenseCat === "other") ||
+    (filterCat === "other" && expenseCat === "miscellaneous")
+  ) {
+    return true;
+  }
+
+  return false;
+};
 
 export const paymentMethods: PaymentMethod[] = [
   "Cash",

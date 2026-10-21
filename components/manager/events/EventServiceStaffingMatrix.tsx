@@ -195,6 +195,46 @@ export default function EventServiceStaffingMatrix({
     }
   };
 
+  const resolveStaffName = (staffField: any): string => {
+    if (typeof staffField === "object" && staffField?.name) return staffField.name;
+    const id = typeof staffField === "object" ? staffField?._id : staffField;
+    if (!id) return "Assigned Staff";
+    const found = data?.allStaffPool?.find((s) => String(s.id) === String(id));
+    return found?.name || "Assigned Staff";
+  };
+
+  const openDutyChecklist = (duty: any, stream: StaffingStream) => {
+    const isAccepted = ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(
+      (duty.status || "").toUpperCase()
+    );
+    if (!isAccepted) {
+      alert("Subtasks can only be managed after the staff member accepts their duty allocation.");
+      return;
+    }
+
+    const staffId = duty.staff?._id || (typeof duty.staff === "string" ? duty.staff : "");
+    const staffName = resolveStaffName(duty.staff);
+
+    const dutyObj: Duty = {
+      id: duty._id,
+      eventId: data?.event?.id || eventId,
+      title: duty.dutyTitle,
+      event: data?.event?.eventName || "Event",
+      eventDate: data?.targetDate ? data.targetDate.slice(0, 10) : "",
+      startTime: duty.startTime,
+      endTime: duty.endTime,
+      location: data?.event?.location || "",
+      staffId: staffId || "",
+      staffName,
+      description: (duty as any).description || "",
+      status: (duty.status as any) || "ACCEPTED",
+      department: stream.department,
+      serviceName: stream.title,
+      checklist: (duty as any).checklist || [],
+    };
+    setManagingChecklistDuty(dutyObj);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white p-8">
@@ -346,12 +386,12 @@ export default function EventServiceStaffingMatrix({
               key={stream.streamId}
               className="flex flex-col justify-between rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm transition hover:shadow-md"
             >
-              {/* Card Header */}
               <div>
-                <div className="flex items-start justify-between gap-3 border-b border-[#f1ece5] pb-4">
+                {/* Clean, Compact Service Header */}
+                <div className="flex items-center justify-between border-b border-[#f1ece5] pb-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#faf6f0] text-[#9a6c37] border border-[#ede5d8]">
-                      <StreamIcon size={20} />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#faf6f0] text-[#9a6c37] border border-[#ede5d8]">
+                      <StreamIcon size={18} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -364,14 +404,14 @@ export default function EventServiceStaffingMatrix({
                           </span>
                         )}
                       </div>
-                      <h3 className="text-base font-extrabold text-[#29241f]">
+                      <h3 className="text-sm font-extrabold text-[#29241f]">
                         {stream.title}
                       </h3>
                     </div>
                   </div>
 
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                       isFullyAllocated
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                         : "bg-amber-50 text-amber-700 border border-amber-200"
@@ -381,235 +421,211 @@ export default function EventServiceStaffingMatrix({
                   </span>
                 </div>
 
-                {/* Client's Requirement Specs */}
-          
+                {/* Assigned Personnel List (Simple, compact rows) */}
+                <div className="mt-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
+                    <span>Assigned Staff ({stream.assignedDuties.length})</span>
+                  </div>
 
-                {/* Currently Assigned Duties */}
-                {stream.assignedDuties.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-bold text-[#29241f]">
-                      Assigned Personnel ({stream.assignedDuties.length}):
-                    </p>
-                    <div className="mt-2 space-y-2">
+                  {stream.assignedDuties.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-gray-200 py-3 text-center text-xs text-gray-400">
+                      No staff assigned to this service yet.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100 rounded-xl border border-gray-100 bg-[#faf8f5]/40 overflow-hidden">
                       {stream.assignedDuties.map((duty) => {
-                        const isAccepted = ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(duty.status);
-                        const isRejected = duty.status === "REJECTED";
-                        const checklistCount = (duty as any).checklist?.length || 0;
-                        const completedCount = ((duty as any).checklist || []).filter(
-                          (i: any) => i.completed
-                        ).length;
+                        const statusUpper = (duty.status || "").toUpperCase();
+                        const isAccepted = ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(statusUpper);
+                        const isRejected = statusUpper === "REJECTED";
+                        const staffName = resolveStaffName(duty.staff);
+                        const checklist = (duty as any).checklist || [];
+                        const checklistCount = checklist.length;
+                        const completedCount = checklist.filter((i: any) => i.completed).length;
 
                         return (
                           <div
                             key={duty._id}
-                            className={`rounded-2xl border p-3 text-xs transition ${
-                              isAccepted
-                                ? "border-emerald-300 bg-emerald-50/70"
-                                : isRejected
-                                ? "border-rose-200 bg-rose-50/70"
-                                : "border-amber-200 bg-amber-50/50"
-                            }`}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 transition hover:bg-white"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <UserCheck
-                                  size={15}
-                                  className={
-                                    isAccepted
-                                      ? "text-emerald-600"
-                                      : isRejected
-                                      ? "text-rose-600"
-                                      : "text-amber-600"
-                                  }
-                                />
-                                <div>
-                                  <span className="font-extrabold text-[#29241f]">
-                                    {duty.staff?.name || "Assigned Staff"}
-                                  </span>
-                                  <span className="ml-1 text-[11px] text-gray-600">
-                                    · {duty.dutyTitle}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                                    isAccepted
-                                      ? "bg-emerald-100 text-emerald-800"
-                                      : isRejected
-                                      ? "bg-rose-100 text-rose-800"
-                                      : "bg-amber-100 text-amber-800"
-                                  }`}
+                            {/* Staff Info: Name · Shift Time · Status */}
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                              <span className="font-bold text-[#29241f]">{staffName}</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-600 font-medium">
+                                {formatTime24to12(duty.startTime)} – {formatTime24to12(duty.endTime)}
+                              </span>
+                              <span className="text-gray-300">·</span>
+                              {isAccepted ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openDutyChecklist(duty, stream)}
+                                  className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition cursor-pointer"
+                                  title="Click to edit subtasks"
                                 >
-                                  {isAccepted
-                                    ? "✓ Confirmed by Staff"
-                                    : isRejected
-                                    ? "Declined"
-                                    : "Pending Acceptance"}
+                                  <CheckCircle2 size={11} className="text-emerald-600" />
+                                  <span>Accepted</span>
+                                </button>
+                              ) : isRejected ? (
+                                <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200">
+                                  Declined
                                 </span>
-
-                                <span className="rounded-md bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-700">
-                                  {formatTime24to12(duty.startTime)} - {formatTime24to12(duty.endTime)}
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+                                  <Clock size={11} className="text-amber-600" />
+                                  Pending Acceptance
                                 </span>
-                              </div>
+                              )}
                             </div>
 
-                            {/* Sub-duty / instructions callout */}
-                            <div className="mt-2.5 flex items-center justify-between border-t border-black/5 pt-2">
-                              <span className="text-[11px] font-semibold text-gray-600">
-                                {checklistCount > 0
-                                  ? `Sub-tasks: ${completedCount}/${checklistCount} completed`
-                                  : isAccepted
-                                  ? "Staff accepted! Assign sub-duty instructions below."
-                                  : "Sub-duty instructions pending."}
-                              </span>
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!isAccepted) {
-                                    alert("Sub-tasks can only be assigned after the staff member accepts the event duty allocation.");
-                                    return;
-                                  }
-                                  const dutyObj: Duty = {
-                                    id: duty._id,
-                                    eventId: data.event.id,
-                                    title: duty.dutyTitle,
-                                    event: data.event.eventName,
-                                    eventDate: data.targetDate ? data.targetDate.slice(0, 10) : "",
-                                    startTime: duty.startTime,
-                                    endTime: duty.endTime,
-                                    location: data.event.location || "",
-                                    staffId: duty.staff?._id || "",
-                                    staffName: duty.staff?.name || "Assigned Staff",
-                                    description: (duty as any).description || "",
-                                    status: (duty.status as any) || "ASSIGNED",
-                                    department: stream.department,
-                                    serviceName: stream.title,
-                                    checklist: (duty as any).checklist || [],
-                                  };
-                                  setManagingChecklistDuty(dutyObj);
-                                }}
-                                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition shadow-2xs ${
-                                  isAccepted
-                                    ? "bg-emerald-700 text-white hover:bg-emerald-800"
-                                    : "bg-amber-100 text-amber-900 hover:bg-amber-200 border border-amber-300"
-                                }`}
-                                title={!isAccepted ? "Sub-tasks can only be assigned after staff accepts duty" : ""}
-                              >
-                                <ListChecks size={13} />
-                                <span>
-                                  {isAccepted
-                                    ? checklistCount > 0
-                                      ? `Manage Sub-duties (${checklistCount})`
-                                      : "+ Assign Sub-duties"
-                                    : "Sub-duties (Awaiting Acceptance)"}
+                            {/* Action / Subtask button */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isAccepted ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openDutyChecklist(duty, stream)}
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 transition cursor-pointer active:scale-95 shadow-2xs"
+                                  title="Click to manage and edit subtasks"
+                                >
+                                  <ListChecks size={13} className="text-emerald-600" />
+                                  <span>
+                                    Manage Subtasks
+                                    {checklistCount > 0
+                                      ? ` · ${completedCount > 0 ? `${completedCount}/` : ""}${checklistCount}`
+                                      : ""}
+                                  </span>
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-gray-400 italic">
+                                  Awaiting acceptance
                                 </span>
-                              </button>
+                              )}
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* Available Department Staff Pool */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-[#29241f]">
+                {/* Available Department Staff Pool (Clean, compact rows) */}
+                <div className="mt-4 border-t border-[#f1ece5] pt-3">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#29241f]">
+                    <span>
                       {stream.department} Staff Pool (
-                      {
-                        stream.departmentStaff.filter((s) => s.isAvailable)
-                          .length
-                      }{" "}
-                      available today):
-                    </p>
+                      {stream.departmentStaff.filter((s) => s.isAvailable).length} available):
+                    </span>
                   </div>
 
-                  <div className="mt-2.5 max-h-56 space-y-2 overflow-y-auto pr-1">
+                  <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto pr-1">
                     {stream.departmentStaff.length === 0 ? (
-                      <p className="py-2 text-center text-xs text-gray-500">
-                        No staff members assigned to this department yet.
+                      <p className="py-2 text-center text-xs text-gray-400">
+                        No staff members assigned to this department.
                       </p>
                     ) : (
-                      stream.departmentStaff.map((staffMember) => (
-                        <div
-                          key={staffMember.id}
-                          className="flex items-center justify-between rounded-2xl border border-[#eee7dc] bg-[#faf8f5] p-2.5 transition hover:border-[#9a6c37]"
-                        >
-                          <div className="min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5">
-                              <p className="truncate text-xs font-bold text-[#29241f]">
-                                {staffMember.name}
-                              </p>
-                              <span className="text-[10px] text-gray-400">
-                                ({staffMember.employeeId})
-                              </span>
-                            </div>
+                      stream.departmentStaff.map((staffMember) => {
+                        const assignedDuty = data?.staffingStreams
+                          ?.flatMap((s) => s.assignedDuties || [])
+                          ?.find(
+                            (d) =>
+                              (d.staff?._id && String(d.staff._id) === String(staffMember.id)) ||
+                              (d.staff && typeof d.staff === "string" && String(d.staff) === String(staffMember.id)) ||
+                              (resolveStaffName(d.staff).trim().toLowerCase() === staffMember.name.trim().toLowerCase())
+                          );
 
-                            {/* Status Indicator */}
-                            <div className="mt-0.5 flex items-center gap-1 text-[10px]">
-                              {staffMember.status === "AVAILABLE" && (
-                                <span className="flex items-center gap-1 font-bold text-emerald-600">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                  Available for this Date
-                                </span>
-                              )}
-                              {staffMember.status === "ON_LEAVE" && (
-                                <span className="flex items-center gap-1 font-bold text-amber-600">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                  On Leave ({staffMember.statusReason})
-                                </span>
-                              )}
-                              {staffMember.status === "ASSIGNED_OTHER" && (
-                                <span className="flex items-center gap-1 font-bold text-blue-600">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                                  {staffMember.statusReason}
-                                </span>
-                              )}
-                              {staffMember.status === "ASSIGNED_THIS_EVENT" && (
-                                <span className="flex items-center gap-1 font-bold text-purple-600">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
-                                  Assigned
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                        const isAccepted =
+                          Boolean(assignedDuty) &&
+                          ["ACCEPTED", "IN_PROGRESS", "COMPLETED"].includes(
+                            (assignedDuty?.status || "").toUpperCase()
+                          );
 
-                          {/* Allocate Action */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openAllocateModal(stream, staffMember)
-                            }
-                            disabled={!staffMember.isAvailable}
-                            className={`flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-bold transition ${
-                              staffMember.isAvailable
-                                ? "bg-[#9a6c37] text-white hover:bg-[#83592a] shadow-xs"
-                                : "cursor-not-allowed bg-gray-200 text-gray-400"
+                        const isAssigned =
+                          Boolean(assignedDuty) ||
+                          staffMember.status === "ASSIGNED_THIS_EVENT";
+
+                        return (
+                          <div
+                            key={staffMember.id}
+                            className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs transition border ${
+                              isAccepted
+                                ? "border-emerald-200 bg-emerald-50/40"
+                                : isAssigned
+                                ? "border-purple-100 bg-purple-50/30"
+                                : "border-gray-100 bg-[#faf8f5]"
                             }`}
                           >
-                            <UserPlus size={13} />
-                            Choose
-                          </button>
-                        </div>
-                      ))
+                            <div className="min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="font-bold text-[#29241f] truncate">
+                                  {staffMember.name}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  ({staffMember.employeeId})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px]">
+                                {isAccepted ? (
+                                  <span className="font-bold text-emerald-600">Accepted</span>
+                                ) : isAssigned ? (
+                                  <span className="font-bold text-purple-600">Assigned</span>
+                                ) : staffMember.status === "AVAILABLE" ? (
+                                  <span className="text-gray-500">Available</span>
+                                ) : staffMember.status === "ON_LEAVE" ? (
+                                  <span className="text-amber-600">On Leave</span>
+                                ) : (
+                                  <span className="text-gray-400">{staffMember.statusReason || "Unavailable"}</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Action Button */}
+                            {isAccepted ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (assignedDuty) {
+                                    openDutyChecklist(assignedDuty, stream);
+                                  }
+                                }}
+                                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-200 transition cursor-pointer"
+                                title="Click to edit subtasks"
+                              >
+                                <CheckCircle2 size={12} className="text-emerald-700" />
+                                <span>Accepted</span>
+                              </button>
+                            ) : isAssigned ? (
+                              <span className="shrink-0 rounded-lg border border-purple-200 bg-purple-50 px-2 py-1 text-[11px] font-bold text-purple-700">
+                                Assigned
+                              </span>
+                            ) : staffMember.isAvailable ? (
+                              <button
+                                type="button"
+                                onClick={() => openAllocateModal(stream, staffMember)}
+                                className="shrink-0 rounded-lg bg-[#9a6c37] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#83592a] transition active:scale-95"
+                              >
+                                Choose
+                              </button>
+                            ) : (
+                              <span className="shrink-0 rounded-lg bg-gray-100 px-2 py-1 text-[11px] text-gray-400">
+                                {staffMember.status === "ON_LEAVE" ? "On Leave" : "Unavailable"}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Bottom Quick Button */}
-              <div className="mt-5 border-t border-[#f1ece5] pt-3.5">
+              <div className="mt-3.5 border-t border-[#f1ece5] pt-2.5">
                 <button
                   type="button"
                   onClick={() => openAllocateModal(stream)}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#9a6c37] bg-white py-2 text-xs font-bold text-[#9a6c37] transition hover:bg-[#faf6f0]"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#9a6c37]/50 bg-white py-1.5 text-xs font-bold text-[#9a6c37] transition hover:bg-[#faf6f0]"
                 >
-                  <Plus size={14} />
-                  Add Custom Duty for {stream.title}
+                  <Plus size={13} />
+                  <span>Assign Duty for {stream.title}</span>
                 </button>
               </div>
             </div>

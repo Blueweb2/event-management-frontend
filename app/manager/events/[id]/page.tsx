@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, UserPlus, Sparkles, Phone, Mail, Edit, Trash2, CreditCard, Play, CheckCircle2, Check, Plus, AlertCircle, X } from "lucide-react";
+import { Loader2, UserPlus, Sparkles, Phone, Mail, Edit, Trash2, CreditCard, Play, CheckCircle2, Check, Plus, AlertCircle, X, MoreVertical } from "lucide-react";
 
 import {
   getEventById,
@@ -66,6 +66,7 @@ export default function ManagerEventDetailsPage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<{
     type: "success" | "error";
@@ -727,23 +728,57 @@ export default function ManagerEventDetailsPage() {
               <span>Record Payment</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setEditModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
-            >
-              <Edit size={14} className="text-[#9A7B4F]" />
-              <span>Edit</span>
-            </button>
+            {/* 3-Dots More Options Menu for Edit & Delete */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="inline-flex min-h-11 w-11 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
+                title="More event actions"
+                aria-label="More event actions"
+                aria-expanded={menuOpen}
+              >
+                <MoreVertical size={16} />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setDeleteModalOpen(true)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-bold text-red-600 shadow-xs hover:bg-red-100 transition active:scale-95"
-            >
-              <Trash2 size={14} />
-              <span>Delete</span>
-            </button>
+              {menuOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Close menu"
+                    className="fixed inset-0 z-20 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-12 z-30 w-44 overflow-hidden rounded-2xl border border-[#e8e1d8] bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setEditModalOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-[#29241f] hover:bg-[#faf7f2] transition"
+                    >
+                      <Edit size={14} className="text-[#9A7B4F]" />
+                      <span>Edit Event</span>
+                    </button>
+
+                    <div className="my-1 border-t border-gray-100" />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-bold text-red-600 hover:bg-red-50 transition"
+                    >
+                      <Trash2 size={14} className="text-red-600" />
+                      <span>Delete Event</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

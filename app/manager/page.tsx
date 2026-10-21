@@ -149,7 +149,7 @@ export default function ManagerDashboardPage() {
         <>
           <ManagerStats />
           <UpcomingEvents />
-          <RecentStaffConfirmations />
+          {/* <RecentStaffConfirmations /> */}
         </>
       )}
     </div>
