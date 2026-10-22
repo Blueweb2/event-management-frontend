@@ -68,4 +68,5 @@ export type BookingFormData = {
   discountType: "percentage" | "fixed";
   discountValue: string;
   additionalCharges: string;
+  gstEnabled?: boolean;
 };

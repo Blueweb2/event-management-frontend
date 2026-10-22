@@ -14,12 +14,17 @@ export interface DocumentLineItem {
 }
 
 export interface DocumentCateringItem {
+  id?: string;
+  foodItemId?: string | null;
   name: string;
   category?: string;
   dietary?: string;
   quantity?: number;
-  rate?: number;
-  amount?: number;
+  unit?: string;
+  unitPrice?: number | null;
+  rate?: number | null;
+  totalPrice?: number | null;
+  amount?: number | null;
 }
 
 export interface DocumentCateringData {
@@ -30,6 +35,12 @@ export interface DocumentCateringData {
   guestCount: number;
   notes?: string;
   items?: DocumentCateringItem[];
+  subtotal?: number;
+  discount?: number;
+  gstEnabled?: boolean;
+  gstRate?: number;
+  gstAmount?: number;
+  total?: number;
 }
 
 export interface ClientDocumentData {
@@ -84,6 +95,7 @@ export interface ClientDocumentData {
   discountType?: "percentage" | "fixed";
   discountValue?: number;
   additionalCharges: number;
+  gstEnabled?: boolean;
   gstRate: number; // e.g. 18
   gstAmount: number;
   total: number;
@@ -168,19 +180,27 @@ export function generateWhatsAppMessage(
   // Catering
   if (doc.catering && doc.catering.included) {
     message += ` *CATERING & FOOD MENU:*\n`;
+    const rateText = doc.catering.ratePerGuest
+      ? `${doc.catering.guestCount} guests × ${formatINR(doc.catering.ratePerGuest, doc.currency)}`
+      : `${doc.catering.guestCount} guests (${doc.catering.servingType || "Buffet"})`;
+
     if (showItemizedPrices) {
-      const rateText = doc.catering.ratePerGuest
-        ? `${doc.catering.guestCount} guests × ${formatINR(doc.catering.ratePerGuest, doc.currency)}`
-        : `${doc.catering.guestCount} guests`;
-      message += `• Custom Catering Package (${rateText}) — *${formatINR(doc.catering.totalFoodAmount, doc.currency)}*\n`;
+      message += `• Catering Package (${rateText}) — *${formatINR(doc.catering.totalFoodAmount, doc.currency)}*\n`;
     } else {
-      message += `• Custom Catering Experience (${doc.catering.guestCount} Attendees · ${doc.catering.servingType || "Buffet"})\n`;
+      message += `• Custom Catering Experience (${rateText})\n`;
     }
 
     if (doc.catering.items && doc.catering.items.length > 0) {
-      const itemNames = doc.catering.items.map((i) => i.name).slice(0, 8).join(", ");
-      const extra = doc.catering.items.length > 8 ? ` +${doc.catering.items.length - 8} more` : "";
-      message += `  _Menu Inclusions:_ ${itemNames}${extra}\n`;
+      message += `  _Itemized Food Menu & Quantities:_\n`;
+      doc.catering.items.forEach((item, idx) => {
+        const unitLabel = item.unit || "Units";
+        const qtyStr = `${item.quantity ? item.quantity.toLocaleString("en-IN") : "1"} ${unitLabel}`;
+        const priceStr =
+          showItemizedPrices && item.totalPrice !== null && item.totalPrice !== undefined
+            ? ` — *${formatINR(item.totalPrice, doc.currency)}* (${item.unitPrice ? formatINR(item.unitPrice, doc.currency) + "/" + unitLabel : ""})`
+            : "";
+        message += `  ${idx + 1}. ${item.name} [${item.category || "Menu"}] (${qtyStr})${priceStr}\n`;
+      });
     }
     message += `\n`;
   }
@@ -191,8 +211,10 @@ export function generateWhatsAppMessage(
     if (doc.discount > 0) {
       message += ` *Discount:* -${formatINR(doc.discount, doc.currency)}\n`;
     }
-    if (doc.gstAmount > 0) {
+    if (doc.gstEnabled !== false && doc.gstAmount > 0) {
       message += ` *GST (${doc.gstRate || 18}%):* +${formatINR(doc.gstAmount, doc.currency)}\n`;
+    } else {
+      message += ` *GST:* Not Applicable / Excluded (0%)\n`;
     }
     if (doc.additionalCharges > 0) {
       message += ` *Additional Charges:* +${formatINR(doc.additionalCharges, doc.currency)}\n`;
@@ -229,6 +251,134 @@ export function createWhatsAppUrl(phone: string, text: string): string {
     : `https://api.whatsapp.com/send?text=${encoded}`;
 }
 
+export function formatCateringItems(
+  rawItems: any[] | undefined,
+  servingType: string = "Buffet",
+  guestCount: number = 0
+): DocumentCateringItem[] {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return [];
+  }
+
+  const isPerGuest = servingType === "PER_GUEST";
+  const isPerPlate = servingType === "PER_PLATE";
+
+  return rawItems.map((item: any, idx: number) => {
+    const rawRate = item.rate ?? item.unitPrice;
+    const hasConfiguredRate =
+      rawRate !== undefined &&
+      rawRate !== null &&
+      rawRate !== "" &&
+      !isNaN(Number(rawRate)) &&
+      Number(rawRate) > 0;
+
+    const rate = hasConfiguredRate ? Number(rawRate) : null;
+
+    // Quantity resolution
+    let quantity = Number(item.quantity || 0);
+    if (!quantity || quantity <= 0) {
+      if (isPerGuest && guestCount > 0) {
+        quantity = guestCount;
+      } else {
+        quantity = 1;
+      }
+    } else if (isPerGuest && guestCount > 0 && quantity === 1 && item.amount) {
+      if (rate && Math.round(Number(item.amount) / rate) === guestCount) {
+        quantity = guestCount;
+      }
+    }
+
+    // Unit resolution
+    let unit = item.unit || item.unitLabel;
+    if (!unit) {
+      if (isPerGuest) {
+        unit = "Guests";
+      } else if (isPerPlate) {
+        unit = "Plates";
+      } else {
+        unit = quantity > 1 ? "Units" : "Fixed";
+      }
+    }
+
+    // Total price / amount resolution
+    let amount: number | null = null;
+    if (
+      item.amount !== undefined &&
+      item.amount !== null &&
+      item.amount !== "" &&
+      !isNaN(Number(item.amount)) &&
+      Number(item.amount) > 0
+    ) {
+      amount = Number(item.amount);
+    } else if (rate !== null) {
+      amount = rate * quantity;
+    }
+
+    return {
+      id: item._id || item.foodItemId || String(idx + 1),
+      foodItemId: item.foodItemId || null,
+      name: item.name || "Menu Item",
+      category: item.category || "General",
+      dietary: item.dietary || "veg",
+      quantity,
+      unit,
+      rate,
+      unitPrice: rate,
+      amount,
+      totalPrice: amount,
+    };
+  });
+}
+
+export function buildCateringData(
+  foodMenu: any,
+  guestCount: number,
+  eventSubtotal: number = 0,
+  eventDiscount: number = 0,
+  eventGstEnabled: boolean = true,
+  eventGstRate: number = 18
+): DocumentCateringData | undefined {
+  if (!foodMenu || (!foodMenu.included && (!foodMenu.items || foodMenu.items.length === 0))) {
+    return undefined;
+  }
+
+  const servingType = foodMenu.servingType || "Buffet";
+  const items = formatCateringItems(foodMenu.items, servingType, guestCount);
+  const totalFoodAmount = Number(
+    foodMenu.totalFoodAmount ??
+      items.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
+  );
+
+  // Proportional discount if applicable
+  const discountRatio =
+    eventSubtotal > 0 && eventDiscount > 0
+      ? Math.min(1, eventDiscount / eventSubtotal)
+      : 0;
+  const cateringDiscount = Math.round(totalFoodAmount * discountRatio);
+
+  const taxableCatering = Math.max(0, totalFoodAmount - cateringDiscount);
+  const gstAmount = eventGstEnabled
+    ? Math.round(taxableCatering * (eventGstRate / 100))
+    : 0;
+  const total = taxableCatering + gstAmount;
+
+  return {
+    included: true,
+    servingType,
+    ratePerGuest: foodMenu.ratePerGuest ? Number(foodMenu.ratePerGuest) : undefined,
+    totalFoodAmount,
+    guestCount,
+    notes: foodMenu.notes,
+    items,
+    subtotal: totalFoodAmount,
+    discount: cateringDiscount,
+    gstEnabled: eventGstEnabled,
+    gstRate: eventGstRate,
+    gstAmount,
+    total,
+  };
+}
+
 export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
   const bookingObj =
     typeof event.booking === "object" && event.booking !== null
@@ -242,6 +392,13 @@ export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
     bookingObj?.advancePayment ??
     0;
   const eventBalance = Math.max(0, eventTotal - eventPaid);
+
+  const gstEnabled =
+    bookingObj?.gstEnabled !== undefined
+      ? bookingObj.gstEnabled
+      : (bookingObj?.gstAmount !== undefined ? bookingObj.gstAmount > 0 : false);
+
+  const gstRate = bookingObj?.gstRate || 0;
 
   return {
     documentType:
@@ -302,22 +459,19 @@ export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
               total: bookingObj?.subtotal || eventTotal,
             },
           ],
-    catering:
-      bookingObj && bookingObj.foodMenu && bookingObj.foodMenu.included
-        ? {
-            included: true,
-            servingType: bookingObj.foodMenu.servingType,
-            ratePerGuest: bookingObj.foodMenu.ratePerGuest,
-            totalFoodAmount: bookingObj.foodMenu.totalFoodAmount,
-            guestCount: event.guests || 0,
-            notes: bookingObj.foodMenu.notes,
-            items: bookingObj.foodMenu.items,
-          }
-        : undefined,
+    catering: buildCateringData(
+      bookingObj?.foodMenu || event.foodMenu,
+      Number(event.guests || bookingObj?.guests || 0),
+      Number(bookingObj?.subtotal || eventTotal),
+      Number(bookingObj?.discountAmount || 0),
+      gstEnabled,
+      gstRate
+    ),
     subtotal: bookingObj?.subtotal || eventTotal,
     discount: bookingObj?.discountAmount || 0,
     additionalCharges: bookingObj?.additionalCharges || 0,
-    gstRate: bookingObj?.gstRate || 0,
+    gstEnabled,
+    gstRate,
     gstAmount: bookingObj?.gstAmount || 0,
     total: eventTotal,
     currency: bookingObj?.currency || "INR",
@@ -328,6 +482,13 @@ export function buildDocumentDataFromEvent(event: any): ClientDocumentData {
 
 export function buildDocumentDataFromEstimate(estimate: any): ClientDocumentData {
   const estTotal = Number(estimate.total || 0);
+
+  const gstEnabled =
+    estimate.gstEnabled !== undefined
+      ? estimate.gstEnabled
+      : (estimate.gstAmount !== undefined ? Number(estimate.gstAmount) > 0 : true);
+
+  const gstRate = Number(estimate.gstRate || 0);
 
   return {
     documentType: "ESTIMATE",
@@ -366,22 +527,19 @@ export function buildDocumentDataFromEstimate(estimate: any): ClientDocumentData
             total: Number(item.total || 0),
           }))
         : [],
-    catering:
-      estimate.foodMenu && estimate.foodMenu.included
-        ? {
-            included: true,
-            servingType: estimate.foodMenu.servingType,
-            ratePerGuest: estimate.foodMenu.ratePerGuest,
-            totalFoodAmount: Number(estimate.foodMenu.totalFoodAmount || 0),
-            guestCount: Number(estimate.guests || 0),
-            notes: estimate.foodMenu.notes,
-            items: estimate.foodMenu.items,
-          }
-        : undefined,
+    catering: buildCateringData(
+      estimate.foodMenu,
+      Number(estimate.guests || 0),
+      Number(estimate.subtotal || estTotal),
+      Number(estimate.discount || estimate.discountAmount || 0),
+      gstEnabled,
+      gstRate
+    ),
     subtotal: Number(estimate.subtotal || estTotal),
     discount: Number(estimate.discount || estimate.discountAmount || 0),
     additionalCharges: Number(estimate.additionalCharges || 0),
-    gstRate: Number(estimate.gstRate || 0),
+    gstEnabled,
+    gstRate,
     gstAmount: Number(estimate.gstAmount || 0),
     total: estTotal,
     currency: estimate.currency || "INR",

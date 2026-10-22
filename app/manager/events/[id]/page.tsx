@@ -28,7 +28,7 @@ import { getEventActivityTimeline } from "@/lib/event.api";
 import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
 import {
   type ClientDocumentData,
-  defaultCompanyDetails,
+  buildDocumentDataFromEvent,
 } from "@/lib/document-formatter";
 import { formatTime24to12 } from "@/lib/time-utils";
 import { useAssignments } from "@/hooks/useAssignments";
@@ -494,95 +494,7 @@ export default function ManagerEventDetailsPage() {
   const eventBalance = Math.max(0, eventTotal - eventPaid);
 
   const eventDocumentData: ClientDocumentData | null = event
-    ? {
-        documentType: "INVOICE",
-        documentNumber: `INV-${event._id.slice(-6).toUpperCase()}`,
-        date: new Date().toISOString().slice(0, 10),
-        status: event.status === "Completed" || event.status === "Settled" || event.paymentStatus === "PAID" ? "PAID" : "CONFIRMED",
-        company: defaultCompanyDetails,
-        client: {
-          name:
-            typeof event.client === "object" && event.client?.name
-              ? event.client.name
-              : "Valued Client",
-          phone:
-            typeof event.client === "object" ? event.client?.phone || "" : "",
-          email:
-            typeof event.client === "object" ? event.client?.email || "" : "",
-          address:
-            typeof event.client === "object"
-              ? event.client?.address
-              : undefined,
-        },
-        event: {
-          name: event.eventName,
-          type: event.eventType,
-          date: event.eventDate,
-          time: formatTime24to12(event.eventTime) || event.eventTime,
-          guests: event.guests,
-          location: event.location,
-          description: event.description || event.notes,
-        },
-        services:
-          bookingObj &&
-          Array.isArray(bookingObj.services) &&
-          bookingObj.services.length > 0
-            ? bookingObj.services.map((s, idx) => ({
-                id: s._id || String(idx),
-                name: s.serviceName,
-                category: s.category,
-                quantity: s.quantity,
-                unitLabel: s.unitLabel,
-                unitPrice: s.unitPrice,
-                total: s.total,
-              }))
-            : [
-                {
-                  id: "1",
-                  name: "Full Event Production & Management Package",
-                  category: "Production",
-                  quantity: 1,
-                  unitLabel: "Package",
-                  unitPrice:
-                    bookingObj?.subtotal || bookingObj?.total || 0,
-                  total:
-                    bookingObj?.subtotal || bookingObj?.total || 0,
-                },
-              ],
-        catering:
-          bookingObj &&
-          bookingObj.foodMenu &&
-          bookingObj.foodMenu.included
-            ? {
-                included: true,
-                servingType: bookingObj.foodMenu.servingType,
-                ratePerGuest: bookingObj.foodMenu.ratePerGuest,
-                totalFoodAmount: bookingObj.foodMenu.totalFoodAmount,
-                guestCount: event.guests,
-                notes: bookingObj.foodMenu.notes,
-                items: bookingObj.foodMenu.items,
-              }
-            : undefined,
-        subtotal:
-          bookingObj?.subtotal ||
-          bookingObj?.total ||
-          0,
-        discount:
-          bookingObj?.discountAmount || 0,
-        additionalCharges:
-          bookingObj?.additionalCharges || 0,
-        gstRate:
-          bookingObj?.gstRate || 18,
-        gstAmount:
-          bookingObj?.gstAmount || 0,
-        total: eventTotal,
-        currency:
-          bookingObj?.currency || "INR",
-        advancePayment: event.advancePayment || 0,
-        paidAmount: eventPaid,
-        balanceDue: eventBalance,
-        paymentStatus: event.paymentStatus || (eventBalance === 0 && eventTotal > 0 ? "PAID" : "PARTIAL"),
-      }
+    ? buildDocumentDataFromEvent(event)
     : null;
 
   return (

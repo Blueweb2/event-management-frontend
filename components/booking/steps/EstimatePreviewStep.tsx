@@ -29,14 +29,15 @@ import EstimateExportActions from "@/components/estimates/EstimateExportActions"
 import {
   type ClientDocumentData,
   defaultCompanyDetails,
+  buildCateringData,
 } from "@/lib/document-formatter";
 import { formatTime24to12 } from "@/lib/time-utils";
 
 type EstimatePreviewStepProps = {
   formData: BookingFormData;
-  updateField: (
-    field: keyof BookingFormData,
-    value: string,
+  updateField: <K extends keyof BookingFormData>(
+    field: K,
+    value: BookingFormData[K],
   ) => void;
   estimate?: Estimate | null;
   onEstimateCreated?: (estimate: Estimate) => void;
@@ -165,8 +166,14 @@ export default function EstimatePreviewStep({
       0,
     );
 
-  const previewGst =
-    previewTaxableAmount * 0.18;
+  const isGstEnabled =
+    estimate?.gstEnabled !== undefined
+      ? estimate.gstEnabled
+      : formData.gstEnabled !== false;
+
+  const previewGst = isGstEnabled
+    ? previewTaxableAmount * 0.18
+    : 0;
 
   const previewGrandTotal =
     previewTaxableAmount +
@@ -192,8 +199,9 @@ export default function EstimatePreviewStep({
     estimate?.gstRate ?? 18;
 
   const gstAmount =
-    estimate?.gstAmount ??
-    previewGst;
+    estimate !== null && estimate !== undefined
+      ? (estimate.gstEnabled === false ? 0 : (estimate.gstAmount ?? previewGst))
+      : previewGst;
 
   const additionalCharges =
     estimate?.additionalCharges ??
@@ -239,29 +247,20 @@ export default function EstimatePreviewStep({
       unitPrice: Number(item.unitPrice || 0),
       total: Number(item.quantity || 1) * Number(item.unitPrice || 0),
     })),
-    catering: formData.foodMenu?.included
-      ? {
-          included: true,
-          servingType: formData.foodMenu.servingType || "Buffet",
-          ratePerGuest: formData.foodMenu.ratePerGuest,
-          totalFoodAmount: previewFoodAmount,
-          guestCount: Number(formData.guests || 100),
-          notes: formData.foodMenu.notes,
-          items: (formData.foodMenu.items || []).map((food) => ({
-            name: food.name,
-            category: food.category,
-            dietary: food.dietary,
-            quantity: food.quantity,
-            rate: food.rate,
-            amount: food.amount,
-          })),
-        }
-      : undefined,
+    catering: buildCateringData(
+      formData.foodMenu,
+      Number(formData.guests || 100),
+      subtotal,
+      discount,
+      isGstEnabled,
+      gstRate
+    ),
     subtotal: subtotal,
     discount: discount,
     discountType: formData.discountType || "percentage",
     discountValue: Number(formData.discountValue || 0),
     additionalCharges: additionalCharges,
+    gstEnabled: isGstEnabled,
     gstRate: gstRate,
     gstAmount: gstAmount,
     total: grandTotal,
@@ -373,6 +372,9 @@ export default function EstimatePreviewStep({
                 formData.additionalCharges ||
                   0,
               ),
+
+            gstEnabled:
+              formData.gstEnabled ?? true,
           });
 
         // --------------------------------------
@@ -531,9 +533,9 @@ export default function EstimatePreviewStep({
             discount,
           )}`,
 
-          `GST (${gstRate}%): ${formatCurrency(
-            gstAmount,
-          )}`,
+          isGstEnabled && gstAmount > 0
+            ? `GST (${gstRate}%): ${formatCurrency(gstAmount)}`
+            : `GST: Not Applicable (0%)`,
 
           `Additional Charges: ${formatCurrency(
             additionalCharges,
@@ -921,63 +923,166 @@ export default function EstimatePreviewStep({
         {/* Food & Catering Menu */}
         {/* ==================================== */}
 
-        {formData.foodMenu?.included && (
-          <div className="border-b border-[var(--border)] px-5 py-6 sm:px-8">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <Utensils
-                  size={17}
-                  className="text-[var(--sage)]"
-                />
-                <h3 className="font-semibold text-[var(--sage-dark)]">
-                  Customized Food & Catering Menu
-                </h3>
+        {formData.foodMenu?.included && (() => {
+          const guestCount = Number(formData.guests || 100);
+          const cateringItems = formData.foodMenu.items || [];
+          const servingType = formData.foodMenu.servingType || "Buffet";
+          const cateringSubtotal = previewFoodAmount;
+          const discountRatio = subtotal > 0 && discount > 0 ? Math.min(1, discount / subtotal) : 0;
+          const cateringDiscount = Math.round(cateringSubtotal * discountRatio);
+          const cateringTaxable = Math.max(0, cateringSubtotal - cateringDiscount);
+          const cateringGstAmount = isGstEnabled ? Math.round(cateringTaxable * (gstRate / 100)) : 0;
+          const finalCateringTotal = isGstEnabled ? cateringTaxable + cateringGstAmount : cateringTaxable;
+
+          return (
+            <div className="border-b border-[var(--border)] px-5 py-6 sm:px-8 space-y-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <Utensils size={17} className="text-[var(--sage)]" />
+                  <div>
+                    <h3 className="font-semibold text-[var(--sage-dark)]">
+                      Catering & Culinary Experience
+                    </h3>
+                    <p className="text-xs text-[var(--taupe)]">
+                      Package Scope: {guestCount.toLocaleString("en-IN")} Guests · {servingType}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-[#f4ecdc] px-3.5 py-1.5 text-xs font-bold text-[#8C7A55]">
+                  {formatCurrency(cateringSubtotal)} package subtotal
+                </div>
               </div>
 
-              <div className="rounded-xl bg-[#f4ecdc] px-3.5 py-1.5 text-xs font-bold text-[#8C7A55]">
-                {formatCurrency(previewFoodAmount)} cumulative
+              {cateringItems.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-[var(--border)] bg-[var(--ivory)] text-[10px] font-bold uppercase tracking-wide text-[var(--taupe)]">
+                        <th className="py-2.5 px-3 w-10 text-center">No.</th>
+                        <th className="py-2.5 px-3">Food Item</th>
+                        <th className="py-2.5 px-3">Category</th>
+                        <th className="py-2.5 px-3 text-right">Quantity</th>
+                        <th className="py-2.5 px-3">Unit</th>
+                        <th className="py-2.5 px-3 text-right">Unit Price</th>
+                        <th className="py-2.5 px-3 text-right">Total Price</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)] bg-white">
+                      {cateringItems.map((dish, idx) => {
+                        const itemQty =
+                          dish.quantity ??
+                          (servingType === "PER_GUEST" ? guestCount : 1);
+                        const itemUnit =
+                          (dish as any).unit ||
+                          (servingType === "PER_GUEST"
+                            ? "Guests"
+                            : servingType === "PER_PLATE"
+                            ? "Plates"
+                            : "Units");
+
+                        const hasUnitPrice =
+                          dish.rate !== null &&
+                          dish.rate !== undefined &&
+                          Number(dish.rate) > 0;
+                        const hasTotalPrice =
+                          dish.amount !== null &&
+                          dish.amount !== undefined &&
+                          Number(dish.amount) > 0;
+
+                        return (
+                          <tr key={idx} className="hover:bg-[var(--ivory)]/40 transition-colors">
+                            <td className="py-2.5 px-3 text-center text-gray-500 font-medium">{idx + 1}</td>
+                            <td className="py-2.5 px-3 font-semibold text-gray-900">
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className={`text-[8px] ${dish.dietary === "veg" ? "text-green-600" : "text-red-600"}`}>●</span>
+                                <span>{dish.name}</span>
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-[var(--taupe)]">{dish.category}</td>
+                            <td className="py-2.5 px-3 text-right font-medium text-gray-900">
+                              {itemQty ? Number(itemQty).toLocaleString("en-IN") : "—"}
+                            </td>
+                            <td className="py-2.5 px-3 text-[var(--taupe)]">{itemUnit}</td>
+                            <td className="py-2.5 px-3 text-right font-medium text-gray-900">
+                              {hasUnitPrice ? formatCurrency(Number(dish.rate)) : "—"}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-semibold text-gray-900">
+                              {hasTotalPrice || hasUnitPrice
+                                ? formatCurrency(Number(dish.amount ?? Number(dish.rate) * Number(itemQty)))
+                                : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-xs italic text-gray-500">
+                  Custom catering package included ({guestCount.toLocaleString("en-IN")} Guests · {servingType}). Individual menu items not itemized in this record.
+                </p>
+              )}
+
+              {/* Catering Financial Summary Breakdown */}
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--ivory)] p-4 text-xs space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-[var(--border)] pb-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--taupe)] block">Total Guests</span>
+                    <span className="text-sm font-bold text-gray-900">{guestCount.toLocaleString("en-IN")} Guests</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--taupe)] block">Selected Items</span>
+                    <span className="text-sm font-bold text-gray-900">{cateringItems.length} Dishes</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--taupe)] block">Serving Style</span>
+                    <span className="text-sm font-bold text-gray-900">{servingType}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--taupe)] block">Catering Subtotal</span>
+                    <span className="text-sm font-bold text-gray-900">{formatCurrency(cateringSubtotal)}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1">
+                  <div className="space-y-1">
+                    {cateringDiscount > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <span>Catering Discount (proportional):</span>
+                        <span className="font-semibold text-rose-700">-{formatCurrency(cateringDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <span>GST Status:</span>
+                      <span className={`font-semibold ${isGstEnabled ? "text-emerald-700" : "text-amber-700"}`}>
+                        {isGstEnabled ? `Applied (${gstRate}%: +${formatCurrency(cateringGstAmount)})` : "Not Applicable / Excluded (₹0)"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border)] w-full sm:w-auto">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--sage)]">
+                      Final Catering Package Amount
+                    </div>
+                    <div className="text-base font-black text-gray-900">
+                      {formatCurrency(finalCateringTotal)}
+                    </div>
+                    <div className="text-[10px] text-gray-500 italic mt-0.5">
+                      (Included in overall estimate grand total of {formatCurrency(grandTotal)})
+                    </div>
+                  </div>
+                </div>
+
+                {formData.foodMenu.notes && (
+                  <div className="pt-2 border-t border-[var(--border)] text-xs text-gray-600">
+                    <strong className="text-gray-900">Catering / Dietary Notes:</strong> {formData.foodMenu.notes}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Selected items pills */}
-            {formData.foodMenu.items && formData.foodMenu.items.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {formData.foodMenu.items.map((dish, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--ivory)] px-3 py-1.5 text-xs text-gray-800"
-                  >
-                    <span
-                      className={`text-[8px] ${
-                        dish.dietary === "veg"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      ●
-                    </span>
-                    <span className="font-medium">{dish.name}</span>
-                    <span className="text-[10px] text-gray-400">({dish.category})</span>
-                    <span className="text-[10px] font-semibold text-gray-600">
-                      {dish.quantity} × {formatCurrency(dish.rate)} = {formatCurrency(dish.amount || dish.rate * dish.quantity)}
-                    </span>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-2 text-xs italic text-gray-500">
-                Custom catering package included.
-              </p>
-            )}
-
-            {formData.foodMenu.notes && (
-              <p className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--ivory)] p-3 text-xs text-gray-600">
-                <strong className="text-gray-800">Catering / Dietary Notes:</strong>{" "}
-                {formData.foodMenu.notes}
-              </p>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {/* ==================================== */}
         {/* Services */}
@@ -1170,6 +1275,54 @@ export default function EstimatePreviewStep({
           {/* ================================= */}
 
           <div className="mt-6 ml-auto max-w-sm">
+            {/* GST Setting Toggle */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--ivory)] p-3.5 mb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[var(--sage-dark)]">
+                      Apply GST
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                        isGstEnabled
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          : "bg-gray-100 text-gray-600 border border-gray-200"
+                      }`}
+                    >
+                      {isGstEnabled ? "ON (18%)" : "OFF"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--taupe)]">
+                    {isGstEnabled
+                      ? "ON: GST is calculated and added according to the existing tax rules."
+                      : "OFF: GST is not applied to this estimate or booking."}
+                  </p>
+                </div>
+
+                {(!estimate || isEditing) && (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isGstEnabled}
+                    id="preview-gst-toggle"
+                    onClick={() => updateField("gstEnabled", !isGstEnabled)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--sage)] ${
+                      isGstEnabled ? "bg-[var(--sage-dark)]" : "bg-gray-300"
+                    }`}
+                  >
+                    <span className="sr-only">Apply GST toggle</span>
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        isGstEnabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-3 text-sm">
               {/* Subtotal */}
 
@@ -1215,17 +1368,29 @@ export default function EstimatePreviewStep({
 
               {/* GST */}
 
-              <div className="flex justify-between text-gray-600">
-                <span>
-                  GST ({gstRate}%)
-                </span>
+              {isGstEnabled && gstAmount > 0 ? (
+                <div className="flex justify-between text-gray-600">
+                  <span>
+                    GST ({gstRate}%)
+                  </span>
 
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(
-                    gstAmount,
-                  )}
-                </span>
-              </div>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(
+                      gstAmount,
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between text-gray-600">
+                  <span>
+                    GST
+                  </span>
+
+                  <span className="font-medium text-gray-500 italic">
+                    Not Applicable / Excluded (₹0)
+                  </span>
+                </div>
+              )}
 
               {/* Additional Charges */}
 

@@ -55,6 +55,7 @@ export interface EventBooking {
   subtotal?: number;
   discountAmount?: number;
   additionalCharges?: number;
+  gstEnabled?: boolean;
   gstRate?: number;
   gstAmount?: number;
 

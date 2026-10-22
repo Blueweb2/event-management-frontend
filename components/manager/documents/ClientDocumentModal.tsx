@@ -477,54 +477,216 @@ export default function ClientDocumentModal({
                 )}
               </div>
 
-              {/* Catering Package Details (If included) */}
-              {currentDoc.catering && currentDoc.catering.included && (
-                <div className="print-avoid-break py-6 border-b border-[#E8E1D8]">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
-                      Catering & Culinary Experience
-                    </h3>
-                    {showItemizedPrices ? (
-                      <span className="text-xs font-bold text-[#29241F]">
-                        {formatINR(currentDoc.catering.totalFoodAmount, currentDoc.currency)}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        ✓ Included in Package Proposal
-                      </span>
-                    )}
-                  </div>
+              {/* Catering Package Details (Itemized Food Menu & Financial Summary) */}
+              {currentDoc.catering && currentDoc.catering.included && (() => {
+                const cateringData = currentDoc.catering;
+                const cateringGuestCount = cateringData.guestCount || currentDoc.event.guests || 0;
+                const cateringItems = cateringData.items || [];
+                const cateringSubtotal = Number(cateringData.totalFoodAmount || 0);
+                const cateringDiscount = Number(cateringData.discount ?? 0);
+                const isGstActive = cateringData.gstEnabled ?? (currentDoc.gstEnabled !== false);
+                const cateringGstRate = Number(cateringData.gstRate ?? (currentDoc.gstRate || 18));
+                const cateringTaxable = Math.max(0, cateringSubtotal - cateringDiscount);
+                const cateringGstAmount = isGstActive
+                  ? Number(cateringData.gstAmount ?? Math.round(cateringTaxable * (cateringGstRate / 100)))
+                  : 0;
+                const finalCateringTotal = Number(cateringData.total ?? (cateringTaxable + cateringGstAmount));
 
-                  <div className="rounded-xl bg-[#FAF8F5] p-4 border border-[#E8E1D8] text-xs space-y-2">
-                    <div className="flex justify-between font-semibold text-[#29241F]">
-                      <span>
-                        Package Scope ({currentDoc.catering.guestCount} Guests · {currentDoc.catering.servingType || "Buffet"})
-                      </span>
-                      {showItemizedPrices && currentDoc.catering.ratePerGuest ? (
-                        <span>{formatINR(currentDoc.catering.ratePerGuest, currentDoc.currency)} / guest</span>
-                      ) : null}
+                return (
+                  <div className="print-avoid-break py-6 border-b border-[#E8E1D8] space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[#9A6C37]">
+                          Catering & Culinary Experience
+                        </h3>
+                        <p className="text-[11px] text-[#756D64] mt-0.5">
+                          Package Scope: {cateringGuestCount.toLocaleString("en-IN")} Guests · {cateringData.servingType || "Buffet"}
+                        </p>
+                      </div>
+                      {showItemizedPrices ? (
+                        <div className="text-right">
+                          <span className="text-[10px] uppercase font-bold text-[#756D64] block">Package Subtotal</span>
+                          <span className="text-xs font-bold text-[#29241F]">
+                            {formatINR(cateringSubtotal, currentDoc.currency)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          ✓ Included in Package Proposal
+                        </span>
+                      )}
                     </div>
 
-                    {currentDoc.catering.items && currentDoc.catering.items.length > 0 && (
-                      <div className="pt-2 border-t border-[#E8E1D8]/60">
-                        <p className="text-[11px] font-bold text-[#756D64] uppercase tracking-wider mb-1.5">
-                          Selected Food & Beverage Menu:
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {currentDoc.catering.items.map((food, fIdx) => (
-                            <span
-                              key={fIdx}
-                              className="rounded-lg bg-white border border-[#E8E1D8] px-2 py-1 text-[11px] text-[#29241F]"
-                            >
-                              {food.dietary === "non-veg" ? "🍗" : "🥗"} {food.name}
-                            </span>
-                          ))}
-                        </div>
+                    {/* Detailed Itemized Food Menu Table */}
+                    {cateringItems.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-[#E8E1D8]">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-[#E8E1D8] bg-[#FAF8F5] text-[10px] font-bold uppercase tracking-wider text-[#756D64]">
+                              <th className="py-2.5 px-3 w-10 text-center">No.</th>
+                              <th className="py-2.5 px-3">Food Item</th>
+                              <th className="py-2.5 px-3">Category</th>
+                              <th className="py-2.5 px-3 text-right">Quantity</th>
+                              <th className="py-2.5 px-3">Unit</th>
+                              <th className="py-2.5 px-3 text-right">Unit Price</th>
+                              <th className="py-2.5 px-3 text-right">Total Price</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E8E1D8]/60 bg-white">
+                            {cateringItems.map((item, fIdx) => {
+                              const itemQty =
+                                item.quantity ??
+                                (cateringData.servingType === "PER_GUEST" ? cateringGuestCount : 1);
+                              const itemUnit =
+                                item.unit ||
+                                (cateringData.servingType === "PER_GUEST"
+                                  ? "Guests"
+                                  : cateringData.servingType === "PER_PLATE"
+                                  ? "Plates"
+                                  : "Units");
+
+                              const rawRate = item.unitPrice ?? item.rate;
+                              const hasUnitPrice =
+                                rawRate !== null &&
+                                rawRate !== undefined &&
+                                Number(rawRate) > 0;
+
+                              const rawTotal = item.totalPrice ?? item.amount;
+                              const hasTotalPrice =
+                                rawTotal !== null &&
+                                rawTotal !== undefined &&
+                                Number(rawTotal) > 0;
+
+                              return (
+                                <tr key={fIdx} className="hover:bg-[#FAF8F5]/50 transition-colors">
+                                  <td className="py-2.5 px-3 text-center text-gray-500 font-medium">
+                                    {fIdx + 1}
+                                  </td>
+                                  <td className="py-2.5 px-3 font-semibold text-[#29241F]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[10px]">
+                                        {item.dietary === "non-veg" ? "🍗" : item.dietary === "egg" ? "🟡" : "🥗"}
+                                      </span>
+                                      <span>{item.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-[#756D64]">
+                                    {item.category || "General"}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-medium text-[#29241F]">
+                                    {itemQty ? Number(itemQty).toLocaleString("en-IN") : "—"}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-[#756D64]">
+                                    {itemUnit}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-medium text-[#29241F]">
+                                    {showItemizedPrices && hasUnitPrice
+                                      ? formatINR(Number(rawRate), currentDoc.currency)
+                                      : showItemizedPrices
+                                      ? "—"
+                                      : "Included"}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right font-semibold text-[#29241F]">
+                                    {showItemizedPrices && (hasTotalPrice || hasUnitPrice)
+                                      ? formatINR(
+                                          Number(rawTotal ?? Number(rawRate) * Number(itemQty)),
+                                          currentDoc.currency
+                                        )
+                                      : showItemizedPrices
+                                      ? "—"
+                                      : "Included"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl bg-[#FAF8F5] p-4 border border-[#E8E1D8] text-xs text-gray-500 italic">
+                        Catering package included ({cateringGuestCount.toLocaleString("en-IN")} Guests · {cateringData.servingType || "Buffet"}). Individual menu items not itemized in this record.
                       </div>
                     )}
+
+                    {/* Catering Financial Summary Breakdown */}
+                    <div className="rounded-xl border border-[#E8E1D8] bg-[#FAF8F5] p-4 text-xs space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 border-b border-[#E8E1D8]/70 pb-3">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#756D64] block">
+                            Total Guests
+                          </span>
+                          <span className="text-sm font-bold text-[#29241F]">
+                            {cateringGuestCount.toLocaleString("en-IN")} Guests
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#756D64] block">
+                            Selected Menu Items
+                          </span>
+                          <span className="text-sm font-bold text-[#29241F]">
+                            {cateringItems.length} Dishes
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#756D64] block">
+                            Serving Style
+                          </span>
+                          <span className="text-sm font-bold text-[#29241F]">
+                            {cateringData.servingType || "Buffet"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#756D64] block">
+                            Catering Subtotal
+                          </span>
+                          <span className="text-sm font-bold text-[#29241F]">
+                            {formatINR(cateringSubtotal, currentDoc.currency)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1">
+                        <div className="space-y-1">
+                          {cateringDiscount > 0 ? (
+                            <div className="flex items-center gap-2 text-xs text-[#756D64]">
+                              <span>Catering Discount (proportional):</span>
+                              <span className="font-semibold text-rose-700">
+                                -{formatINR(cateringDiscount, currentDoc.currency)}
+                              </span>
+                            </div>
+                          ) : null}
+                          <div className="flex items-center gap-2 text-xs text-[#756D64]">
+                            <span>GST Status:</span>
+                            <span className={`font-semibold ${isGstActive ? "text-emerald-700" : "text-amber-700"}`}>
+                              {isGstActive
+                                ? `Applied (${cateringGstRate}%: +${formatINR(cateringGstAmount, currentDoc.currency)})`
+                                : "Not Applicable / Excluded (₹0)"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E8E1D8]/60 w-full sm:w-auto">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-[#9A6C37]">
+                            Final Catering Package Amount
+                          </div>
+                          <div className="text-base font-black text-[#29241F]">
+                            {formatINR(finalCateringTotal, currentDoc.currency)}
+                          </div>
+                          <div className="text-[10px] text-gray-500 italic mt-0.5">
+                            (Included in overall {currentDoc.documentType === "INVOICE" ? "invoice" : "estimate"} grand total of {formatINR(currentDoc.total, currentDoc.currency)})
+                          </div>
+                        </div>
+                      </div>
+
+                      {cateringData.notes && (
+                        <div className="pt-2 border-t border-[#E8E1D8]/60 text-xs text-[#756D64]">
+                          <strong className="text-[#29241F]">Dietary & Service Notes:</strong> {cateringData.notes}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Financial Calculation Summary (Shows Final Estimate Amount) */}
               <div className="print-avoid-break py-6 flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-[#E8E1D8]">
@@ -568,11 +730,18 @@ export default function ClientDocumentModal({
                     </div>
                   )}
 
-                  {currentDoc.gstAmount > 0 && (
+                  {currentDoc.gstEnabled !== false && currentDoc.gstAmount > 0 ? (
                     <div className="flex justify-between text-[#756D64]">
                       <span>GST ({currentDoc.gstRate || 18}%)</span>
                       <span className="font-medium text-[#29241F]">
                         +{formatINR(currentDoc.gstAmount, currentDoc.currency)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-[#756D64]">
+                      <span>GST</span>
+                      <span className="font-medium text-gray-500 italic">
+                        Not Applicable / Excluded (₹0)
                       </span>
                     </div>
                   )}

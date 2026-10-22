@@ -102,6 +102,7 @@ const initialFormData: BookingFormData = {
   discountType: "percentage",
   discountValue: "0",
   additionalCharges: "0",
+  gstEnabled: true,
 };
 
 // ==========================================
@@ -221,6 +222,10 @@ export default function BookingForm() {
           discountType: est.discountType || "percentage",
           discountValue: String(est.discountValue ?? 0),
           additionalCharges: String(est.additionalCharges ?? 0),
+          gstEnabled:
+            est.gstEnabled !== undefined
+              ? est.gstEnabled
+              : (est.gstAmount !== undefined ? est.gstAmount > 0 : true),
         });
 
         setIsLoadingEstimateToEdit(false);
@@ -267,7 +272,14 @@ export default function BookingForm() {
 
       if (hasContent) {
         queueMicrotask(() => {
-          setFormData(draft.formData);
+          setFormData({
+            ...initialFormData,
+            ...draft.formData,
+            gstEnabled:
+              draft.formData.gstEnabled !== undefined
+                ? draft.formData.gstEnabled
+                : true,
+          });
           if (draft.currentStep && draft.currentStep >= 1 && draft.currentStep <= 5) {
             setCurrentStep(draft.currentStep);
           }
@@ -804,6 +816,7 @@ export default function BookingForm() {
         discountType: formData.discountType || "percentage",
         discountValue: Number(formData.discountValue || 0),
         additionalCharges: Number(formData.additionalCharges || 0),
+        gstEnabled: formData.gstEnabled ?? true,
       });
 
       estimateCreatedRef.current = true;
@@ -865,6 +878,7 @@ export default function BookingForm() {
         discountType: formData.discountType || "percentage",
         discountValue: Number(formData.discountValue || 0),
         additionalCharges: Number(formData.additionalCharges || 0),
+        gstEnabled: formData.gstEnabled ?? true,
       });
 
       estimateCreatedRef.current = true;

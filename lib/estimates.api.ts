@@ -55,6 +55,7 @@ export type CreateEstimatePayload = {
   discountType?: "percentage" | "fixed";
   discountValue?: number;
   additionalCharges?: number;
+  gstEnabled?: boolean;
 };
 
 export type EstimateItem = {
@@ -106,6 +107,7 @@ export type Estimate = {
 
   additionalCharges: number;
 
+  gstEnabled?: boolean;
   gstRate: number;
   gstAmount: number;
 

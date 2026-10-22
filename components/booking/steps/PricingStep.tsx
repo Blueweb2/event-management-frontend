@@ -13,9 +13,9 @@ import { getServiceImageUrl } from "@/lib/services.api";
 
 type PricingStepProps = {
   formData: BookingFormData;
-  updateField: (
-    field: keyof BookingFormData,
-    value: string,
+  updateField: <K extends keyof BookingFormData>(
+    field: K,
+    value: BookingFormData[K],
   ) => void;
 };
 
@@ -25,6 +25,11 @@ export default function PricingStep({
   formData,
   updateField,
 }: PricingStepProps) {
+  /**
+   * Determine whether GST is applied (defaults to true per business rules).
+   */
+  const isGstEnabled = formData.gstEnabled !== false;
+
   /**
    * Calculate subtotal from selected services/items.
    */
@@ -73,10 +78,10 @@ export default function PricingStep({
   /**
    * GST.
    *
-   * GST is calculated on the discounted
-   * service amount.
+   * When GST is ON: GST is calculated on the discounted service amount.
+   * When GST is OFF: GST amount is 0.
    */
-  const gst = taxableAmount * (GST_RATE / 100);
+  const gst = isGstEnabled ? taxableAmount * (GST_RATE / 100) : 0;
 
   /**
    * Final total.
@@ -231,7 +236,7 @@ export default function PricingStep({
             onChange={(event) =>
               updateField(
                 "discountType",
-                event.target.value,
+                event.target.value as "percentage" | "fixed",
               )
             }
             className="h-12 rounded-xl border border-[var(--border)] bg-[var(--ivory)] px-4 text-sm text-gray-900 outline-none transition focus:border-[var(--sage)]"
@@ -324,6 +329,71 @@ export default function PricingStep({
         </div>
       </div>
 
+      {/* Optional GST Toggle */}
+      <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--sage-light)] text-[var(--sage-dark)]">
+              <ReceiptText size={18} />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-[var(--sage-dark)]">
+                  Apply GST
+                </h3>
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                    isGstEnabled
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                      : "bg-gray-100 text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  {isGstEnabled ? `ON (${GST_RATE}%)` : "OFF"}
+                </span>
+              </div>
+
+              <p className="mt-1 text-xs text-[var(--taupe)]">
+                {isGstEnabled
+                  ? "ON: GST is calculated and added according to the existing tax rules."
+                  : "OFF: GST is not applied to this estimate or booking."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+            {isGstEnabled ? (
+              <span className="text-xs font-semibold text-[var(--sage-dark)]">
+                + {formatCurrency(gst)}
+              </span>
+            ) : (
+              <span className="text-xs font-medium text-gray-400 italic">
+                ₹0 (Excluded)
+              </span>
+            )}
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isGstEnabled}
+              id="gst-toggle-button"
+              onClick={() => updateField("gstEnabled", !isGstEnabled)}
+              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--sage)] focus:ring-offset-2 ${
+                isGstEnabled ? "bg-[var(--sage-dark)]" : "bg-gray-300"
+              }`}
+            >
+              <span className="sr-only">Apply GST toggle</span>
+              <span
+                aria-hidden="true"
+                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  isGstEnabled ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Price Summary */}
       <div className="rounded-2xl bg-[var(--sage-dark)] p-5 text-white shadow-lg sm:p-6">
         <h3 className="text-lg font-semibold">
@@ -348,10 +418,12 @@ export default function PricingStep({
           </div>
 
           <div className="flex items-center justify-between text-sm text-white/70">
-            <span>GST ({GST_RATE}%)</span>
+            <span>
+              {isGstEnabled ? `GST (${GST_RATE}%)` : "GST (Disabled)"}
+            </span>
 
             <span>
-              {formatCurrency(gst)}
+              {isGstEnabled ? formatCurrency(gst) : "₹0 (Excluded)"}
             </span>
           </div>
 
