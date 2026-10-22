@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Users,
   UserCheck,
@@ -18,6 +19,7 @@ import { useAuth } from "@/hooks/useAuth";
 import type { CreateStaffPayload, Staff } from "@/types/staff";
 
 export default function StaffDirectoryTab() {
+  const router = useRouter();
   const { user, token } = useAuth();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -110,11 +112,20 @@ export default function StaffDirectoryTab() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {isSuperAdmin ? (
           <>
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3.5 shadow-xs transition hover:shadow-sm sm:p-4">
-              <span className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-800">
-                <ShieldCheck size={10} />
-                Total Managers
-              </span>
+            <div
+              onClick={() => router.push("/manager/staff?tab=managers")}
+              className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-3.5 shadow-xs transition hover:shadow-md hover:border-indigo-300 hover:bg-indigo-50/80 sm:p-4 cursor-pointer group"
+              title="Click to view and manage Department Managers"
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-800">
+                  <ShieldCheck size={10} />
+                  Total Managers
+                </span>
+                <span className="text-[10px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Manage →
+                </span>
+              </div>
               <p className="mt-1.5 text-2xl font-bold tracking-tight text-indigo-950">
                 {computedStats.totalManagers}
               </p>

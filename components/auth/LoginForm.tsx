@@ -37,7 +37,7 @@ function getSafeRedirectUrl(
   const role = (userRole || "").toLowerCase();
   let defaultPath = "/staff";
   if (role === "superadmin") {
-    defaultPath = "/superadmin";
+    defaultPath = "/manager/staff?tab=managers";
   } else if (role === "admin" || role === "manager") {
     defaultPath = "/manager";
   } else {
@@ -64,6 +64,11 @@ function getSafeRedirectUrl(
       return defaultPath;
     }
 
+    // Handle legacy /superadmin requests
+    if (decoded === "/superadmin" || decoded.startsWith("/superadmin/")) {
+      return "/manager/staff?tab=managers";
+    }
+
     // Enforce role boundaries on redirect destination
     if (role === "staff") {
       if (decoded.startsWith("/manager") || decoded.startsWith("/superadmin")) {
@@ -74,8 +79,8 @@ function getSafeRedirectUrl(
         return "/manager";
       }
     } else if (role === "superadmin") {
-      if (decoded.startsWith("/staff")) {
-        return "/superadmin";
+      if (decoded.startsWith("/staff") && !decoded.startsWith("/manager/staff")) {
+        return "/manager/staff?tab=managers";
       }
     }
 
