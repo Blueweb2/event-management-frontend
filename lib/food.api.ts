@@ -10,9 +10,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 export type FoodCategory =
   | "Welcome Drinks"
   | "Starters / Appetizers"
+  | "Starters"
   | "Main Course"
   | "Breads & Rice"
+  | "Breads"
+  | "Rice and Biriyani"
+  | "Side Dishes"
   | "Desserts & Sweets"
+  | "Desserts"
   | "Live Counters"
   | "Beverages"
   | "Salads & Soups";

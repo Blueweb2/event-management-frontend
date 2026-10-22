@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   AlertCircle,
   Award,
   Calendar,
   CheckCircle2,
+  ChevronRight,
   Clock,
   Coffee,
   Disc,
@@ -35,9 +37,6 @@ import {
 
 import {
   getEventStaffingRequirements,
-  calculateKitchenIngredients,
-  getKitchenPurchaseRequests,
-  type IngredientCalculationResult,
   EventStaffingResponse,
   StaffingStream,
   DepartmentStaffMember,
@@ -87,49 +86,6 @@ export default function EventServiceStaffingMatrix({
   // Managing Sub-duties Checklist Modal State
   const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
 
-  // Collapsible Catering Menu & Chef Ingredients State
-  const [cateringMenuExpanded, setCateringMenuExpanded] = useState(false);
-  const [cateringCalcResult, setCateringCalcResult] = useState<IngredientCalculationResult | null>(null);
-  const [chefPurchaseItems, setChefPurchaseItems] = useState<any[]>([]);
-  const [cateringIngredientsLoading, setCateringIngredientsLoading] = useState(false);
-
-  const loadCateringChefData = async () => {
-    if (!eventId) return;
-    try {
-      setCateringIngredientsLoading(true);
-      const [calcRes, reqsRes] = await Promise.all([
-        calculateKitchenIngredients(eventId, 5, token).catch(() => ({ data: null })),
-        getKitchenPurchaseRequests("", token).catch(() => ({ data: [] })),
-      ]);
-
-      if (calcRes?.data) {
-        setCateringCalcResult(calcRes.data);
-      }
-
-      if (Array.isArray(reqsRes?.data)) {
-        const eventRequests = reqsRes.data.filter(
-          (pr: any) =>
-            (pr.event?._id && String(pr.event._id) === String(eventId)) ||
-            (pr.event && typeof pr.event === "string" && String(pr.event) === String(eventId))
-        );
-        const eventItems = eventRequests.flatMap((pr: any) =>
-          (pr.items || []).map((it: any) => ({
-            name: it.itemName,
-            requiredQuantity: it.requiredQuantity,
-            unit: it.unit || "pcs",
-            notes: it.notes || pr.notes || "",
-            isGroceryRequest: true,
-          }))
-        );
-        setChefPurchaseItems(eventItems);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setCateringIngredientsLoading(false);
-    }
-  };
-
   const loadMatrix = async () => {
     try {
       setLoading(true);
@@ -138,7 +94,6 @@ export default function EventServiceStaffingMatrix({
       if (res.data) {
         setData(res.data);
       }
-      void loadCateringChefData();
     } catch (err) {
       setError(
         err instanceof Error
@@ -356,25 +311,6 @@ export default function EventServiceStaffingMatrix({
             ? (stream.specDetails?.guests || data?.event?.guests || 0)
             : 0;
 
-          const foodNotes = isCateringStream
-            ? (data?.event?.foodMenu?.notes || "")
-            : "";
-
-          const dishesWithIngredients = isCateringStream
-            ? (cateringCalcResult?.perItemCalculations?.filter(
-                (dish) => Array.isArray(dish.ingredients) && dish.ingredients.length > 0
-              ) || [])
-            : [];
-
-          const aggregatedList = isCateringStream
-            ? (cateringCalcResult?.aggregatedIngredients || [])
-            : [];
-
-          const hasAnyChefIngredients =
-            dishesWithIngredients.length > 0 ||
-            aggregatedList.length > 0 ||
-            chefPurchaseItems.length > 0;
-
           return (
             <div
               key={stream.streamId}
@@ -414,6 +350,39 @@ export default function EventServiceStaffingMatrix({
                     {stream.allocatedCount} / {stream.recommendedStaffCount} Staffed
                   </span>
                 </div>
+
+                {/* Highlighted Catering Menu & Ingredients Action Button (Positioned right below header, before Assigned Staff) */}
+                {isCateringStream && (
+                  <Link
+                    href={`/manager/events/${eventId}/catering`}
+                    id="catering-menu-ingredients-btn"
+                    className="mt-3.5 group flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-[#fdfbf7] via-[#faf5ec] to-[#f6ede0] p-3.5 text-left shadow-2xs transition-all duration-200 hover:border-amber-300 hover:bg-[#f5ede0] hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-900 border border-amber-300/50 group-hover:bg-amber-500/25 group-hover:scale-105 transition-transform">
+                        <Utensils size={18} className="text-[#87551e]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-[#29241f] group-hover:text-amber-950">
+                            Catering Menu & Ingredients
+                          </span>
+                          {cateringMenuItems.length > 0 && (
+                            <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300/60">
+                              {cateringMenuItems.length} {cateringMenuItems.length === 1 ? "dish" : "dishes"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#785122]/85 truncate mt-0.5">
+                          View selected dishes, quantities, and kitchen ingredients
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border border-amber-200 text-amber-800 shadow-2xs group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 transition-colors">
+                      <ChevronRight size={16} />
+                    </div>
+                  </Link>
+                )}
 
                 {/* Assigned Personnel List (Simple, compact rows) */}
                 <div className="mt-3.5 space-y-1.5">
@@ -610,239 +579,8 @@ export default function EventServiceStaffingMatrix({
                   </div>
                 </div>
 
-                {/* Collapsible Catering Menu & Chef-Added Ingredients Section */}
-                {isCateringStream && (
-                  <div className="mt-4 border-t border-[#f1ece5] pt-3">
-                    {/* Compact Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCateringMenuExpanded((prev) => !prev);
-                        if (!cateringCalcResult && !cateringIngredientsLoading) {
-                          void loadCateringChefData();
-                        }
-                      }}
-                      className="flex w-full items-center justify-between rounded-xl border border-[#ede5d8] bg-[#faf8f5] px-3.5 py-2 text-xs font-bold text-[#785122] transition hover:bg-[#f3ede4] hover:border-[#dfd3c3] active:scale-[0.99] cursor-pointer"
-                      aria-expanded={cateringMenuExpanded}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <span>{cateringMenuExpanded ? "▲ Hide Catering Menu" : "▼ Show Catering Menu"}</span>
-                        {cateringMenuItems.length > 0 && (
-                          <span className="rounded-full bg-amber-100 border border-amber-300/70 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-900">
-                            {cateringMenuItems.length}
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-[10px] font-semibold text-[#9a6c37]">
-                        {cateringMenuExpanded ? "Click to collapse" : "Menus & Ingredients"}
-                      </span>
-                    </button>
 
-                    {/* Collapsible Expanded Content */}
-                    {cateringMenuExpanded && (
-                      <div className="mt-2.5 space-y-4 rounded-2xl border border-[#ede5d8] bg-[#fdfcf9] p-3 text-xs animate-in fade-in duration-200">
-                        {/* 1. Client-Selected Catering Menus */}
-                        <div>
-                          <div className="flex items-center justify-between border-b border-[#f1ece5] pb-2 mb-2">
-                            <div className="flex items-center gap-1.5 font-bold text-[#29241f]">
-                              <Utensils size={13} className="text-[#9a6c37]" />
-                              <span>Client-Selected Catering Menus</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                              {servingType && (
-                                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700 capitalize">
-                                  Serving: {servingType}
-                                </span>
-                              )}
-                              {guestCount > 0 && (
-                                <span className="rounded bg-stone-100 px-1.5 py-0.5 font-medium text-stone-700">
-                                  {guestCount} Guests
-                                </span>
-                              )}
-                            </div>
-                          </div>
 
-                          {cateringMenuItems.length === 0 ? (
-                            <p className="text-xs text-gray-500 italic py-1">
-                              No catering menus selected for this event.
-                            </p>
-                          ) : (
-                            <div className="space-y-2">
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                {cateringMenuItems.map((item, idx) => (
-                                  <div
-                                    key={item.name + idx}
-                                    className="flex flex-col justify-between rounded-xl border border-[#ede5d8] bg-white p-2.5 shadow-2xs"
-                                  >
-                                    <div>
-                                      <div className="flex items-start justify-between gap-1.5">
-                                        <span className="font-bold text-[#29241f] leading-snug">
-                                          {item.name}
-                                        </span>
-                                        {item.dietary && (
-                                          <span
-                                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-extrabold uppercase ${
-                                              item.dietary === "VEG"
-                                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                                : item.dietary === "NON_VEG"
-                                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                                : "bg-amber-50 text-amber-700 border border-amber-200"
-                                            }`}
-                                          >
-                                            {item.dietary}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <p className="mt-1 text-[11px] font-medium text-gray-500 capitalize">
-                                        Category: {item.category || "General"}
-                                      </p>
-                                    </div>
-                                    {(item.quantity || guestCount > 0) && (
-                                      <div className="mt-1.5 flex items-center justify-between border-t border-gray-100 pt-1 text-[10px] text-gray-500">
-                                        <span>Quantity / Servings:</span>
-                                        <span className="font-semibold text-gray-800">
-                                          {item.quantity ? `${item.quantity} portions` : `${guestCount} guests`}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {foodNotes && (
-                                <div className="rounded-xl bg-amber-50/70 border border-amber-200/60 p-2.5 text-[11px] text-amber-900">
-                                  <span className="font-bold">Client Notes & Customizations: </span>
-                                  <span>{foodNotes}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* 2. Chef-Added Ingredients */}
-                        <div className="border-t border-[#f1ece5] pt-3">
-                          <div className="flex items-center justify-between pb-2">
-                            <div className="flex items-center gap-1.5 font-bold text-[#29241f]">
-                              <ChefHat size={13} className="text-[#9a6c37]" />
-                              <span>Chef-Added Ingredients</span>
-                            </div>
-                            {cateringIngredientsLoading && (
-                              <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                                <Loader2 size={11} className="animate-spin text-[#9a6c37]" />
-                                <span>Loading...</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {cateringIngredientsLoading && !hasAnyChefIngredients ? (
-                            <div className="flex items-center justify-center py-3 text-xs text-gray-400">
-                              <Loader2 size={14} className="animate-spin mr-1.5 text-[#9a6c37]" />
-                              Loading event ingredients...
-                            </div>
-                          ) : !hasAnyChefIngredients ? (
-                            <p className="text-xs text-gray-500 italic py-1">
-                              No ingredients added by the chef yet.
-                            </p>
-                          ) : (
-                            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-                              {/* Grouped by Dish when perItemCalculations exists */}
-                              {dishesWithIngredients.length > 0 ? (
-                                dishesWithIngredients.map((dish, dIdx) => (
-                                  <div
-                                    key={dish.name + dIdx}
-                                    className="rounded-xl border border-[#ede5d8] bg-white p-2.5 shadow-2xs"
-                                  >
-                                    <div className="flex items-center justify-between border-b border-gray-100 pb-1.5 mb-1.5">
-                                      <span className="font-bold text-xs text-[#29241f] flex items-center gap-1.5">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-[#9a6c37]" />
-                                        {dish.name}
-                                      </span>
-                                      {dish.category && (
-                                        <span className="text-[10px] text-gray-400 font-medium capitalize">
-                                          {dish.category}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="grid gap-1.5 sm:grid-cols-2">
-                                      {dish.ingredients.map((ing, iIdx) => (
-                                        <div
-                                          key={ing.name + iIdx}
-                                          className="flex items-center justify-between rounded-lg bg-[#faf8f5] px-2 py-1 text-[11px]"
-                                        >
-                                          <div className="truncate pr-2">
-                                            <span className="font-medium text-gray-800">{ing.name}</span>
-                                            {ing.notes && (
-                                              <span className="block text-[9px] text-gray-400 italic truncate">
-                                                {ing.notes}
-                                              </span>
-                                            )}
-                                          </div>
-                                          <span className="shrink-0 font-bold text-[#785122]">
-                                            {ing.requiredQuantity} {ing.unit}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ))
-                              ) : aggregatedList.length > 0 ? (
-                                <div className="rounded-xl border border-[#ede5d8] bg-white p-2.5">
-                                  <div className="grid gap-1.5 sm:grid-cols-2">
-                                    {aggregatedList.map((ing, idx) => (
-                                      <div
-                                        key={ing.name + idx}
-                                        className="flex items-center justify-between rounded-lg bg-[#faf8f5] px-2.5 py-1.5 text-[11px]"
-                                      >
-                                        <span className="font-medium text-gray-800">{ing.name}</span>
-                                        <span className="shrink-0 font-bold text-[#785122]">
-                                          {ing.requiredQuantity} {ing.unit}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : null}
-
-                              {/* Additional Event-Specific Chef Grocery Requests */}
-                              {chefPurchaseItems.length > 0 && (
-                                <div className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-2.5">
-                                  <div className="flex items-center justify-between border-b border-amber-200/50 pb-1 mb-1.5">
-                                    <span className="font-bold text-xs text-amber-900">
-                                      Event Grocery & Special Requests
-                                    </span>
-                                    <span className="text-[10px] text-amber-700 font-medium">
-                                      {chefPurchaseItems.length} items
-                                    </span>
-                                  </div>
-                                  <div className="grid gap-1.5 sm:grid-cols-2">
-                                    {chefPurchaseItems.map((item, pIdx) => (
-                                      <div
-                                        key={item.name + pIdx}
-                                        className="flex items-center justify-between rounded-lg bg-white/90 px-2 py-1 text-[11px] border border-amber-100"
-                                      >
-                                        <div className="truncate pr-2">
-                                          <span className="font-medium text-gray-800">{item.name}</span>
-                                          {item.notes && (
-                                            <span className="block text-[9px] text-gray-400 italic truncate">
-                                              {item.notes}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <span className="shrink-0 font-bold text-amber-800">
-                                          {item.requiredQuantity} {item.unit}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* Bottom Quick Button */}

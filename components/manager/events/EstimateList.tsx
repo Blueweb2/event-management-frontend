@@ -297,7 +297,7 @@ export default function EstimateList({
                 </button>
 
                 <Link
-                  href={`/manager/booking?edit=${est._id}`}
+                  href={`/manager/booking?edit=${est._id}&editEstimateId=${est._id}`}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <Edit size={13} />

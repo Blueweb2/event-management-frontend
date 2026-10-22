@@ -328,6 +328,7 @@ export interface PurchaseRequestRecord {
     unit: string;
     estimatedCost: number;
     urgency: string;
+    notes?: string;
   }>;
   requestedBy?: {
     name: string;
@@ -408,7 +409,7 @@ export interface PhotographyEventItem {
 // API CLIENT FUNCTIONS
 // ==========================================
 
-import { post, patch } from "./api";
+import { post, patch, del } from "./api";
 
 export async function getMyDepartmentInfo(token?: string): Promise<ApiResponse<MyDepartmentInfo>> {
   return get<ApiResponse<MyDepartmentInfo>>("/departments/my-info", token);
@@ -515,6 +516,17 @@ export async function updateKitchenTaskStatus(
   return patch<ApiResponse<DepartmentTask>>(
     `/departments/kitchen/tasks/${dutyId}/${taskId}/status`,
     payload,
+    token
+  );
+}
+
+export async function deleteKitchenTask(
+  dutyId: string,
+  taskId: string,
+  token?: string
+): Promise<ApiResponse<{ message: string; taskId: string }>> {
+  return del<ApiResponse<{ message: string; taskId: string }>>(
+    `/departments/kitchen/tasks/${dutyId}/${taskId}`,
     token
   );
 }

@@ -405,7 +405,7 @@ export const getEstimateById = async (
       token
     );
 
-  return result.data;
+  return (result as any)?.data || (result as any);
 };
 
 // ==========================================

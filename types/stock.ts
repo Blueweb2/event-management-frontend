@@ -8,6 +8,8 @@ export type StockCategory =
   | "Kitchen Equipment"
   | "Decor"
   | "Lighting"
+  | "Raw Ingredients"
+  | "Kitchen Supplies"
   | "Other";
 
 export type EventStockStatus =
@@ -61,6 +63,7 @@ export interface StockItem {
   unitPrice: number;
   rentalPrice?: number;
   isRentable?: boolean;
+  stockType?: "kitchen" | "rentable";
   location: string;
   description?: string;
   createdBy?: { _id: string; name: string; email: string };

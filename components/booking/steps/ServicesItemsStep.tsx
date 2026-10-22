@@ -151,8 +151,15 @@ export default function ServicesItemsStep({
     });
 
     // Add rentable stock equipment items for rental
+    const KITCHEN_CATEGORIES = ["Raw Ingredients", "Kitchen Supplies"];
     stockItems.forEach((stock) => {
-      if (stock.isRentable === false) return;
+      if (
+        stock.isRentable !== true ||
+        stock.stockType === "kitchen" ||
+        KITCHEN_CATEGORIES.includes(stock.category)
+      ) {
+        return;
+      }
       const uniqueKey = stock._id;
       const isSelected = formData.services.some(
         (s) => s.serviceId === stock._id && !s.optionId

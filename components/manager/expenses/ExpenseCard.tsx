@@ -135,19 +135,10 @@ export default function ExpenseCard({
               {expense.isAutomatedPayroll ? (expense.staffName || expense.title) : expense.title}
             </h3>
 
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${catConfig.badge}`}
-            >
-              {expense.category}
-            </span>
+        
 
             {/* Automated Payroll Badge */}
-            {expense.isAutomatedPayroll && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-200">
-                <Sparkles size={10} className="text-emerald-600" />
-                Automated Payroll
-              </span>
-            )}
+       
 
             {/* Duty Title / Role */}
             {expense.isAutomatedPayroll && expense.dutyRole && (
@@ -157,22 +148,9 @@ export default function ExpenseCard({
             )}
 
             {/* Department */}
-            {expense.isAutomatedPayroll && expense.department && (
-              <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                {expense.department}
-              </span>
-            )}
+          
 
-            {!expense.isAutomatedPayroll && expense.vendorName && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-semibold text-stone-700">
-                <Store size={10} className="text-stone-500" />
-                <span className="truncate max-w-[140px]">{expense.vendorName}</span>
-              </span>
-            )}
 
-            <span className="font-mono text-[10px] text-gray-400">
-              #{expense.id}
-            </span>
           </div>
 
           {/* Sub Line: Event + Date + Shift Times / Added By + Payment Method */}

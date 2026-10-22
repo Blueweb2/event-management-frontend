@@ -68,23 +68,13 @@ export default function ManagerDashboardPage() {
             </span>
           </div> */}
 
-          <h1 className="mt-1.5 text-xl sm:text-2xl font-black text-[#29241f]">
-            Welcome
-          </h1>
-
+       
           {/* <p className="mt-0.5 text-xs text-gray-500">
             Organization-wide overview of upcoming confirmed events, bookings, and team operations.
           </p> */}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href="/manager/booking"
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#29241f] px-4 text-xs font-bold text-white transition active:scale-[0.98] hover:bg-black shadow-2xs"
-          >
-            + New Booking
-          </Link>
-        </div>
+      
       </section>
 
       {/* Department Tabs for Executive / Operations */}
@@ -141,6 +131,7 @@ export default function ManagerDashboardPage() {
           <span>Photography Dashboard</span>
         </button>
       </div> */}
+
 
       {activeDepartmentView === "KITCHEN" && <KitchenDashboard token={token} />}
       {activeDepartmentView === "DECORATION" && <DecorationDashboard token={token} />}

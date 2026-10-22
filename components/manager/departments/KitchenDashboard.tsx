@@ -36,6 +36,7 @@ import {
   getKitchenTasks,
   createKitchenTask,
   updateKitchenTaskStatus,
+  deleteKitchenTask,
   createKitchenPurchaseRequest,
   getKitchenPurchaseRequests,
   type KitchenEventItem,
@@ -329,6 +330,24 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
     } catch (err) {
       console.error("Task toggle error:", err);
     }
+  };
+
+  // Remove task from prep checklist
+  const handleDeleteTask = async (dutyId: string, taskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!token) return;
+    try {
+      await deleteKitchenTask(dutyId, taskId, token);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (err) {
+      console.error("Task delete error:", err);
+    }
+  };
+
+  // Dietary helper: checks case-insensitively for veg/vegan
+  const isVegDietary = (dietary?: string) => {
+    const d = (dietary || "").toLowerCase();
+    return d === "veg" || d === "vegan";
   };
 
   // Date helper utilities
@@ -779,9 +798,7 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
               {filteredEvents.map((ev) => {
                 const menuItems = ev.foodMenu?.items || [];
                 const guests = ev.guests || 0;
-                const vegCount = menuItems.filter(
-                  (m) => (m.dietary || "").toUpperCase() === "VEG"
-                ).length;
+                const vegCount = menuItems.filter((m) => isVegDietary(m.dietary)).length;
                 const nonVegCount = menuItems.length - vegCount;
 
                 const isToday = isDateToday(ev.eventDate);
@@ -881,7 +898,7 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                             >
                               <span
                                 className={`h-1.5 w-1.5 rounded-full ${
-                                  dish.dietary === "VEG" ? "bg-emerald-500" : "bg-rose-500"
+                                  isVegDietary(dish.dietary) ? "bg-emerald-500" : "bg-rose-500"
                                 }`}
                               />
                               <span>{dish.name}</span>
@@ -1025,6 +1042,15 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                             </p>
                           )}
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => void handleDeleteTask(t.dutyId, t.id, e)}
+                          title="Remove task"
+                          className="mt-0.5 text-gray-300 hover:text-rose-500 p-0.5 transition cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     );
                   })
@@ -1182,10 +1208,10 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
               <div className="flex items-center gap-3 py-2 border-y border-gray-100 text-xs font-bold">
                 <span className="text-gray-500">Dietary Summary:</span>
                 <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                  🥬 Veg: {kitchenSlipEvent.foodMenu?.items?.filter((i) => i.dietary === "VEG").length || 0} Dishes
+                  🥬 Veg: {kitchenSlipEvent.foodMenu?.items?.filter((i) => isVegDietary(i.dietary)).length || 0} Dishes
                 </span>
                 <span className="text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
-                  🍗 Non-Veg: {kitchenSlipEvent.foodMenu?.items?.filter((i) => i.dietary !== "VEG").length || 0} Dishes
+                  🍗 Non-Veg: {kitchenSlipEvent.foodMenu?.items?.filter((i) => !isVegDietary(i.dietary)).length || 0} Dishes
                 </span>
                 {kitchenSlipEvent.foodMenu?.servingType && (
                   <span className="text-stone-700 bg-stone-100 px-2.5 py-1 rounded-lg">
@@ -1209,7 +1235,7 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                         <span className="font-bold text-gray-400 text-[11px] w-4">{i + 1}.</span>
                         <span
                           className={`h-2 w-2 rounded-full ${
-                            dish.dietary === "VEG" ? "bg-emerald-500" : "bg-rose-500"
+                            isVegDietary(dish.dietary) ? "bg-emerald-500" : "bg-rose-500"
                           }`}
                         />
                         <span className="font-bold text-gray-900">{dish.name}</span>
@@ -1220,7 +1246,7 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                         )}
                       </div>
                       <span className="text-gray-500 font-medium text-[11px]">
-                        {dish.dietary === "VEG" ? "Vegetarian" : "Non-Vegetarian"}
+                        {isVegDietary(dish.dietary) ? "Vegetarian" : "Non-Vegetarian"}
                       </span>
                     </div>
                   ))}

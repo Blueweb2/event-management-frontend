@@ -13,8 +13,10 @@ import {
   Sparkles,
   AlertCircle,
   X,
+  ChefHat,
 } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import FoodRecipeModal from "./FoodRecipeModal";
 import {
   type FoodItem,
   type FoodCategory,
@@ -34,12 +36,17 @@ interface FoodListProps {
 const CATEGORIES = [
   "All",
   "Welcome Drinks",
+  "Beverages",
   "Starters / Appetizers",
+  "Starters",
   "Main Course",
   "Breads & Rice",
+  "Breads",
+  "Rice and Biriyani",
+  "Side Dishes",
   "Desserts & Sweets",
+  "Desserts",
   "Live Counters",
-  "Beverages",
   "Salads & Soups",
 ];
 
@@ -55,6 +62,7 @@ export default function FoodList({
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingItem, setDeletingItem] = useState<FoodItem | null>(null);
+  const [recipeItem, setRecipeItem] = useState<FoodItem | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Filter items
@@ -350,6 +358,16 @@ export default function FoodList({
                             )}
                           </button>
 
+                          {/* Recipe / Ingredients */}
+                          <button
+                            type="button"
+                            onClick={() => setRecipeItem(item)}
+                            title="Manage recipe & ingredients"
+                            className="rounded-lg p-1.5 text-amber-700 hover:bg-amber-50 hover:text-amber-900 transition"
+                          >
+                            <ChefHat size={15} />
+                          </button>
+
                           {/* Edit */}
                           <button
                             type="button"
@@ -393,6 +411,12 @@ export default function FoodList({
         }
         confirmText="Remove item"
         loading={Boolean(deletingId)}
+      />
+
+      <FoodRecipeModal
+        isOpen={Boolean(recipeItem)}
+        foodItem={recipeItem}
+        onClose={() => setRecipeItem(null)}
       />
     </div>
   );

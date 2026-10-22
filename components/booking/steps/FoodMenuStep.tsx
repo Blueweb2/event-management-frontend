@@ -33,12 +33,17 @@ interface FoodMenuStepProps {
 
 const CATEGORIES: FoodCategory[] = [
   "Welcome Drinks",
+  "Beverages",
   "Starters / Appetizers",
+  "Starters",
   "Main Course",
   "Breads & Rice",
+  "Breads",
+  "Rice and Biriyani",
+  "Side Dishes",
   "Desserts & Sweets",
+  "Desserts",
   "Live Counters",
-  "Beverages",
   "Salads & Soups",
 ];
 

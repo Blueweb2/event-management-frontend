@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   Loader2,
+  Plus,
+  RefreshCw,
 } from "lucide-react";
 import {
   getEventProfitability,
   type EventProfitabilityData,
 } from "@/lib/expense.api";
 import { useAuth } from "@/hooks/useAuth";
-import UnifiedExpensesSection from "@/components/manager/expenses/UnifiedExpensesSection";
+import UnifiedExpensesSection, {
+  type UnifiedExpensesSectionRef,
+} from "@/components/manager/expenses/UnifiedExpensesSection";
 
 interface EventProfitabilityCardProps {
   eventId: string;
@@ -24,7 +28,9 @@ export default function EventProfitabilityCard({
   const { token } = useAuth();
   const [data, setData] = useState<EventProfitabilityData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expensesLoading, setExpensesLoading] = useState(false);
   const [error, setError] = useState("");
+  const expensesRef = useRef<UnifiedExpensesSectionRef>(null);
 
   const loadProfitability = async () => {
     try {
@@ -41,6 +47,17 @@ export default function EventProfitabilityCard({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      expensesRef.current?.fetchExpenses(),
+      loadProfitability(),
+    ]);
+  };
+
+  const handleAddExpense = () => {
+    expensesRef.current?.handleAddExpense();
   };
 
   useEffect(() => {
@@ -85,16 +102,36 @@ export default function EventProfitabilityCard({
       <section className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm">
         {/* Header */}
         <div className="border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-5 sm:p-6">
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-             
               <h3 className="text-lg font-black tracking-tight text-[#29241f] sm:text-xl">
                 Event Expenses
               </h3>
             </div>
-            <p className="text-xs text-[#756d64]">
-              Scope: <strong className="text-[#29241f]">{eventName}</strong>
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleRefresh()}
+                disabled={loading || expensesLoading}
+                title="Refresh expenses"
+                aria-label="Refresh expenses"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#ded5cb] bg-white text-[#756d64] hover:bg-[#f7f2ec] transition disabled:opacity-50"
+              >
+                <RefreshCw
+                  size={14}
+                  className={loading || expensesLoading ? "animate-spin" : ""}
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddExpense}
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-black"
+              >
+                <Plus size={14} />
+                <span>Add Expense</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -133,12 +170,15 @@ export default function EventProfitabilityCard({
         {/* Unified Department-wise Operational Expenses Section (Includes Automated Staff Duty Payroll) */}
         <div className="border-t border-[#f1ece5] p-5 sm:p-6">
           <UnifiedExpensesSection
+            ref={expensesRef}
             eventId={eventId}
             eventName={eventName}
             staffPayroll={data?.staffPayroll}
             onExpenseChange={loadProfitability}
+            onLoadingChange={setExpensesLoading}
             showHeader={false}
             showStats={false}
+            hideCompactHeader={true}
           />
         </div>
       </section>

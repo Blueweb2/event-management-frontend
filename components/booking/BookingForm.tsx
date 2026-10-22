@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Clock,
   Trash2,
@@ -112,7 +113,14 @@ const initialFormData: BookingFormData = {
 export default function BookingForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const editEstimateIdParam = searchParams?.get("editEstimateId");
+  const { token } = useAuth();
+
+  // Support ?edit=id, ?editEstimateId=id, and ?estimateId=id
+  const editEstimateIdParam =
+    searchParams?.get("edit") ||
+    searchParams?.get("editEstimateId") ||
+    searchParams?.get("estimateId") ||
+    null;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<BookingFormData>(initialFormData);
@@ -135,7 +143,7 @@ export default function BookingForm() {
   const [isLoadingEstimateToEdit, setIsLoadingEstimateToEdit] = useState(false);
   const estimateCreatedRef = useRef(false);
 
-  // Load estimate if editEstimateId is present in URL
+  // Load estimate if edit / editEstimateId is present in URL
   useEffect(() => {
     if (!editEstimateIdParam) return;
 
@@ -143,9 +151,15 @@ export default function BookingForm() {
     setIsLoadingEstimateToEdit(true);
     setError("");
 
-    getEstimateById(editEstimateIdParam)
+    getEstimateById(editEstimateIdParam, token || undefined)
       .then((est) => {
         if (!isMounted) return;
+        if (!est) {
+          setError("Requested proposal estimate was not found.");
+          setIsLoadingEstimateToEdit(false);
+          return;
+        }
+
         if (est.convertedToEvent) {
           setError(
             `Estimate #${est.estimateNumber} has already been converted to an event and cannot be edited.`
@@ -181,7 +195,7 @@ export default function BookingForm() {
           phone: est.client?.phone || "",
           email: est.client?.email || "",
           message: est.client?.message || "",
-          address: "",
+          address: (est.client as any)?.address || "",
           referralSource: est.client?.referralSource || "",
           customReferral: "",
 
@@ -193,7 +207,7 @@ export default function BookingForm() {
                   ratePerGuest: est.foodMenu.ratePerGuest || 0,
                   totalFoodAmount: est.foodMenu.totalFoodAmount || 0,
                   notes: est.foodMenu.notes || "",
-                  items: est.foodMenu.items || [],
+                  items: Array.isArray(est.foodMenu.items) ? est.foodMenu.items : [],
                 }
               : {
                   included: false,
@@ -205,18 +219,30 @@ export default function BookingForm() {
                 },
 
           services: Array.isArray(est.items)
-            ? est.items.map((item) => ({
-                id: item.serviceId,
-                serviceId: item.serviceId,
-                optionId: item.optionId ?? undefined,
-                name: item.serviceName,
-                category: item.category,
-                description: item.description,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                pricingType: item.pricingType as any,
-                unitLabel: item.unitLabel,
-              }))
+            ? est.items.map((item) => {
+                const sId =
+                  typeof item.serviceId === "object" && item.serviceId !== null
+                    ? String((item.serviceId as any)._id || "")
+                    : String(item.serviceId || "");
+                const optId =
+                  typeof item.optionId === "object" && item.optionId !== null
+                    ? String((item.optionId as any)._id || "")
+                    : item.optionId
+                    ? String(item.optionId)
+                    : undefined;
+                return {
+                  id: item._id || (optId ? `${sId}-${optId}` : sId),
+                  serviceId: sId,
+                  optionId: optId,
+                  name: item.serviceName,
+                  category: item.category,
+                  description: item.description || "",
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  pricingType: item.pricingType as any,
+                  unitLabel: item.unitLabel || "",
+                };
+              })
             : [],
 
           discountType: est.discountType || "percentage",
@@ -240,7 +266,7 @@ export default function BookingForm() {
     return () => {
       isMounted = false;
     };
-  }, [editEstimateIdParam]);
+  }, [editEstimateIdParam, token]);
 
   // Restore draft on mount if within 7 days; auto-delete if expired
   useEffect(() => {
@@ -944,9 +970,9 @@ export default function BookingForm() {
     nextStep();
   };
 
-  // Direct step jump (only for previously validated/completed steps)
+  // Direct step jump (for previously validated steps, or any step when editing an existing estimate)
   const handleStepJump = (targetStep: number) => {
-    if (targetStep < currentStep) {
+    if (editingEstimateId || targetStep < currentStep) {
       setCurrentStep(targetStep);
       window.scrollTo({
         top: 0,

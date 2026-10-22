@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Layers, Receipt, RefreshCw } from "lucide-react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
+import { Plus, RefreshCw } from "lucide-react";
 
 import ExpensesHeader from "./ExpensesHeader";
 import ExpensesStats from "./ExpensesStats";
@@ -30,27 +37,42 @@ import {
 } from "@/lib/expense.api";
 import { getEvents } from "@/lib/event.api";
 
+export interface UnifiedExpensesSectionRef {
+  fetchExpenses: () => Promise<void>;
+  handleAddExpense: () => void;
+}
+
 interface UnifiedExpensesSectionProps {
   eventId?: string;
   eventName?: string;
   onExpenseChange?: () => void;
   showHeader?: boolean;
   showStats?: boolean;
+  hideCompactHeader?: boolean;
   title?: string;
   subtitle?: string;
   staffPayroll?: EventProfitabilityData["staffPayroll"];
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export default function UnifiedExpensesSection({
-  eventId,
-  eventName,
-  onExpenseChange,
-  showHeader = false,
-  showStats = false,
-  title = "Department-wise Operational Expenses",
-  subtitle = "Track supplier invoices, vendor bills, and operational expenses with receipt verification.",
-  staffPayroll,
-}: UnifiedExpensesSectionProps) {
+const UnifiedExpensesSection = forwardRef<
+  UnifiedExpensesSectionRef,
+  UnifiedExpensesSectionProps
+>(function UnifiedExpensesSection(
+  {
+    eventId,
+    eventName,
+    onExpenseChange,
+    showHeader = false,
+    showStats = false,
+    hideCompactHeader = false,
+    title = "Department-wise Operational Expenses",
+    subtitle = "Track supplier invoices, vendor bills, and operational expenses with receipt verification.",
+    staffPayroll,
+    onLoadingChange,
+  },
+  ref
+) {
   const [expenseList, setExpenseList] = useState<Expense[]>([]);
   const [eventOptions, setEventOptions] = useState<{ id: string; name: string }[]>([]);
   const [creators, setCreators] = useState<ExpenseCreator[]>([]);
@@ -73,7 +95,7 @@ export default function UnifiedExpensesSection({
 
   const isEventScoped = Boolean(eventId);
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -116,12 +138,16 @@ export default function UnifiedExpensesSection({
     } finally {
       setLoading(false);
     }
-  };
+  }, [isEventScoped, eventId]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchExpenses(), 0);
     return () => window.clearTimeout(timer);
-  }, [eventId]);
+  }, [fetchExpenses]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   // Convert automated staff duty payroll records into unified expense entries
   const payrollExpenseList: Expense[] = useMemo(() => {
@@ -304,10 +330,19 @@ export default function UnifiedExpensesSection({
     staffFilterOptions,
   ]);
 
-  const handleAddExpense = () => {
+  const handleAddExpense = useCallback(() => {
     setEditingExpense(null);
     setModalOpen(true);
-  };
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      fetchExpenses,
+      handleAddExpense,
+    }),
+    [fetchExpenses, handleAddExpense]
+  );
 
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
@@ -400,12 +435,10 @@ export default function UnifiedExpensesSection({
       {/* Optional Full Page Header (for global page) */}
       {showHeader ? (
         <ExpensesHeader onAddExpense={handleAddExpense} />
-      ) : (
+      ) : !hideCompactHeader ? (
         /* Event-specific Compact Section Header */
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          
-        </div>
+          <div></div>
 
           <div className="flex items-center gap-2">
             <button
@@ -429,7 +462,7 @@ export default function UnifiedExpensesSection({
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Error Banner */}
       {error && (
@@ -523,4 +556,6 @@ export default function UnifiedExpensesSection({
       />
     </div>
   );
-}
+});
+
+export default UnifiedExpensesSection;

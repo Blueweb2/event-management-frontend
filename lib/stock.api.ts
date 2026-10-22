@@ -13,11 +13,11 @@ import type {
 // ==========================================
 
 export async function getStockItems(
-  firstArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number },
-  secondArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number }
+  firstArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; stockType?: "kitchen" | "rentable"; page?: number; limit?: number },
+  secondArg?: string | { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; stockType?: "kitchen" | "rentable"; page?: number; limit?: number }
 ): Promise<{ data: StockItem[]; pagination: { total: number; page: number; totalPages: number } }> {
   let token: string | undefined;
-  let params: { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; page?: number; limit?: number } | undefined;
+  let params: { search?: string; category?: string; lowStock?: boolean; isRentable?: boolean; rentable?: boolean; stockType?: "kitchen" | "rentable"; page?: number; limit?: number } | undefined;
 
   if (typeof firstArg === "string") {
     token = firstArg;
@@ -35,6 +35,7 @@ export async function getStockItems(
   if (params?.lowStock !== undefined) query.set("lowStock", String(params.lowStock));
   if (params?.isRentable !== undefined) query.set("isRentable", String(params.isRentable));
   if (params?.rentable !== undefined) query.set("rentable", String(params.rentable));
+  if (params?.stockType) query.set("stockType", params.stockType);
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
 

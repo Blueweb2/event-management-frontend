@@ -48,6 +48,8 @@ const CATEGORIES: StockCategory[] = [
   "Kitchen Equipment",
   "Decor",
   "Lighting",
+  "Raw Ingredients",
+  "Kitchen Supplies",
   "Other",
 ];
 
@@ -118,14 +120,19 @@ export default function StockItemDetailPage({ params }: PageProps) {
   // Open Edit Modal
   const openEditModal = () => {
     if (!item) return;
+    const isKitchen =
+      item.stockType === "kitchen" ||
+      item.category === "Raw Ingredients" ||
+      item.category === "Kitchen Supplies";
+
     setEditData({
       name: item.name,
       category: item.category,
       minStockLevel: item.minStockLevel,
       unit: item.unit,
       unitPrice: item.unitPrice,
-      rentalPrice: item.rentalPrice || 0,
-      isRentable: item.isRentable !== false,
+      rentalPrice: isKitchen ? 0 : (item.rentalPrice || 0),
+      isRentable: isKitchen ? false : (item.isRentable === true),
       location: item.location,
       description: item.description || "",
     });
@@ -230,13 +237,27 @@ export default function StockItemDetailPage({ params }: PageProps) {
   }
 
   if (error || !item) {
+    const isAccessDenied =
+      error?.toLowerCase().includes("access denied") ||
+      error?.toLowerCase().includes("restricted");
+
     return (
       <div className="space-y-4 max-w-lg mx-auto py-12 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
+        <div
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${
+            isAccessDenied
+              ? "bg-amber-100 text-amber-800 border border-amber-200"
+              : "bg-rose-100 text-rose-700"
+          }`}
+        >
           <AlertTriangle size={28} />
         </div>
-        <h2 className="text-lg font-bold text-gray-900">Stock Item Not Found</h2>
-        <p className="text-xs text-gray-500">{error || "The requested product does not exist or was removed."}</p>
+        <h2 className="text-lg font-bold text-gray-900">
+          {isAccessDenied ? "Access Restricted" : "Stock Item Not Found"}
+        </h2>
+        <p className="text-xs text-gray-500">
+          {error || "The requested product does not exist or was removed."}
+        </p>
         <Link
           href="/manager/stock"
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-black"
@@ -281,14 +302,18 @@ export default function StockItemDetailPage({ params }: PageProps) {
               <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-700">
                 {item.category}
               </span>
-              {item.isRentable !== false ? (
+              {item.stockType === "kitchen" || item.category === "Raw Ingredients" || item.category === "Kitchen Supplies" ? (
+                <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                  Kitchen Operational Stock
+                </span>
+              ) : item.isRentable === true ? (
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                   <BadgeCheck size={11} className="text-emerald-600" />
                   Client Rentable
                 </span>
               ) : (
                 <span className="rounded-md bg-gray-100 border border-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
-                  Internal Only
+                  Company Internal Use
                 </span>
               )}
               {isLowStock && (
@@ -458,7 +483,7 @@ export default function StockItemDetailPage({ params }: PageProps) {
                 </p>
               </div>
 
-              {item.isRentable !== false && (
+              {item.stockType !== "kitchen" && item.category !== "Raw Ingredients" && item.category !== "Kitchen Supplies" && item.isRentable === true && (
                 <div className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-900">
                   <IndianRupee size={13} className="text-emerald-700" />
                   <span>Rental Rate: ₹{item.rentalPrice || 0} / {item.unit}</span>
@@ -656,17 +681,25 @@ export default function StockItemDetailPage({ params }: PageProps) {
             <div className="space-y-3 text-xs">
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="font-bold text-gray-500">Rental Availability</span>
-                <span className={`font-bold ${item.isRentable !== false ? "text-emerald-700" : "text-gray-500"}`}>
-                  {item.isRentable !== false ? "Available for Client Hire" : "Company Internal Use Only"}
-                </span>
+                {item.stockType === "kitchen" || item.category === "Raw Ingredients" || item.category === "Kitchen Supplies" ? (
+                  <span className="font-bold text-amber-700">
+                    Kitchen Consumption (Non-Rentable)
+                  </span>
+                ) : (
+                  <span className={`font-bold ${item.isRentable === true ? "text-emerald-700" : "text-gray-500"}`}>
+                    {item.isRentable === true ? "Available for Client Hire" : "Company Internal Use Only"}
+                  </span>
+                )}
               </div>
 
-              <div className="flex justify-between py-1 border-b border-gray-50">
-                <span className="font-bold text-gray-500">Client Rental Rate</span>
-                <span className="font-extrabold text-emerald-800 text-sm">
-                  ₹{item.rentalPrice || 0} / {item.unit}
-                </span>
-              </div>
+              {item.stockType !== "kitchen" && item.category !== "Raw Ingredients" && item.category !== "Kitchen Supplies" && (
+                <div className="flex justify-between py-1 border-b border-gray-50">
+                  <span className="font-bold text-gray-500">Client Rental Rate</span>
+                  <span className="font-extrabold text-emerald-800 text-sm">
+                    {item.isRentable === true ? `₹${item.rentalPrice || 0} / ${item.unit}` : "N/A (Internal Equipment)"}
+                  </span>
+                </div>
+              )}
 
               <div className="flex justify-between py-1 border-b border-gray-50">
                 <span className="font-bold text-gray-500">Unit Replacement Value</span>
@@ -889,7 +922,16 @@ export default function StockItemDetailPage({ params }: PageProps) {
                   <label className="font-bold text-gray-700">Category *</label>
                   <select
                     value={editData.category}
-                    onChange={(e) => setEditData({ ...editData, category: e.target.value as StockCategory })}
+                    onChange={(e) => {
+                      const newCat = e.target.value as StockCategory;
+                      const isNowKitchen = newCat === "Raw Ingredients" || newCat === "Kitchen Supplies";
+                      setEditData({
+                        ...editData,
+                        category: newCat,
+                        isRentable: isNowKitchen ? false : editData.isRentable,
+                        rentalPrice: isNowKitchen ? 0 : editData.rentalPrice,
+                      });
+                    }}
                     className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-gray-700 outline-none focus:border-[#9a6c37]"
                   >
                     {CATEGORIES.map((c) => (
@@ -923,16 +965,25 @@ export default function StockItemDetailPage({ params }: PageProps) {
                   />
                 </div>
 
-                <div>
-                  <label className="font-bold text-gray-700">Client Rental Rate (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editData.rentalPrice || 0}
-                    onChange={(e) => setEditData({ ...editData, rentalPrice: Number(e.target.value) })}
-                    className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
-                  />
-                </div>
+                {editData.category !== "Raw Ingredients" && editData.category !== "Kitchen Supplies" ? (
+                  <div>
+                    <label className="font-bold text-gray-700">Client Rental Rate (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editData.rentalPrice || 0}
+                      onChange={(e) => setEditData({ ...editData, rentalPrice: Number(e.target.value) })}
+                      className="mt-1 h-10 w-full rounded-xl border border-gray-200 px-3 text-xs font-bold text-emerald-800 outline-none focus:border-emerald-600"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="font-bold text-gray-400">Client Rental Rate</label>
+                    <div className="mt-1 flex h-10 w-full items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-semibold text-gray-400">
+                      Not Rentable
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="font-bold text-gray-700">Min Alert Level</label>
@@ -946,18 +997,27 @@ export default function StockItemDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="isRentableEdit"
-                  checked={editData.isRentable !== false}
-                  onChange={(e) => setEditData({ ...editData, isRentable: e.target.checked })}
-                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                />
-                <label htmlFor="isRentableEdit" className="text-xs font-bold text-gray-700 cursor-pointer">
-                  Available for Client Rental
-                </label>
-              </div>
+              {editData.category === "Raw Ingredients" || editData.category === "Kitchen Supplies" ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                  <p className="font-bold">Internal Kitchen Item (Non-Rentable)</p>
+                  <p className="mt-0.5 text-[11px] text-amber-700 leading-relaxed">
+                    Raw ingredients and consumables are reserved for internal kitchen use and cannot be rented to clients.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="isRentableEdit"
+                    checked={editData.isRentable === true}
+                    onChange={(e) => setEditData({ ...editData, isRentable: e.target.checked })}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="isRentableEdit" className="text-xs font-bold text-gray-700 cursor-pointer">
+                    Available for Client Rental
+                  </label>
+                </div>
+              )}
 
               <div>
                 <label className="font-bold text-gray-700">Storage Location</label>

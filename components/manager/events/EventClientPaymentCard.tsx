@@ -179,7 +179,7 @@ export default function EventClientPaymentCard({
        
 
           {/* Action Triggers */}
-          {eventPaid === 0 && (
+          {/* {eventPaid === 0 && (
             <button
               type="button"
               onClick={() => handleOpenModal("ADVANCE")}
@@ -188,7 +188,7 @@ export default function EventClientPaymentCard({
               <Plus size={14} />
               <span>Record Advance</span>
             </button>
-          )}
+          )} */}
 
           <button
             type="button"
@@ -202,7 +202,7 @@ export default function EventClientPaymentCard({
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 divide-x divide-y divide-[#f1ece5] sm:grid-cols-4 sm:divide-y-0 border-b border-[#f1ece5]">
+      <div className="grid grid-cols-3 divide-x divide-y divide-[#f1ece5] sm:grid-cols-3 sm:divide-y-0 border-b border-[#f1ece5]">
         {/* KPI 1: Total Contract Amount */}
         <div className="bg-white p-5">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
@@ -217,7 +217,7 @@ export default function EventClientPaymentCard({
         </div>
 
         {/* KPI 2: Advance Deposit */}
-        <div className="bg-white p-5">
+        {/* <div className="bg-white p-5">
           <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
             Advance Deposit
           </p>
@@ -227,7 +227,7 @@ export default function EventClientPaymentCard({
           <p className="mt-1 text-[11px] font-medium text-gray-500">
             Initial booking token
           </p>
-        </div>
+        </div> */}
 
         {/* KPI 3: Total Paid Amount */}
         <div className="bg-white p-5">

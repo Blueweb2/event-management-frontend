@@ -867,15 +867,7 @@ export default function ManagerEventDetailsPage() {
         {/* ======================================
             Actions
         ====================================== */}
-        <section className="mt-6 space-y-3">
-          <button
-            type="button"
-            onClick={() => setEditModalOpen(true)}
-            className="min-h-12 w-full rounded-2xl border border-gray-300 bg-white px-5 text-sm font-bold text-[#252525] shadow-xs transition hover:bg-gray-50 active:scale-[0.98]"
-          >
-            Edit Event Details & Status
-          </button>
-        </section>
+    
 
         {eventDocumentData && (
           <ClientDocumentModal

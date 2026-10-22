@@ -27,24 +27,59 @@ import {
   takeStock,
   returnStock,
 } from "@/lib/stock.api";
+import { useAuth } from "@/hooks/useAuth";
 import type { StockItem, EventStock } from "@/types/stock";
 import { formatTime24to12 } from "@/lib/time-utils";
 
-const CATEGORIES: { label: string; value: string }[] = [
-  { label: "All Items", value: "ALL" },
-  { label: "Crockery", value: "Crockery" },
-  { label: "Glassware", value: "Glassware" },
-  { label: "Cutlery", value: "Cutlery" },
-  { label: "Furniture", value: "Furniture" },
-  { label: "Audio/Visual", value: "Audio/Visual" },
-  { label: "Linen", value: "Linen" },
-  { label: "Kitchen Equipment", value: "Kitchen Equipment" },
-  { label: "Decor", value: "Decor" },
-  { label: "Lighting", value: "Lighting" },
-  { label: "Other", value: "Other" },
-];
-
 export default function StaffStockPage() {
+  const { user } = useAuth();
+
+  const isKitchenAuthorized = React.useMemo(() => {
+    if (!user) return false;
+    const role = (user.role || "").toLowerCase();
+    if (role === "superadmin" || role === "admin") return true;
+    const dept = (user.department || "").toLowerCase();
+    return (
+      dept.includes("kitchen") ||
+      dept.includes("catering") ||
+      dept.includes("chef") ||
+      dept.includes("cook") ||
+      dept.includes("operation")
+    );
+  }, [user]);
+
+  const categories = React.useMemo(() => {
+    if (isKitchenAuthorized) {
+      return [
+        { label: "All Items", value: "ALL" },
+        { label: "Kitchen Equipment", value: "Kitchen Equipment" },
+        { label: "Raw Ingredients", value: "Raw Ingredients" },
+        { label: "Kitchen Supplies", value: "Kitchen Supplies" },
+        { label: "Crockery", value: "Crockery" },
+        { label: "Glassware", value: "Glassware" },
+        { label: "Cutlery", value: "Cutlery" },
+        { label: "Furniture", value: "Furniture" },
+        { label: "Audio/Visual", value: "Audio/Visual" },
+        { label: "Linen", value: "Linen" },
+        { label: "Decor", value: "Decor" },
+        { label: "Lighting", value: "Lighting" },
+        { label: "Other", value: "Other" },
+      ];
+    }
+    return [
+      { label: "All Items", value: "ALL" },
+      { label: "Crockery", value: "Crockery" },
+      { label: "Glassware", value: "Glassware" },
+      { label: "Cutlery", value: "Cutlery" },
+      { label: "Furniture", value: "Furniture" },
+      { label: "Audio/Visual", value: "Audio/Visual" },
+      { label: "Linen", value: "Linen" },
+      { label: "Decor", value: "Decor" },
+      { label: "Lighting", value: "Lighting" },
+      { label: "Other", value: "Other" },
+    ];
+  }, [isKitchenAuthorized]);
+
   // Main Navigation Tabs
   // 'catalog' = Browse & Hold Stock
   // 'held' = My Active Holds (Ready to Take / Release)
@@ -511,7 +546,7 @@ export default function StaffStockPage() {
 
                   {/* Category Pills */}
                   <div className="mt-3 flex gap-1.5 overflow-x-auto no-scrollbar pt-1">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <button
                         key={cat.value}
                         type="button"
