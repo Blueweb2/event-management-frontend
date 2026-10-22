@@ -20,6 +20,11 @@ import type {
 } from "@/types/staff";
 import { uploadStaffAvatarImage, uploadGeneralStaffAvatar, getStaffAvatarUrl } from "@/lib/staff.api";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  validateFullName,
+  validateEmail,
+  validatePhone,
+} from "@/lib/user-validation";
 
 interface EditStaffModalProps {
   staff: Staff;
@@ -196,37 +201,33 @@ export default function EditStaffModal({
 
     setError(null);
 
-    const name = formData.name.trim();
-    const email = formData.email.trim();
-    const phone = formData.phone.trim();
-    const role = formData.role.trim();
-    const department =
-      formData.department.trim();
-
-    if (!name) {
-      setError("Name is required.");
+    const nameErr = validateFullName(formData.name);
+    if (nameErr) {
+      setError(nameErr);
       return;
     }
 
-    if (!email) {
-      setError("Email is required.");
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) {
+      setError(emailErr);
       return;
     }
 
-    if (!role) {
-      setError("Role is required.");
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) {
+      setError(phoneErr);
       return;
     }
 
+    const department = formData.department.trim();
     const numSalary = Number(formData.salary) || 0;
 
     const payload: UpdateStaffPayload = {
-      name,
-      email,
-      phone: phone || undefined,
-      role,
-      department:
-        department || undefined,
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim() || undefined,
+      role: "staff",
+      department: department || undefined,
       salary: numSalary,
       salaryType: formData.salaryType,
       hourlyRate: formData.salaryType === "hourly" ? numSalary : undefined,
@@ -235,9 +236,7 @@ export default function EditStaffModal({
 
     try {
       setIsSaving(true);
-
       await onSave(payload);
-
       onClose();
     } catch (err) {
       setError(

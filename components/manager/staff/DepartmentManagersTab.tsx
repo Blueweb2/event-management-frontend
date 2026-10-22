@@ -38,6 +38,14 @@ import type {
   CreateManagerPayload,
   UpdateManagerPayload,
 } from "@/types/auth";
+import {
+  validateFullName,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+  validatePhone,
+  generateUsernameSuggestion,
+} from "@/lib/user-validation";
 
 const DEPARTMENT_OPTIONS = [
   {
@@ -58,12 +66,19 @@ const DEPARTMENT_OPTIONS = [
     icon: Camera,
     color: "text-sky-800 border-sky-200 bg-sky-50",
   },
-  {
-    label: "Sound & Lighting",
-    value: "Sound & Lighting",
-    icon: Music,
-    color: "text-purple-800 border-purple-200 bg-purple-50",
+  // {
+  //   label: "Sound & Lighting",
+  //   value: "Sound & Lighting",
+  //   icon: Music,
+  //   color: "text-purple-800 border-purple-200 bg-purple-50",
+  // },
+   {
+    label: "Marketing & Promotions",
+    value: "Marketing & Promotions",
+    icon: Layers,
+    color: "text-emerald-800 border-emerald-200 bg-emerald-50",
   },
+
   {
     label: "Catering Service",
     value: "Catering",
@@ -109,6 +124,7 @@ const PERMISSION_OPTIONS = [
     label: "View Decoration Events",
     depts: ["Decoration", "Operations"],
   },
+
   {
     id: "decoration:view_materials",
     label: "Check Decor Materials Availability",
@@ -146,7 +162,7 @@ const PERMISSION_OPTIONS = [
       "Kitchen",
       "Decoration",
       "Photography",
-      "Sound & Lighting",
+      "Marketing & Promotions",
       "Catering",
       "Operations",
     ],
@@ -161,6 +177,7 @@ const getDefaultPermissionsForDept = (dept: string): string[] => {
 
 export default function DepartmentManagersTab() {
   const { token, user } = useAuth();
+  const isSuperAdmin = (user?.role || "").toLowerCase() === "superadmin";
 
   const [managers, setManagers] = useState<ManagerItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,11 +270,7 @@ export default function DepartmentManagersTab() {
 
   const handleNameBlur = () => {
     if (formData.name && !formData.username) {
-      const generated = formData.name
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "_")
-        .slice(0, 20);
+      const generated = generateUsernameSuggestion(formData.name);
       setFormData((prev) => ({ ...prev, username: generated }));
     }
   };
@@ -266,20 +279,38 @@ export default function DepartmentManagersTab() {
     e.preventDefault();
     if (!token) return;
 
-    if (!formData.name.trim()) {
-      setModalError("Manager full name is required");
+    const nameErr = validateFullName(formData.name);
+    if (nameErr) {
+      setModalError(nameErr);
       return;
     }
-    if (!formData.username.trim() || formData.username.trim().length < 3) {
-      setModalError("Username must be at least 3 characters");
+
+    const usernameErr = validateUsername(formData.username);
+    if (usernameErr) {
+      setModalError(usernameErr);
       return;
     }
-    if (!formData.email.trim()) {
-      setModalError("Valid email address is required");
+
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) {
+      setModalError(emailErr);
       return;
     }
-    if (!formData.password || formData.password.length < 6) {
-      setModalError("Password must be at least 6 characters");
+
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) {
+      setModalError(phoneErr);
+      return;
+    }
+
+    const passwordErr = validatePassword(formData.password);
+    if (passwordErr) {
+      setModalError(passwordErr);
+      return;
+    }
+
+    if (!formData.department?.trim()) {
+      setModalError("Please select an operational department for this manager.");
       return;
     }
 
@@ -370,6 +401,27 @@ export default function DepartmentManagersTab() {
   const handleUpdateManager = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !editingManager) return;
+
+    if (editFormData.name) {
+      const nameErr = validateFullName(editFormData.name);
+      if (nameErr) {
+        setModalError(nameErr);
+        return;
+      }
+    }
+
+    if (editFormData.phone) {
+      const phoneErr = validatePhone(editFormData.phone);
+      if (phoneErr) {
+        setModalError(phoneErr);
+        return;
+      }
+    }
+
+    if (!editFormData.department?.trim()) {
+      setModalError("Operational department cannot be empty.");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -475,6 +527,22 @@ export default function DepartmentManagersTab() {
       }
     );
   };
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-amber-200 bg-amber-50/60 p-8 sm:p-12 text-center shadow-xs">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-[#9A7B4F] mb-4 shadow-xs">
+          <ShieldCheck size={28} />
+        </div>
+        <h3 className="text-base sm:text-lg font-bold text-gray-900">
+          Super Admin Privileges Required
+        </h3>
+        <p className="mt-1 text-xs text-gray-600 max-w-md">
+          Department manager provisioning, cross-department role configuration, and scoped permission assignments are restricted to authenticated Super Admin accounts.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

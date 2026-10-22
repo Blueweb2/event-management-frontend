@@ -262,11 +262,11 @@ export default function StaffList({
         <button
           type="button"
           onClick={onAddStaff}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-black active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-black active:scale-95 cursor-pointer"
           aria-label="Add staff member"
         >
           <Plus size={15} strokeWidth={2.5} />
-          <span>{isSuperAdmin ? "Add User" : "Add Staff"}</span>
+          <span>Add Staff</span>
         </button>
       </div>
 

@@ -15,6 +15,21 @@ export interface DepartmentStaffMember {
   isAvailable: boolean;
 }
 
+export interface BookedServiceDetail {
+  serviceId?: string | null;
+  serviceName: string;
+  optionId?: string | null;
+  optionName?: string | null;
+  packageName?: string | null;
+  category: string;
+  description?: string;
+  quantity: number;
+  pricingType: string;
+  unitLabel?: string;
+  unitPrice: number;
+  total: number;
+}
+
 export interface StaffingStream {
   streamId: string;
   streamType: "CATERING" | "SERVICE" | "OPERATIONS";
@@ -23,6 +38,14 @@ export interface StaffingStream {
   category: string;
   description: string;
   specDetails: {
+    serviceId?: string | null;
+    serviceName?: string;
+    category?: string;
+    optionId?: string | null;
+    optionName?: string | null;
+    packageName?: string | null;
+    description?: string;
+    imageUrl?: string;
     guests?: number;
     servingType?: string;
     ratePerGuest?: number;
@@ -43,6 +66,7 @@ export interface StaffingStream {
     unitPrice?: number;
     total?: number;
     location?: string;
+    categoryServices?: BookedServiceDetail[];
   };
   recommendedStaffCount: number;
   allocatedCount: number;
@@ -105,6 +129,7 @@ export interface EventStaffingResponse {
       }>;
     };
     servicesCount: number;
+    bookedServices?: BookedServiceDetail[];
   };
   targetDate: string;
   staffingStreams: StaffingStream[];

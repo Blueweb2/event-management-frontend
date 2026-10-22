@@ -19,10 +19,10 @@ import {
   EyeOff,
   Camera,
   Trash2,
-  Upload,
   IndianRupee,
-  ShieldCheck,
   ChefHat,
+  AtSign,
+  AlertCircle,
 } from "lucide-react";
 
 import type {
@@ -31,6 +31,18 @@ import type {
 } from "@/types/staff";
 import { uploadGeneralStaffAvatar, getStaffAvatarUrl } from "@/lib/staff.api";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  validateFullName,
+  validateUsername,
+  validateEmail,
+  validatePassword,
+  validatePhone,
+  generateUsernameSuggestion,
+} from "@/lib/user-validation";
+import {
+  getDepartmentAndServiceOptions,
+  STANDARD_DEPARTMENTS,
+} from "@/lib/department-options";
 
 interface AddStaffModalProps {
   isOpen: boolean;
@@ -42,10 +54,10 @@ interface AddStaffModalProps {
 
 interface FormData {
   name: string;
+  username: string;
   email: string;
   phone: string;
   role: string;
-  userRole: "staff" | "manager";
   department: string;
   salary: string;
   salaryType: "hourly" | "daily" | "monthly" | "per_event";
@@ -56,10 +68,10 @@ interface FormData {
 
 const initialFormData: FormData = {
   name: "",
+  username: "",
   email: "",
   phone: "",
   role: "",
-  userRole: "staff",
   department: "",
   salary: "",
   salaryType: "hourly",
@@ -67,11 +79,6 @@ const initialFormData: FormData = {
   confirmPassword: "",
   avatar: "",
 };
-
-import {
-  getDepartmentAndServiceOptions,
-  STANDARD_DEPARTMENTS,
-} from "@/lib/department-options";
 
 export default function AddStaffModal({
   isOpen,
@@ -86,30 +93,15 @@ export default function AddStaffModal({
     String(user?.department || "").toLowerCase().includes("kitchen");
   const isDepartmentManager = role === "manager" && !isChefManager;
 
-  const [formData, setFormData] =
-    useState<FormData>(initialFormData);
-
-  const [departmentOptions, setDepartmentOptions] =
-    useState<string[]>(STANDARD_DEPARTMENTS);
-
-  const [error, setError] =
-    useState<string | null>(null);
-
-  const [isSaving, setIsSaving] =
-    useState(false);
-
-  const [isUploadingAvatar, setIsUploadingAvatar] =
-    useState(false);
-
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [departmentOptions, setDepartmentOptions] = useState<string[]>(STANDARD_DEPARTMENTS);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [
-    showConfirmPassword,
-    setShowConfirmPassword,
-  ] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -123,7 +115,6 @@ export default function AddStaffModal({
     setFormData({
       ...initialFormData,
       department: defaultDept,
-      userRole: "staff",
     });
     setError(null);
     setIsSaving(false);
@@ -155,10 +146,7 @@ export default function AddStaffModal({
     return null;
   }
 
-  const handleChange = (
-    field: keyof FormData,
-    value: string,
-  ) => {
+  const handleChange = (field: keyof FormData, value: string) => {
     setFormData((current) => ({
       ...current,
       [field]: value,
@@ -166,6 +154,15 @@ export default function AddStaffModal({
 
     if (error) {
       setError(null);
+    }
+  };
+
+  const handleNameOrEmailBlur = () => {
+    if (!formData.username.trim()) {
+      const suggestion = generateUsernameSuggestion(formData.name || formData.email);
+      if (suggestion) {
+        setFormData((prev) => ({ ...prev, username: suggestion }));
+      }
     }
   };
 
@@ -204,94 +201,87 @@ export default function AddStaffModal({
     setFormData((prev) => ({ ...prev, avatar: "" }));
   };
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setError(null);
 
-    const name = formData.name.trim();
-    const email = formData.email.trim();
-    const phone = formData.phone.trim();
-    const role = formData.role.trim();
-    const department =
-      formData.department.trim();
-    const password = formData.password;
-    const confirmPassword =
-      formData.confirmPassword;
-
-    if (!name) {
-      setError("Name is required.");
+    // 1. Unified Validations
+    const nameErr = validateFullName(formData.name);
+    if (nameErr) {
+      setError(nameErr);
       return;
     }
 
-    if (!email) {
-      setError("Email is required.");
+    let usernameVal = formData.username.trim().toLowerCase();
+    if (!usernameVal) {
+      usernameVal = generateUsernameSuggestion(formData.name || formData.email);
+    }
+    const usernameErr = validateUsername(usernameVal);
+    if (usernameErr) {
+      setError(usernameErr);
       return;
     }
 
-    if (!role) {
-      setError("Role is required.");
+    const emailErr = validateEmail(formData.email);
+    if (emailErr) {
+      setError(emailErr);
       return;
     }
 
-    if (!password) {
-      setError("Password is required.");
+    const phoneErr = validatePhone(formData.phone);
+    if (phoneErr) {
+      setError(phoneErr);
       return;
     }
 
-    if (password.length < 6) {
-      setError(
-        "Password must be at least 6 characters.",
-      );
+    const passwordErr = validatePassword(formData.password);
+    if (passwordErr) {
+      setError(passwordErr);
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError(
-        "Passwords do not match.",
-      );
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match. Please re-enter.");
       return;
     }
-
-    const rawUsername = email.includes("@") ? email.split("@")[0] : email;
-    const sanitizedUsername = rawUsername.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-    const validUsername = sanitizedUsername.length >= 3 ? sanitizedUsername.slice(0, 30) : `${sanitizedUsername}staff`;
 
     const finalDepartment = isChefManager
       ? "Kitchen"
       : isDepartmentManager
-      ? (user?.department || department)
-      : department;
+      ? (user?.department || formData.department.trim())
+      : formData.department.trim();
+
+    if (!finalDepartment && !isSuperAdmin) {
+      setError("Department is required.");
+      return;
+    }
 
     const numSalary = Number(formData.salary) || 0;
 
+    // Staff creation strictly provisions role: "staff"
     const payload: CreateStaffPayload = {
-      name,
-      username: validUsername,
-      email,
-      phone: phone || undefined,
-      role: isSuperAdmin && formData.userRole === "manager" ? "manager" : "staff",
+      name: formData.name.trim(),
+      username: usernameVal,
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim() || undefined,
+      role: "staff",
       department: finalDepartment || undefined,
       salary: isChefManager ? 0 : numSalary,
       salaryType: formData.salaryType,
       hourlyRate: !isChefManager && formData.salaryType === "hourly" ? numSalary : undefined,
-      password,
+      password: formData.password,
       avatar: formData.avatar ? formData.avatar : undefined,
     };
 
     try {
       setIsSaving(true);
-
       await onSave(payload);
-
       onClose();
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to create staff.",
+          : "Failed to create staff account.",
       );
     } finally {
       setIsSaving(false);
@@ -311,7 +301,7 @@ export default function AddStaffModal({
       {/* Backdrop overlay */}
       <div
         onClick={handleClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
       />
 
       {/* Modal Dialog Box */}
@@ -321,31 +311,23 @@ export default function AddStaffModal({
         aria-labelledby="add-staff-title"
         className="relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-3xl bg-white shadow-2xl sm:max-w-md animate-in fade-in zoom-in-95 duration-200"
       >
-        {/* Mobile drag bar */}
-        <div className="flex justify-center pt-3 sm:hidden">
-          <span className="h-1 w-10 rounded-full bg-gray-200" />
-        </div>
-
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F4EBDD] text-[#9A7B4F]">
-              <UserRound
-                size={19}
-                strokeWidth={1.9}
-              />
+              <UserRound size={19} strokeWidth={1.9} />
             </div>
 
             <div className="min-w-0">
               <h2
                 id="add-staff-title"
-                className="text-base font-semibold text-[#1F1F1F]"
+                className="text-base font-bold text-[#1F1F1F]"
               >
-                Add Staff
+                Add Staff Member
               </h2>
 
               <p className="mt-0.5 text-xs text-gray-500">
-                Create a new staff account
+                Provision a regular employee account
               </p>
             </div>
           </div>
@@ -355,22 +337,24 @@ export default function AddStaffModal({
             onClick={handleClose}
             disabled={isSaving}
             aria-label="Close"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 active:scale-95 disabled:opacity-50"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 active:scale-95 disabled:opacity-50 cursor-pointer"
           >
-            <X
-              size={20}
-              strokeWidth={2}
-            />
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
 
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 px-5 pb-6 pt-5"
-        >
+        {/* Form Error Alert */}
+        {error && (
+          <div className="mx-5 mt-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 font-medium animate-in fade-in">
+            <AlertCircle size={15} className="shrink-0 text-red-600" />
+            <span className="flex-1">{error}</span>
+          </div>
+        )}
+
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="space-y-4 px-5 pb-6 pt-4">
           {/* Avatar Upload Section */}
-          <div className="flex flex-col items-center justify-center gap-2 pb-2">
+          <div className="flex flex-col items-center justify-center gap-2 pb-1">
             <input
               ref={fileInputRef}
               type="file"
@@ -397,7 +381,7 @@ export default function AddStaffModal({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSaving || isUploadingAvatar}
-                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#9A7B4F] text-white shadow-md transition hover:bg-[#85673E] active:scale-90 disabled:opacity-50"
+                className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-[#9A7B4F] text-white shadow-md transition hover:bg-[#85673E] active:scale-90 disabled:opacity-50 cursor-pointer"
                 title="Upload staff photo"
               >
                 {isUploadingAvatar ? (
@@ -408,12 +392,12 @@ export default function AddStaffModal({
               </button>
             </div>
 
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-0.5">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSaving || isUploadingAvatar}
-                className="text-[11px] font-medium text-[#9A7B4F] hover:underline"
+                className="text-[11px] font-medium text-[#9A7B4F] hover:underline cursor-pointer"
               >
                 {formData.avatar ? "Change Photo" : "Upload Photo"}
               </button>
@@ -424,7 +408,7 @@ export default function AddStaffModal({
                     type="button"
                     onClick={handleRemoveAvatar}
                     disabled={isSaving || isUploadingAvatar}
-                    className="text-[11px] font-medium text-red-500 hover:underline"
+                    className="text-[11px] font-medium text-red-500 hover:underline cursor-pointer"
                   >
                     Remove
                   </button>
@@ -432,132 +416,71 @@ export default function AddStaffModal({
               )}
             </div>
           </div>
-          {/* Name */}
-          <FormField
-            label="Full Name"
-            icon={UserRound}
-            required
-          >
+
+          {/* Full Name */}
+          <FormField label="Full Name" icon={UserRound} required>
             <input
               type="text"
               value={formData.name}
-              onChange={(event) =>
-                handleChange(
-                  "name",
-                  event.target.value,
-                )
-              }
-              placeholder="Enter full name"
+              onChange={(e) => handleChange("name", e.target.value)}
+              onBlur={handleNameOrEmailBlur}
+              placeholder="e.g. Ramesh Kumar"
               autoComplete="name"
               disabled={isSaving}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+              required
+              className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
             />
           </FormField>
 
+          {/* Username */}
+          <FormField label="Username" icon={AtSign} required>
+            <input
+              type="text"
+              value={formData.username}
+              onChange={(e) => handleChange("username", e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""))}
+              placeholder="e.g. ramesh_decor"
+              autoComplete="username"
+              disabled={isSaving}
+              required
+              className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
+            />
+            <p className="mt-1 text-[10px] text-gray-400">
+              Unique identifier (3-30 lowercase characters, letters, numbers, dot, underscore, hyphen)
+            </p>
+          </FormField>
+
           {/* Email */}
-          <FormField
-            label="Email"
-            icon={Mail}
-            required
-          >
+          <FormField label="Email Address" icon={Mail} required>
             <input
               type="email"
               value={formData.email}
-              onChange={(event) =>
-                handleChange(
-                  "email",
-                  event.target.value,
-                )
-              }
-              placeholder="Enter email address"
+              onChange={(e) => handleChange("email", e.target.value)}
+              onBlur={handleNameOrEmailBlur}
+              placeholder="ramesh@example.com"
               autoComplete="email"
               disabled={isSaving}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+              required
+              className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
             />
           </FormField>
 
           {/* Phone */}
-          <FormField
-            label="Phone"
-            icon={Phone}
-          >
+          <FormField label="Phone Number" icon={Phone}>
             <input
               type="tel"
               value={formData.phone}
-              onChange={(event) =>
-                handleChange(
-                  "phone",
-                  event.target.value,
-                )
-              }
-              placeholder="Enter phone number"
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="+91 98765 43210"
               autoComplete="tel"
               disabled={isSaving}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+              className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
             />
           </FormField>
 
-          {/* System Role Selection for Super Admin */}
-          {isSuperAdmin && (
-            <FormField label="Account Type / Level" icon={ShieldCheck} required>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleChange("userRole", "staff")}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition ${
-                    formData.userRole === "staff"
-                      ? "border-[#9A7B4F] bg-[#9A7B4F]/10 text-[#9A7B4F] shadow-xs"
-                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <UserRound size={14} />
-                  Staff Member
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleChange("userRole", "manager")}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-semibold transition ${
-                    formData.userRole === "manager"
-                      ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs"
-                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <ShieldCheck size={14} />
-                  Department Manager
-                </button>
-              </div>
-            </FormField>
-          )}
-
-          {/* Job Title / Role */}
-          <FormField
-            label="Job Title / Designation"
-            icon={BriefcaseBusiness}
-            required
-          >
-            <input
-              type="text"
-              value={formData.role}
-              onChange={(event) =>
-                handleChange(
-                  "role",
-                  event.target.value,
-                )
-              }
-              placeholder="e.g. Lead Decorator, Chef de Partie, Server"
-              disabled={isSaving}
-              className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
-            />
-          </FormField>
-
-          {/* Department */}
-          <FormField
-            label="Department / Scope"
-            icon={Building2}
-            required
-          >
+          {/* Department Selection */}
+          <FormField label="Assigned Department" icon={Building2} required>
             {isChefManager ? (
-              <div className="flex h-11 w-full items-center justify-between rounded-xl border border-amber-200 bg-amber-50/60 px-3.5 text-xs font-semibold text-amber-900">
+              <div className="flex h-10 w-full items-center justify-between rounded-xl border border-amber-200 bg-amber-50/60 px-3.5 text-xs font-semibold text-amber-900">
                 <span className="flex items-center gap-1.5">
                   <ChefHat size={14} className="text-amber-700" />
                   Kitchen Department
@@ -567,7 +490,7 @@ export default function AddStaffModal({
                 </span>
               </div>
             ) : isDepartmentManager ? (
-              <div className="flex h-11 w-full items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-3.5 text-xs font-semibold text-sky-900">
+              <div className="flex h-10 w-full items-center justify-between rounded-xl border border-sky-200 bg-sky-50/60 px-3.5 text-xs font-semibold text-sky-900">
                 <span className="flex items-center gap-1.5">
                   <Building2 size={14} className="text-sky-700" />
                   {user?.department || "Operations"}
@@ -579,15 +502,10 @@ export default function AddStaffModal({
             ) : (
               <select
                 value={formData.department}
-                onChange={(event) =>
-                  handleChange(
-                    "department",
-                    event.target.value,
-                  )
-                }
+                onChange={(e) => handleChange("department", e.target.value)}
                 disabled={isSaving}
                 required
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50 cursor-pointer"
+                className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50 cursor-pointer"
               >
                 <option value="">Select a department</option>
                 {departmentOptions.map((dept) => (
@@ -602,41 +520,25 @@ export default function AddStaffModal({
           {/* Salary & Pay Structure (Hidden for Chef Manager) */}
           {!isChefManager && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl bg-[#faf8f5] p-3 border border-[#e8e1d8]">
-              <FormField
-                label="Salary / Pay Rate (₹)"
-                icon={IndianRupee}
-              >
+              <FormField label="Rate / Base Pay (₹)" icon={IndianRupee}>
                 <input
                   type="number"
                   min="0"
                   step="0.5"
                   value={formData.salary}
-                  onChange={(event) =>
-                    handleChange(
-                      "salary",
-                      event.target.value,
-                    )
-                  }
+                  onChange={(e) => handleChange("salary", e.target.value)}
                   placeholder="e.g. 500"
                   disabled={isSaving}
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
                 />
               </FormField>
 
-              <FormField
-                label="Rate Structure"
-                icon={IndianRupee}
-              >
+              <FormField label="Rate Structure" icon={IndianRupee}>
                 <select
                   value={formData.salaryType}
-                  onChange={(event) =>
-                    handleChange(
-                      "salaryType",
-                      event.target.value as any,
-                    )
-                  }
+                  onChange={(e) => handleChange("salaryType", e.target.value as any)}
                   disabled={isSaving}
-                  className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                  className="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50 cursor-pointer"
                 >
                   <option value="hourly">Hourly Rate (₹/hr)</option>
                   <option value="daily">Daily Rate (₹/day)</option>
@@ -644,163 +546,75 @@ export default function AddStaffModal({
                   <option value="per_event">Per Event Pay (₹/event)</option>
                 </select>
               </FormField>
-              <p className="col-span-full text-[10px] text-gray-500 italic">
-                Configured rate will automatically apply when assigning this staff member to events.
-              </p>
             </div>
           )}
 
           {/* Password */}
-          <FormField
-            label="Password"
-            icon={LockKeyhole}
-            required
-          >
+          <FormField label="Initial Password" icon={LockKeyhole} required>
             <div className="relative">
               <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 value={formData.password}
-                onChange={(event) =>
-                  handleChange(
-                    "password",
-                    event.target.value,
-                  )
-                }
-                placeholder="Create password"
+                onChange={(e) => handleChange("password", e.target.value)}
+                placeholder="Create secure password"
                 autoComplete="new-password"
                 disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-3.5 pr-12 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                required
+                className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-3 pr-10 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
               />
-
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword(
-                    (value) => !value,
-                  )
-                }
+                onClick={() => setShowPassword((prev) => !prev)}
                 disabled={isSaving}
-                aria-label={
-                  showPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
-                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
               >
-                {showPassword ? (
-                  <EyeOff size={16} />
-                ) : (
-                  <Eye size={16} />
-                )}
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
-
-            <p className="mt-1.5 text-[10px] text-gray-400">
-              Minimum 6 characters
-            </p>
+            <p className="mt-1 text-[10px] text-gray-400">At least 6 characters</p>
           </FormField>
 
           {/* Confirm Password */}
-          <FormField
-            label="Confirm Password"
-            icon={LockKeyhole}
-            required
-          >
+          <FormField label="Confirm Password" icon={LockKeyhole} required>
             <div className="relative">
               <input
-                type={
-                  showConfirmPassword
-                    ? "text"
-                    : "password"
-                }
-                value={
-                  formData.confirmPassword
-                }
-                onChange={(event) =>
-                  handleChange(
-                    "confirmPassword",
-                    event.target.value,
-                  )
-                }
-                placeholder="Confirm password"
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                placeholder="Re-enter password"
                 autoComplete="new-password"
                 disabled={isSaving}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-white pl-3.5 pr-12 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/10 disabled:cursor-not-allowed disabled:bg-gray-50"
+                required
+                className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-3 pr-10 text-xs text-[#1F1F1F] outline-none transition focus:border-[#9A7B4F] focus:ring-1 focus:ring-[#9A7B4F] disabled:bg-gray-50"
               />
-
               <button
                 type="button"
-                onClick={() =>
-                  setShowConfirmPassword(
-                    (value) => !value,
-                  )
-                }
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
                 disabled={isSaving}
-                aria-label={
-                  showConfirmPassword
-                    ? "Hide password"
-                    : "Show password"
-                }
-                className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-50 hover:text-gray-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 cursor-pointer"
               >
-                {showConfirmPassword ? (
-                  <EyeOff size={16} />
-                ) : (
-                  <Eye size={16} />
-                )}
+                {showConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </FormField>
 
-          {/* Error */}
-          {error && (
-            <div
-              role="alert"
-              className="rounded-xl border border-red-100 bg-red-50 px-4 py-3"
-            >
-              <p className="text-xs font-medium leading-5 text-red-600">
-                {error}
-              </p>
-            </div>
-          )}
-
           {/* Actions */}
-          <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={handleClose}
               disabled={isSaving}
-              className="min-h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 rounded-xl border border-gray-200 px-4 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 cursor-pointer"
             >
               Cancel
             </button>
-
             <button
               type="submit"
               disabled={isSaving}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#1F1F1F] px-4 text-sm font-semibold text-white transition hover:bg-black active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-5 text-xs font-bold text-white shadow-xs transition hover:bg-black active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              {isSaving ? (
-                <>
-                  <Loader2
-                    size={17}
-                    className="animate-spin"
-                  />
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <UserRound
-                    size={16}
-                    strokeWidth={1.9}
-                  />
-                  <span>Create Staff</span>
-                </>
-              )}
+              {isSaving && <Loader2 size={13} className="animate-spin" />}
+              <span>{isSaving ? "Creating Staff..." : "Create Staff Member"}</span>
             </button>
           </div>
         </form>
@@ -809,41 +623,24 @@ export default function AddStaffModal({
   );
 }
 
-/* ==========================================
-   FORM FIELD
-========================================== */
-
-interface FormFieldProps {
-  label: string;
-  icon: React.ElementType;
-  required?: boolean;
-  children: React.ReactNode;
-}
-
 function FormField({
   label,
   icon: Icon,
   required = false,
   children,
-}: FormFieldProps) {
+}: {
+  label: string;
+  icon?: any;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-        <Icon
-          size={14}
-          strokeWidth={1.8}
-          className="text-[#9A7B4F]"
-        />
-
+      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-gray-700">
+        {Icon && <Icon size={13} className="text-[#9A7B4F]" />}
         <span>{label}</span>
-
-        {required && (
-          <span className="text-red-500">
-            *
-          </span>
-        )}
+        {required && <span className="text-red-500">*</span>}
       </label>
-
       {children}
     </div>
   );

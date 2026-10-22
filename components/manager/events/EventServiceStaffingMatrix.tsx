@@ -46,6 +46,8 @@ import { useAuth } from "@/hooks/useAuth";
 import ManageChecklistModal from "@/components/manager/duties/ManageChecklistModal";
 import type { Duty } from "@/components/manager/duties/constants";
 import { formatTime24to12 } from "@/lib/time-utils";
+import EventServiceSelectionSummary from "./EventServiceSelectionSummary";
+import ServiceSelectionDetailModal from "./ServiceSelectionDetailModal";
 
 interface EventServiceStaffingMatrixProps {
   eventId: string;
@@ -85,6 +87,9 @@ export default function EventServiceStaffingMatrix({
 
   // Managing Sub-duties Checklist Modal State
   const [managingChecklistDuty, setManagingChecklistDuty] = useState<Duty | null>(null);
+
+  // Detailed Service Selection View Modal State
+  const [selectedDetailStream, setSelectedDetailStream] = useState<StaffingStream | null>(null);
 
   const loadMatrix = async () => {
     try {
@@ -351,38 +356,12 @@ export default function EventServiceStaffingMatrix({
                   </span>
                 </div>
 
-                {/* Highlighted Catering Menu & Ingredients Action Button (Positioned right below header, before Assigned Staff) */}
-                {isCateringStream && (
-                  <Link
-                    href={`/manager/events/${eventId}/catering`}
-                    id="catering-menu-ingredients-btn"
-                    className="mt-3.5 group flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-200/90 bg-gradient-to-r from-[#fdfbf7] via-[#faf5ec] to-[#f6ede0] p-3.5 text-left shadow-2xs transition-all duration-200 hover:border-amber-300 hover:bg-[#f5ede0] hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-900 border border-amber-300/50 group-hover:bg-amber-500/25 group-hover:scale-105 transition-transform">
-                        <Utensils size={18} className="text-[#87551e]" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-[#29241f] group-hover:text-amber-950">
-                            Catering Menu & Ingredients
-                          </span>
-                          {cateringMenuItems.length > 0 && (
-                            <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300/60">
-                              {cateringMenuItems.length} {cateringMenuItems.length === 1 ? "dish" : "dishes"}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-[#785122]/85 truncate mt-0.5">
-                          View selected dishes, quantities, and kitchen ingredients
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border border-amber-200 text-amber-800 shadow-2xs group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 transition-colors">
-                      <ChevronRight size={16} />
-                    </div>
-                  </Link>
-                )}
+                {/* Dedicated Client-Selected Items, Packages & Options Section */}
+                <EventServiceSelectionSummary
+                  stream={stream}
+                  eventId={eventId}
+                  onOpenDetails={(s) => setSelectedDetailStream(s)}
+                />
 
                 {/* Assigned Personnel List (Simple, compact rows) */}
                 <div className="mt-3.5 space-y-1.5">
@@ -867,6 +846,17 @@ export default function EventServiceStaffingMatrix({
           await loadMatrix();
           if (onAssignmentCreated) onAssignmentCreated();
         }}
+      />
+
+      {/* Service Selection Detail Modal */}
+      <ServiceSelectionDetailModal
+        isOpen={Boolean(selectedDetailStream)}
+        onClose={() => setSelectedDetailStream(null)}
+        stream={selectedDetailStream}
+        eventName={data?.event?.eventName}
+        eventDate={data?.event?.eventDate}
+        guests={data?.event?.guests}
+        location={data?.event?.location}
       />
     </div>
   );
