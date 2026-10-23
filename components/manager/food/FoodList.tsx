@@ -31,6 +31,7 @@ interface FoodListProps {
   onItemUpdated: (item: FoodItem) => void;
   onItemDeleted: (id: string) => void;
   onAddNew: () => void;
+  onConfigureRecipe?: (item: FoodItem) => void;
 }
 
 const CATEGORIES = [
@@ -56,6 +57,7 @@ export default function FoodList({
   onItemUpdated,
   onItemDeleted,
   onAddNew,
+  onConfigureRecipe,
 }: FoodListProps) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedDietary, setSelectedDietary] = useState("all");
@@ -361,7 +363,7 @@ export default function FoodList({
                           {/* Recipe / Ingredients */}
                           <button
                             type="button"
-                            onClick={() => setRecipeItem(item)}
+                            onClick={() => onConfigureRecipe ? onConfigureRecipe(item) : setRecipeItem(item)}
                             title="Manage recipe & ingredients"
                             className="rounded-lg p-1.5 text-amber-700 hover:bg-amber-50 hover:text-amber-900 transition"
                           >

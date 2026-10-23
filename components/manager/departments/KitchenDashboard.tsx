@@ -338,9 +338,10 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
     if (!token) return;
     try {
       await deleteKitchenTask(dutyId, taskId, token);
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
     } catch (err) {
-      console.error("Task delete error:", err);
+      console.warn("Task delete notice:", err);
+    } finally {
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
     }
   };
 

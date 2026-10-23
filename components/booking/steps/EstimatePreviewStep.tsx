@@ -315,7 +315,7 @@ export default function EstimatePreviewStep({
               formData.location.trim(),
 
             description:
-              formData.description.trim(),
+              formData.description?.trim() || "",
 
             client: {
               name:

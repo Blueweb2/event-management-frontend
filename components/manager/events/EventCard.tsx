@@ -356,7 +356,7 @@ export default function EventCard({
               title="Record or view client payment for this event"
             >
               <Plus size={11} className="text-[#9a6c37]" />
-              <span>Record Payment</span>
+              <span>Add Payment</span>
             </button>
           </div>
         </div>

@@ -240,7 +240,19 @@ export interface RecipeIngredient {
   name: string;
   quantityPerServing: number;
   unit: string;
-  stockItem?: string;
+  stockItem?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        category?: string;
+        availableQuantity?: number;
+        totalQuantity?: number;
+        unit?: string;
+        stockType?: string;
+        isRentable?: boolean;
+      }
+    | null;
   notes?: string;
 }
 
@@ -468,6 +480,13 @@ export async function getRecipes(
   if (params?.category) query.append("category", params.category);
   const qStr = query.toString() ? `?${query.toString()}` : "";
   return get<ApiResponse<RecipeItem[]>>(`/departments/kitchen/recipes${qStr}`, token);
+}
+
+export async function getRecipeByFoodItem(
+  foodItemId: string,
+  token?: string
+): Promise<ApiResponse<RecipeItem | null>> {
+  return get<ApiResponse<RecipeItem | null>>(`/departments/kitchen/recipes/${foodItemId}`, token);
 }
 
 export async function upsertRecipe(

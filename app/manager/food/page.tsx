@@ -5,6 +5,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import FoodHeader from "@/components/manager/food/FoodHeader";
 import FoodList from "@/components/manager/food/FoodList";
 import FoodModal from "@/components/manager/food/FoodModal";
+import FoodRecipeModal from "@/components/manager/food/FoodRecipeModal";
 import { type FoodItem, getFoodItems } from "@/lib/food.api";
 
 export default function ManagerFoodPage() {
@@ -14,6 +15,7 @@ export default function ManagerFoodPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [recipeItem, setRecipeItem] = useState<FoodItem | null>(null);
 
   const fetchItems = async () => {
     try {
@@ -104,15 +106,24 @@ export default function ManagerFoodPage() {
           onItemUpdated={handleItemUpdated}
           onItemDeleted={handleItemDeleted}
           onAddNew={handleAddNew}
+          onConfigureRecipe={(item) => setRecipeItem(item)}
         />
       )}
 
-      {/* Modal */}
+      {/* Food Modal */}
       <FoodModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleItemSaved}
+        onConfigureRecipe={(item) => setRecipeItem(item)}
         editingItem={editingItem}
+      />
+
+      {/* Recipe & Ingredients Modal */}
+      <FoodRecipeModal
+        isOpen={Boolean(recipeItem)}
+        foodItem={recipeItem}
+        onClose={() => setRecipeItem(null)}
       />
     </div>
   );

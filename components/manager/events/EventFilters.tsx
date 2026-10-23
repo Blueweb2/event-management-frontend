@@ -19,6 +19,10 @@ export default function EventFilters({
     badge?: number;
     badgeColor?: string;
   }[] = [
+     {
+      label: "Ongoing",
+      value: "Ongoing",
+    },
     {
       label: "Upcoming",
       value: "Upcoming",
@@ -29,10 +33,7 @@ export default function EventFilters({
       badge: estimatesCount,
       badgeColor: "bg-amber-100 text-amber-900 border border-amber-300",
     },
-    {
-      label: "Ongoing",
-      value: "Ongoing",
-    },
+   
     {
       label: "Completed",
       value: "Completed",
@@ -79,4 +80,4 @@ export default function EventFilters({
       </div>
     </div>
   );
-}
+}

@@ -587,14 +587,6 @@ export default function BookingForm() {
 
         return false;
       }
-
-      if (!formData.description.trim()) {
-        setError(
-          "Please enter event notes or setup requirements.",
-        );
-
-        return false;
-      }
     }
 
     // STEP 2 - CLIENT DETAILS
@@ -822,7 +814,7 @@ export default function BookingForm() {
         eventTime: formData.eventTime.trim(),
         guests: Number(formData.guests),
         location: formData.location.trim(),
-        description: formData.description.trim(),
+        description: formData.description?.trim() || "",
         client: {
           name: formData.name.trim(),
           phone: formData.phone.trim(),
@@ -884,7 +876,7 @@ export default function BookingForm() {
         eventTime: formData.eventTime.trim(),
         guests: Number(formData.guests),
         location: formData.location.trim(),
-        description: formData.description.trim(),
+        description: formData.description?.trim() || "",
         client: {
           name: formData.name.trim(),
           phone: formData.phone.trim(),

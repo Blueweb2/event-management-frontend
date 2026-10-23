@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Utensils, ImagePlus } from "lucide-react";
+import { X, Loader2, Utensils, ImagePlus, ChefHat } from "lucide-react";
 import {
   type FoodItem,
   type FoodCategory,
@@ -15,6 +15,7 @@ interface FoodModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (item: FoodItem) => void;
+  onConfigureRecipe?: (item: FoodItem) => void;
   editingItem?: FoodItem | null;
 }
 
@@ -38,6 +39,7 @@ export default function FoodModal({
   isOpen,
   onClose,
   onSuccess,
+  onConfigureRecipe,
   editingItem,
 }: FoodModalProps) {
   const [name, setName] = useState("");
@@ -91,9 +93,7 @@ export default function FoodModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSave = async (configureRecipe = false) => {
     if (!name.trim()) {
       setError("Please enter the food item name.");
       return;
@@ -110,8 +110,9 @@ export default function FoodModal({
 
     try {
       const savedImageUrl = imageFile ? await uploadFoodImage(imageFile) : imageUrl;
+      let resultItem: FoodItem;
       if (editingItem) {
-        const updated = await updateFoodItem(editingItem._id, {
+        resultItem = await updateFoodItem(editingItem._id, {
           name: name.trim(),
           category,
           dietary,
@@ -121,9 +122,9 @@ export default function FoodModal({
           active,
           imageUrl: savedImageUrl,
         });
-        onSuccess(updated);
+        onSuccess(resultItem);
       } else {
-        const created = await createFoodItem({
+        resultItem = await createFoodItem({
           name: name.trim(),
           category,
           dietary,
@@ -133,9 +134,12 @@ export default function FoodModal({
           active,
           imageUrl: savedImageUrl,
         });
-        onSuccess(created);
+        onSuccess(resultItem);
       }
       onClose();
+      if (configureRecipe && onConfigureRecipe) {
+        onConfigureRecipe(resultItem);
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -145,6 +149,11 @@ export default function FoodModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSave(false);
   };
 
   return (
@@ -356,20 +365,32 @@ export default function FoodModal({
         </form>
 
         {/* Sticky Actions Footer - Always visible and thumb-friendly on mobile */}
-        <div className="sticky bottom-0 z-20 flex items-center justify-end gap-3 border-t border-gray-100 bg-white/95 px-5 sm:px-6 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur-xs shrink-0">
+        <div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-end gap-2.5 border-t border-gray-100 bg-white/95 px-5 sm:px-6 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] backdrop-blur-xs shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 sm:flex-none inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-300 bg-white px-5 text-sm sm:text-xs font-bold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-gray-300 bg-white px-4 text-xs font-bold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50"
           >
             Cancel
           </button>
+
+          {/* Action to immediately add or edit recipe ingredients */}
+          <button
+            type="button"
+            onClick={() => handleSave(true)}
+            disabled={loading}
+            className="inline-flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-4 text-xs font-bold text-amber-900 shadow-2xs transition hover:bg-amber-100 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+          >
+            <ChefHat size={15} />
+            <span>{editingItem ? "Save & Configure Recipe" : "Add & Configure Recipe"}</span>
+          </button>
+
           <button
             type="submit"
             form="food-item-form"
             disabled={loading}
-            className="flex-1 sm:flex-none inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 text-sm sm:text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? (
               <>

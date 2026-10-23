@@ -34,9 +34,9 @@ export default function EventsHeader() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#252525] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-black active:scale-95"
         >
           <Plus size={15} className="text-[#D4AF37]" />
-          <span>Create Estimate / Booking</span>
+          <span>New Booking</span>
         </button>
       </div>
     </header>
   );
-}
+}

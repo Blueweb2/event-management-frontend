@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Clock3,
   MapPin,
@@ -5,12 +6,15 @@ import {
   Sparkles,
   Plus,
   Minus,
+  Building2,
 } from "lucide-react";
 
 import Input from "@/components/ui/Input";
 import DatePicker from "@/components/common/DatePicker";
 import EventTypeSelect from "./EventTypeSelect";
 import type { BookingFormData } from "../types";
+import { getServices } from "@/lib/services.api";
+import type { Service } from "@/types/service";
 import {
   parse12HourComponents,
   build24HourFrom12,
@@ -29,6 +33,28 @@ export default function EventDetailsStep({
   formData,
   updateField,
 }: EventDetailsStepProps) {
+  const [backendVenues, setBackendVenues] = useState<Service[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getServices()
+      .then((data) => {
+        if (isMounted && Array.isArray(data)) {
+          const venues = data.filter(
+            (s) => s.category?.toLowerCase() === "venue" && s.active
+          );
+          setBackendVenues(venues);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load backend venues:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const { hour: timeHour, minute: timeMinute, ampm: timeAmpm } =
     parse12HourComponents(formData.eventTime);
 
@@ -339,22 +365,61 @@ export default function EventDetailsStep({
           </p>
         </div>
 
-        {/* Location */}
-        <Input
-          id="location"
-          label="Event Venue / Location"
-          placeholder="Enter venue name, hall, or complete location"
-          value={formData.location}
-          onChange={(event) =>
-            updateField(
-              "location",
-              event.target.value,
-            )
-          }
-          leftIcon={<MapPin size={18} />}
-          helperText="Enter the resort, banquet hall, or destination."
-          required
-        />
+        {/* Location / Venue */}
+        <div className="space-y-2.5">
+          <Input
+            id="location"
+            list="backend-venues-list"
+            label="Event Venue / Location"
+            placeholder="Search venue or enter custom hall/destination"
+            value={formData.location}
+            onChange={(event) =>
+              updateField(
+                "location",
+                event.target.value,
+              )
+            }
+            leftIcon={<MapPin size={18} />}
+            helperText="Select a registered convention centre from the backend or enter any custom location."
+            required
+          />
+
+          <datalist id="backend-venues-list">
+            {backendVenues.map((v) => (
+              <option key={v._id} value={v.name}>
+                {v.name} · ₹{v.basePrice.toLocaleString("en-IN")}/day
+              </option>
+            ))}
+          </datalist>
+
+          {backendVenues.length > 0 && (
+            <div className="rounded-xl border border-[#e8e1d8] bg-[#fcfaf7] p-3 text-xs">
+              <span className="flex items-center gap-1.5 font-semibold text-[#6B5B95] mb-2">
+                <Building2 size={13} />
+                Registered Venues ({backendVenues.length}):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {backendVenues.map((venue) => {
+                  const isSelected = formData.location === venue.name;
+                  return (
+                    <button
+                      key={venue._id}
+                      type="button"
+                      onClick={() => updateField("location", venue.name)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
+                        isSelected
+                          ? "bg-[#6B5B95] text-white shadow-2xs font-semibold scale-105"
+                          : "border border-[#ded5cb] bg-white text-[#5c544a] hover:border-[#6B5B95] hover:text-[#6B5B95]"
+                      }`}
+                    >
+                      {venue.name.split(",")[0]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Event Description */}
         <div>
@@ -363,7 +428,7 @@ export default function EventDetailsStep({
             className="mb-1.5 block text-xs sm:text-sm font-semibold text-[#29241f]"
           >
             Event Notes &amp; Setup Requirements
-            <span className="ml-1 text-[#b8894b]">*</span>
+            <span className="ml-1 text-xs font-normal text-gray-500">(Optional)</span>
           </label>
 
           <textarea
@@ -374,7 +439,6 @@ export default function EventDetailsStep({
             onChange={(event) =>
               updateField("description", event.target.value)
             }
-            required
             className="w-full resize-none rounded-2xl border border-[#d8cfc4] bg-white p-3.5 text-sm text-[#29241f] placeholder:text-gray-400 outline-none transition-all duration-200 focus:border-[#9A7B4F] focus:ring-2 focus:ring-[#9A7B4F]/20 shadow-2xs"
           />
         </div>
