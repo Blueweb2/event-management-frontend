@@ -37,6 +37,7 @@ import { useStaff } from "@/hooks/useStaff";
 
 import type { CreateAssignmentPayload } from "@/types/assignment";
 import { getSocket } from "@/lib/socket";
+import { canViewClientPayments } from "@/lib/manager-navigation";
 
 // ==========================================
 // Page
@@ -45,7 +46,8 @@ import { getSocket } from "@/lib/socket";
 export default function ManagerEventDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const canViewPayments = canViewClientPayments(user);
 
   const eventId =
     typeof params.id === "string"
@@ -787,18 +789,20 @@ export default function ManagerEventDetailsPage() {
         </div>
 
         {/* ======================================
-            Client Payment Details & Balance Settlement
+            Client Payment Details & Balance Settlement (Super Admin Only)
         ====================================== */}
-        <section className="mt-6" id="payments">
-          <EventClientPaymentCard
-            event={event}
-            token={token || undefined}
-            onPaymentRecorded={fetchEvent}
-          />
-        </section>
+        {canViewPayments && (
+          <section className="mt-6" id="payments">
+            <EventClientPaymentCard
+              event={event}
+              token={token || undefined}
+              onPaymentRecorded={fetchEvent}
+            />
+          </section>
+        )}
 
         {/* ======================================
-            Event Profitability & Expense Tracking
+            Event Expenses & Operational Costs (Net Profit Super Admin Only)
         ====================================== */}
         <section className="mt-6">
           <EventProfitabilityCard

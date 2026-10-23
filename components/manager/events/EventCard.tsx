@@ -6,6 +6,8 @@ import type { Event } from "@/lib/event.api";
 import { Edit, Trash2, ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity, CreditCard, Plus, Play, CheckCircle2 } from "lucide-react";
 import EventStatusBadge from "./EventStatusBadge";
 import { formatTime24to12 } from "@/lib/time-utils";
+import { useAuth } from "@/hooks/useAuth";
+import { canViewClientPayments } from "@/lib/manager-navigation";
 
 interface EventCardProps {
   event: Event;
@@ -33,6 +35,8 @@ export default function EventCard({
   isFeatured = false,
 }: EventCardProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const showPayments = canViewClientPayments(user);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const clientName =
@@ -107,7 +111,7 @@ export default function EventCard({
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t border-gray-100 sm:border-0">
-            {eventTotal > 0 && (
+            {showPayments && eventTotal > 0 && (
               <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                 isSettled ? "bg-emerald-50 text-emerald-700" : isPartiallyPaid ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
               }`}>
@@ -265,101 +269,155 @@ export default function EventCard({
           />
         </div>
 
-        {/* Payment & Financial Ledger Strip */}
-        <div className="mt-4 rounded-xl border border-gray-100 bg-[#faf8f5] p-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <CreditCard size={15} className="text-[#9a6c37] shrink-0" />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment Status</p>
-              <p className="text-xs font-black text-gray-900">
-                {eventTotal > 0 ? (
-                  <>
-                    <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
-                    <span className="text-gray-400 font-normal"> / </span>
-                    <span>₹{eventTotal.toLocaleString("en-IN")}</span>
-                  </>
-                ) : (
-                  <span className="text-gray-400 font-medium">Estimate pending</span>
-                )}
-              </p>
+        {/* Payment & Financial Ledger Strip (Super Admin Only) */}
+        {showPayments ? (
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#faf8f5] p-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CreditCard size={15} className="text-[#9a6c37] shrink-0" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment Status</p>
+                <p className="text-xs font-black text-gray-900">
+                  {eventTotal > 0 ? (
+                    <>
+                      <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
+                      <span className="text-gray-400 font-normal"> / </span>
+                      <span>₹{eventTotal.toLocaleString("en-IN")}</span>
+                    </>
+                  ) : (
+                    <span className="text-gray-400 font-medium">Estimate pending</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+              {eventTotal > 0 && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                  isSettled
+                    ? "bg-emerald-100 text-emerald-800"
+                    : isPartiallyPaid
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-red-100 text-red-800"
+                }`}>
+                  {isSettled ? "PAID" : `₹${eventBalance.toLocaleString("en-IN")} DUE`}
+                </span>
+              )}
+
+              {/* Accept Action if Pending and date not passed */}
+              {onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAccept(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
+                  title="Accept / Confirm booking"
+                >
+                  <CheckCircle2 size={12} />
+                  <span>Accept</span>
+                </button>
+              )}
+
+              {/* Start Event Action if Upcoming/Confirmed */}
+              {onStart && !isCompleted && !isOngoing && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStart(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
+                  title="Start event operations now"
+                >
+                  <Play size={11} className="fill-white" />
+                  <span>Start Event</span>
+                </button>
+              )}
+
+              {/* Export Document Action */}
+              {onExport && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExport(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                  title="Export Quotation, Invoice & WhatsApp Summary"
+                >
+                  <Sparkles size={11} className="text-[#D4AF37]" />
+                  <span>Export</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/manager/events/${event._id}#payments`);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95"
+                title="Record or view client payment for this event"
+              >
+                <Plus size={11} className="text-[#9a6c37]" />
+                <span>Add Payment</span>
+              </button>
             </div>
           </div>
+        ) : (
+          /* For other managers: Payment details are hidden, operational actions remain available */
+          (Boolean(onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending")) ||
+            Boolean(onStart && !isCompleted && !isOngoing) ||
+            Boolean(onExport)) ? (
+            <div className="mt-3.5 flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-2.5">
+              {onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAccept(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
+                  title="Accept / Confirm booking"
+                >
+                  <CheckCircle2 size={12} />
+                  <span>Accept</span>
+                </button>
+              )}
 
-          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
-            {eventTotal > 0 && (
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                isSettled
-                  ? "bg-emerald-100 text-emerald-800"
-                  : isPartiallyPaid
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-red-100 text-red-800"
-              }`}>
-                {isSettled ? "PAID" : `₹${eventBalance.toLocaleString("en-IN")} DUE`}
-              </span>
-            )}
+              {onStart && !isCompleted && !isOngoing && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStart(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
+                  title="Start event operations now"
+                >
+                  <Play size={11} className="fill-white" />
+                  <span>Start Event</span>
+                </button>
+              )}
 
-            {/* Accept Action if Pending and date not passed */}
-            {onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAccept(event);
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
-                title="Accept / Confirm booking"
-              >
-                <CheckCircle2 size={12} />
-                <span>Accept</span>
-              </button>
-            )}
-
-            {/* Start Event Action if Upcoming/Confirmed */}
-            {onStart && !isCompleted && !isOngoing && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStart(event);
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
-                title="Start event operations now"
-              >
-                <Play size={11} className="fill-white" />
-                <span>Start Event</span>
-              </button>
-            )}
-
-            {/* Export Document Action */}
-            {onExport && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExport(event);
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
-                title="Export Quotation, Invoice & WhatsApp Summary"
-              >
-                <Sparkles size={11} className="text-[#D4AF37]" />
-                <span>Export</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/manager/events/${event._id}#payments`);
-              }}
-              className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95"
-              title="Record or view client payment for this event"
-            >
-              <Plus size={11} className="text-[#9a6c37]" />
-              <span>Add Payment</span>
-            </button>
-          </div>
-        </div>
+              {onExport && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExport(event);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                  title="Export Quotation, Invoice & WhatsApp Summary"
+                >
+                  <Sparkles size={11} className="text-[#D4AF37]" />
+                  <span>Export</span>
+                </button>
+              )}
+            </div>
+          ) : null
+        )}
 
         {/* Client & Navigation Footer */}
         <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">

@@ -25,7 +25,10 @@ export default function EventProfitabilityCard({
   eventId,
   eventName,
 }: EventProfitabilityCardProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const role = (user?.role || "").toLowerCase();
+  const isSuperAdmin = role === "superadmin" || role === "admin";
+
   const [data, setData] = useState<EventProfitabilityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expensesLoading, setExpensesLoading] = useState(false);
@@ -71,7 +74,7 @@ export default function EventProfitabilityCard({
       <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-[#e8e1d8] bg-white p-8">
         <Loader2 className="h-7 w-7 animate-spin text-[#9a6c37]" />
         <p className="mt-3 text-xs font-bold text-gray-500">
-          Calculating revenue, catering costs, and profit margins...
+          Calculating direct expenses and operational costs...
         </p>
       </div>
     );
@@ -81,7 +84,7 @@ export default function EventProfitabilityCard({
     return (
       <div className="rounded-3xl border border-red-100 bg-red-50 p-6 text-center text-xs text-red-700">
         <AlertCircle className="mx-auto mb-2 h-6 w-6 text-red-500" />
-        <p className="font-bold">{error || "Failed to load profitability data."}</p>
+        <p className="font-bold">{error || "Failed to load event expenses."}</p>
         <button
           type="button"
           onClick={loadProfitability}
@@ -135,8 +138,8 @@ export default function EventProfitabilityCard({
           </div>
         </div>
 
-        {/* 2 Main KPI Cards */}
-        <div className="grid grid-cols-1 gap-px bg-[#f1ece5] sm:grid-cols-2">
+        {/* KPI Cards: Total Direct Costs (All Managers) & Net Operating Profit (Super Admin Only) */}
+        <div className={`grid grid-cols-1 gap-px bg-[#f1ece5] ${isSuperAdmin ? "sm:grid-cols-2" : ""}`}>
           <div className="bg-white p-5 text-center sm:text-left">
             <p className="text-[10px] font-extrabold uppercase text-gray-400">
               Total Direct Costs
@@ -149,22 +152,25 @@ export default function EventProfitabilityCard({
             </p>
           </div>
 
-          <div className="bg-white p-5 text-center sm:text-left">
-            <p className="text-[10px] font-extrabold uppercase text-gray-400">
-              Net Operating Profit
-            </p>
-            <p
-              className={`mt-1.5 text-xl font-black sm:text-2xl ${
-                profitability.netProfit >= 0 ? "text-emerald-600" : "text-red-600"
-              }`}
-            >
-              {profitability.netProfit >= 0 ? "+" : ""}₹
-              {profitability.netProfit.toLocaleString()}
-            </p>
-            <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-              Revenue - All Operating Costs
-            </p>
-          </div>
+          {/* Net Operating Profit - Strictly visible to Super Admin only */}
+          {isSuperAdmin && typeof profitability?.netProfit === "number" && (
+            <div className="bg-white p-5 text-center sm:text-left">
+              <p className="text-[10px] font-extrabold uppercase text-gray-400">
+                Net Operating Profit
+              </p>
+              <p
+                className={`mt-1.5 text-xl font-black sm:text-2xl ${
+                  profitability.netProfit >= 0 ? "text-emerald-600" : "text-red-600"
+                }`}
+              >
+                {profitability.netProfit >= 0 ? "+" : ""}₹
+                {profitability.netProfit.toLocaleString()}
+              </p>
+              <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
+                Revenue - All Operating Costs
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Unified Department-wise Operational Expenses Section (Includes Automated Staff Duty Payroll) */}

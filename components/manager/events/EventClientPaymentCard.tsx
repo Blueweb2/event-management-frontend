@@ -15,6 +15,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Event, EventPaymentLog, recordEventPayment } from "@/lib/event.api";
+import { useAuth } from "@/hooks/useAuth";
+import { canViewClientPayments } from "@/lib/manager-navigation";
 
 interface EventClientPaymentCardProps {
   event: Event;
@@ -27,6 +29,7 @@ export default function EventClientPaymentCard({
   token,
   onPaymentRecorded,
 }: EventClientPaymentCardProps) {
+  const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [amount, setAmount] = useState<number | "">("");
   const [paymentMethod, setPaymentMethod] = useState("UPI");
@@ -37,6 +40,11 @@ export default function EventClientPaymentCard({
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successToast, setSuccessToast] = useState("");
+
+  // Strictly restricted to Super Admin only - no other managers including marketing manager can see this
+  if (!canViewClientPayments(user)) {
+    return null;
+  }
 
   // Extract financial variables
   const bookingObj = typeof event.booking === "object" && event.booking !== null ? event.booking : null;

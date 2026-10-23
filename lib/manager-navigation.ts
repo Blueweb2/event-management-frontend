@@ -29,11 +29,14 @@ export type DepartmentScopeType =
   | "sound_lighting"
   | "logistics"
   | "operations"
+  | "marketing"
   | "general";
 
 export interface ManagerScopeInfo {
   isSuperAdmin: boolean;
   isChefManager: boolean;
+  isMarketingManager: boolean;
+  canViewClientPayments: boolean;
   departmentType: DepartmentScopeType;
   roleTitle: string;
   departmentDisplay: string;
@@ -52,10 +55,30 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: true,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: true,
       departmentType: "superadmin",
       roleTitle: "Super Admin",
       departmentDisplay: "All Departments",
       badgeColor: "bg-rose-100 text-rose-800 border-rose-200",
+    };
+  }
+
+  // Marketing & Promotions Manager
+  if (
+    role.includes("market") ||
+    dept.includes("market") ||
+    dept.includes("promo")
+  ) {
+    return {
+      isSuperAdmin: false,
+      isChefManager: false,
+      isMarketingManager: true,
+      canViewClientPayments: false,
+      departmentType: "marketing",
+      roleTitle: "Marketing Manager",
+      departmentDisplay: user?.department || "Marketing & Promotions",
+      badgeColor: "bg-emerald-100 text-emerald-900 border-emerald-200",
     };
   }
 
@@ -70,6 +93,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: true,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "kitchen",
       roleTitle: "Chef Manager",
       departmentDisplay: user?.department || "Kitchen Department",
@@ -87,6 +112,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "decoration",
       roleTitle: "Decoration Manager",
       departmentDisplay: user?.department || "Decoration Department",
@@ -103,6 +130,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "photography",
       roleTitle: "Photography Manager",
       departmentDisplay: user?.department || "Photography & Media",
@@ -120,6 +149,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "sound_lighting",
       roleTitle: "Sound & Lighting Manager",
       departmentDisplay: user?.department || "Sound & Lighting",
@@ -136,6 +167,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "logistics",
       roleTitle: "Logistics Manager",
       departmentDisplay: user?.department || "Logistics",
@@ -148,6 +181,8 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
     return {
       isSuperAdmin: false,
       isChefManager: false,
+      isMarketingManager: false,
+      canViewClientPayments: false,
       departmentType: "operations",
       roleTitle: "Operations Manager",
       departmentDisplay: user?.department || "Operations",
@@ -159,11 +194,49 @@ export function getManagerScope(user: AuthUser | null): ManagerScopeInfo {
   return {
     isSuperAdmin: false,
     isChefManager: false,
+    isMarketingManager: false,
+    canViewClientPayments: false,
     departmentType: "general",
     roleTitle: user?.department ? `${user.department} Manager` : "Department Manager",
     departmentDisplay: user?.department || "Department",
     badgeColor: "bg-gray-100 text-gray-800 border-gray-200",
   };
+}
+
+/**
+ * Returns whether the user is a Marketing Manager
+ */
+export function isMarketingManager(user: AuthUser | null): boolean {
+  if (!user) return false;
+  const role = (user.role || "").toLowerCase().trim();
+  const dept = (user.department || "").toLowerCase().trim();
+
+  return (
+    role.includes("market") ||
+    dept.includes("market") ||
+    dept.includes("promo")
+  );
+}
+
+/**
+ * Determines whether the user is authorized to view Client Payment Overview and Payment Status.
+ * Strictly restricted to Super Admin only - no other managers including marketing manager can see this.
+ */
+export function canViewClientPayments(user: AuthUser | null): boolean {
+  if (!user) return false;
+  const role = (user.role || "").toLowerCase().trim();
+
+  // Super Admin / Admin ONLY
+  return role === "superadmin" || role === "admin";
+}
+
+/**
+ * Determines whether the user is authorized to view or manage event expenses.
+ * All managers are authorized to view and add event operational expenses.
+ */
+export function canViewExpenses(user: AuthUser | null): boolean {
+  if (!user) return false;
+  return true;
 }
 
 /**
@@ -319,7 +392,34 @@ export function getAuthorizedMenuItems(user: AuthUser | null): ManagerMenuItem[]
     ];
   }
 
-  // 5. Sound & Lighting, Logistics, or other specific service departments
+  // 5. Marketing & Promotions Manager — Marketing Console, Events, Services, Staff
+  if (scope.departmentType === "marketing") {
+    return [
+      {
+        label: "Marketing Console",
+        href: "/manager",
+        icon: LayoutDashboard,
+        badge: "Console",
+      },
+      {
+        label: "Events",
+        href: "/manager/events",
+        icon: CalendarCheck,
+      },
+      {
+        label: "Services",
+        href: "/manager/services",
+        icon: BriefcaseBusiness,
+      },
+      {
+        label: "Staff Members",
+        href: "/manager/staff",
+        icon: Users,
+      },
+    ];
+  }
+
+  // 6. Sound & Lighting, Logistics, or other specific service departments
   return [
     {
       label: "Department Dashboard",
@@ -413,6 +513,32 @@ export function getAuthorizedBottomNavItems(user: AuthUser | null): Array<{
 
   // Photography Manager: Home, Events, Services, Staff
   if (scope.departmentType === "photography") {
+    return [
+      {
+        label: "Console",
+        href: "/manager",
+        icon: LayoutDashboard,
+      },
+      {
+        label: "Events",
+        href: "/manager/events",
+        icon: CalendarDays,
+      },
+      {
+        label: "Services",
+        href: "/manager/services",
+        icon: BriefcaseBusiness,
+      },
+      {
+        label: "Staff",
+        href: "/manager/staff",
+        icon: Users,
+      },
+    ];
+  }
+
+  // Marketing Manager: Console, Events, Services, Staff
+  if (scope.departmentType === "marketing") {
     return [
       {
         label: "Console",

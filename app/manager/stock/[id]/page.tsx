@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -22,6 +22,10 @@ import {
   Layers,
   FileText,
   BadgeCheck,
+  PackagePlus,
+  TrendingUp,
+  Search,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -92,6 +96,10 @@ export default function StockItemDetailPage({ params }: PageProps) {
   const [discrepancyNotes, setDiscrepancyNotes] = useState("");
   const [discrepancySubmitting, setDiscrepancySubmitting] = useState(false);
 
+  // Stock audit history filters
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "RESTOCK" | "USAGE" | "RETURN">("ALL");
+  const [historySearch, setHistorySearch] = useState("");
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(""), 4000);
@@ -112,6 +120,44 @@ export default function StockItemDetailPage({ params }: PageProps) {
       setLoading(false);
     }
   }, [token, stockItemId]);
+
+  // Derived audit & restock statistics
+  const restockTransactions = useMemo(() => {
+    return transactions.filter((tx) => tx.type === "ADDED");
+  }, [transactions]);
+
+  const totalRestockedUnits = useMemo(() => {
+    return restockTransactions.reduce((acc, tx) => acc + (tx.quantity || 0), 0);
+  }, [restockTransactions]);
+
+  const lastRestockTx = restockTransactions.length > 0 ? restockTransactions[0] : null;
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      if (historyFilter === "RESTOCK" && tx.type !== "ADDED") return false;
+      if (historyFilter === "USAGE" && tx.type !== "TAKEN" && tx.type !== "RESERVED") return false;
+      if (historyFilter === "RETURN" && tx.type !== "RETURNED" && tx.type !== "UNRESERVED") return false;
+
+      if (historySearch.trim()) {
+        const q = historySearch.toLowerCase();
+        const itemName = (typeof tx.stockItem === "object" && tx.stockItem?.name) || item?.name || "";
+        const note = tx.notes || "";
+        const user = tx.performedBy?.name || "";
+        const event = tx.event?.eventName || "";
+        const type = tx.type || "";
+        if (
+          !itemName.toLowerCase().includes(q) &&
+          !note.toLowerCase().includes(q) &&
+          !user.toLowerCase().includes(q) &&
+          !event.toLowerCase().includes(q) &&
+          !type.toLowerCase().includes(q)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [transactions, historyFilter, historySearch, item?.name]);
 
   useEffect(() => {
     void loadItemDetails();
@@ -439,7 +485,7 @@ export default function StockItemDetailPage({ params }: PageProps) {
           )}
         </button>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => setActiveTab("details")}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap cursor-pointer ${
@@ -450,7 +496,7 @@ export default function StockItemDetailPage({ params }: PageProps) {
         >
           <FileText size={16} />
           <span>Stock Specifications & Pricing</span>
-        </button>
+        </button> */}
 
         <button
           type="button"
@@ -730,77 +776,317 @@ export default function StockItemDetailPage({ params }: PageProps) {
       {/* SECTION 3: STOCK AUDIT HISTORY & LEDGER */}
       {/* ========================================================================= */}
       {activeTab === "history" && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs space-y-5">
+          {/* Header & Quick Action */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-4">
             <div>
-              <h3 className="text-base font-extrabold text-[#29241f]">Stock Transaction Audit History</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Complete historical record of all restocks, event allocations, takes, returns, and write-offs.
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-extrabold text-[#29241f]">Stock Transaction Audit History</h3>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-black">
+                  <PackagePlus size={12} className="text-emerald-700" />
+                  {restockTransactions.length} Restocks Recorded
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Verified audit trail showing which items were restocked, quantity inflows, event allocations, and stock returns.
               </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRestockModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-2 text-xs font-bold transition shadow-xs cursor-pointer self-start sm:self-auto shrink-0"
+            >
+              <PackagePlus size={14} />
+              <span>Restock This Item</span>
+            </button>
+          </div>
+
+          {/* Restock & Audit KPI Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Total Restocked Quantity */}
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                  Total Restocked
+                </p>
+                <TrendingUp size={14} className="text-emerald-600" />
+              </div>
+              <p className="mt-1 text-xl font-black text-emerald-900">
+                +{totalRestockedUnits} {item?.unit}
+              </p>
+              <p className="mt-0.5 text-[11px] text-emerald-700 font-medium">Cumulative restock additions</p>
+            </div>
+
+            {/* Restock Batches Logged */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                Restock Batches
+              </p>
+              <p className="mt-1 text-xl font-black text-[#29241f]">
+                {restockTransactions.length} <span className="text-xs font-semibold text-gray-500">batches</span>
+              </p>
+              <p className="mt-0.5 text-[11px] text-gray-500">Recorded restock events</p>
+            </div>
+
+            {/* Most Recent Restock */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                Last Restocked
+              </p>
+              <p className="mt-1 text-xs font-black text-[#29241f] truncate">
+                {lastRestockTx ? new Date(lastRestockTx.createdAt).toLocaleDateString() : "Never"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-gray-500 truncate">
+                {lastRestockTx ? `By ${lastRestockTx.performedBy?.name || "System"}` : "No restock logged yet"}
+              </p>
+            </div>
+
+            {/* Current Available On Hand */}
+            <div className="rounded-xl border border-[#e8e1d8] bg-amber-50/30 p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#9a6c37]">
+                Available On Hand
+              </p>
+              <p className="mt-1 text-xl font-black text-[#29241f]">
+                {item?.availableQuantity} <span className="text-xs font-medium text-gray-500">/ {item?.totalQuantity} {item?.unit}</span>
+              </p>
+              <p className="mt-0.5 text-[11px] text-gray-500">Current available balance</p>
             </div>
           </div>
 
-          {transactions.length === 0 ? (
-            <div className="py-12 text-center text-gray-400">
+          {/* Filter & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  historyFilter === "ALL"
+                    ? "bg-[#29241f] text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                All Activities ({transactions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("RESTOCK")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  historyFilter === "RESTOCK"
+                    ? "bg-emerald-700 text-white shadow-2xs"
+                    : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                }`}
+              >
+                <PackagePlus size={13} />
+                <span>Restocked Items Only ({restockTransactions.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("USAGE")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  historyFilter === "USAGE"
+                    ? "bg-blue-700 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Allocations & Takes
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryFilter("RETURN")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  historyFilter === "RETURN"
+                    ? "bg-teal-700 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Returns
+              </button>
+            </div>
+
+            <div className="relative min-w-[220px]">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search history, notes, user..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-gray-200 text-xs focus:outline-hidden focus:border-[#9a6c37]"
+              />
+            </div>
+          </div>
+
+          {filteredTransactions.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 border border-dashed border-gray-200 rounded-xl">
               <History size={36} className="mx-auto text-gray-300" />
-              <p className="mt-2 text-sm font-bold text-gray-700">No transactions recorded yet</p>
-              <p className="text-xs text-gray-400">Restock additions and event allocations will be logged here.</p>
+              <p className="mt-2 text-sm font-bold text-gray-700">No matching transactions found</p>
+              <p className="text-xs text-gray-400">
+                {historyFilter === "RESTOCK"
+                  ? "No restock records found for this item. Click 'Restock This Item' above to add stock."
+                  : "Try clearing your search query or switching filters."}
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-gray-100">
               <table className="w-full text-left text-xs">
-                <thead className="border-b border-gray-100 bg-[#faf8f5] text-[11px] font-bold text-gray-500">
+                <thead className="border-b border-gray-200 bg-[#faf8f5] text-[11px] font-bold text-gray-600">
                   <tr>
                     <th className="px-3.5 py-3">Timestamp</th>
-                    <th className="px-3.5 py-3">Action</th>
-                    <th className="px-3.5 py-3 text-center">Qty Change</th>
-                    <th className="px-3.5 py-3 text-center">Available Stock</th>
+                    <th className="px-3.5 py-3">Item Restocked / Inventory Item</th>
+                    <th className="px-3.5 py-3">Action Type</th>
+                    <th className="px-3.5 py-3 text-center">Qty Restocked / Changed</th>
+                    <th className="px-3.5 py-3 text-center">Available Stock Flow</th>
                     <th className="px-3.5 py-3">Event / Context</th>
                     <th className="px-3.5 py-3">Performed By</th>
-                    <th className="px-3.5 py-3">Notes</th>
+                    <th className="px-3.5 py-3">Audit Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {transactions.map((tx) => {
-                    const isPositive = tx.quantity > 0 && (tx.type === "ADDED" || tx.type === "RETURNED" || tx.type === "UNRESERVED");
+                  {filteredTransactions.map((tx) => {
+                    const isRestock = tx.type === "ADDED";
+                    const isPositive = tx.quantity > 0 && (isRestock || tx.type === "RETURNED" || tx.type === "UNRESERVED");
+                    const itemName = (typeof tx.stockItem === "object" && tx.stockItem?.name) || item?.name || "Stock Item";
+                    const itemCategory = (typeof tx.stockItem === "object" && tx.stockItem?.category) || item?.category || "";
+                    const itemUnit = (typeof tx.stockItem === "object" && tx.stockItem?.unit) || item?.unit || "";
+
                     return (
-                      <tr key={tx._id} className="hover:bg-gray-50/70 transition">
-                        <td className="px-3.5 py-3 text-gray-500 whitespace-nowrap">
-                          {new Date(tx.createdAt).toLocaleString()}
+                      <tr
+                        key={tx._id}
+                        className={`transition ${
+                          isRestock
+                            ? "bg-emerald-50/40 hover:bg-emerald-50/70 border-l-4 border-l-emerald-500"
+                            : "hover:bg-gray-50/70"
+                        }`}
+                      >
+                        {/* Timestamp */}
+                        <td className="px-3.5 py-3 text-gray-500 whitespace-nowrap font-medium">
+                          {new Date(tx.createdAt).toLocaleString(undefined, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
                         </td>
+
+                        {/* Item Restocked / Inventory Item Column */}
+                        <td className="px-3.5 py-3 min-w-[210px]">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {isRestock ? (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                                  <PackagePlus size={11} className="text-emerald-700 shrink-0" />
+                                  Restocked Item
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 text-stone-700 px-1.5 py-0.5 text-[10px] font-bold">
+                                  <Package size={10} className="text-stone-500 shrink-0" />
+                                  Inventory Item
+                                </span>
+                              )}
+                              <span className="font-extrabold text-[#29241f] text-xs">
+                                {itemName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 pl-0.5">
+                              {itemCategory && (
+                                <span className="rounded bg-gray-100 px-1 py-0.2 text-gray-600 font-medium">
+                                  {itemCategory}
+                                </span>
+                              )}
+                              {itemUnit && <span>• Unit: {itemUnit}</span>}
+                              {item?.sku && <span>• SKU: {item.sku}</span>}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Action Type */}
                         <td className="px-3.5 py-3 whitespace-nowrap">
-                          <span
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
-                              tx.type === "ADDED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : tx.type === "RETURNED"
-                                ? "bg-teal-100 text-teal-800"
-                                : tx.type === "TAKEN"
-                                ? "bg-blue-100 text-blue-800"
-                                : tx.type === "DAMAGED" || tx.type === "LOST"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-stone-100 text-stone-800"
-                            }`}
-                          >
-                            {tx.type}
-                          </span>
+                          {isRestock ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-extrabold uppercase shadow-2xs">
+                              <PackagePlus size={10} />
+                              RESTOCKED
+                            </span>
+                          ) : (
+                            <span
+                              className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                tx.type === "RETURNED"
+                                  ? "bg-teal-100 text-teal-800"
+                                  : tx.type === "TAKEN"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : tx.type === "DAMAGED" || tx.type === "LOST"
+                                  ? "bg-rose-100 text-rose-800"
+                                  : "bg-stone-100 text-stone-800"
+                              }`}
+                            >
+                              {tx.type}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-3.5 py-3 text-center font-extrabold whitespace-nowrap">
-                          <span className={isPositive ? "text-emerald-700" : "text-gray-900"}>
-                            {isPositive ? `+${tx.quantity}` : tx.quantity} {item.unit}
-                          </span>
+
+                        {/* Qty Restocked / Changed */}
+                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                          {isRestock ? (
+                            <div className="inline-flex flex-col items-center">
+                              <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">
+                                +{tx.quantity} {itemUnit}
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-700 mt-0.5 uppercase tracking-wider">
+                                Restocked Inflow
+                              </span>
+                            </div>
+                          ) : (
+                            <span className={`font-extrabold ${isPositive ? "text-emerald-700" : "text-gray-900"}`}>
+                              {isPositive ? `+${tx.quantity}` : tx.quantity} {itemUnit}
+                            </span>
+                          )}
                         </td>
-                        <td className="px-3.5 py-3 text-center font-bold text-gray-600 whitespace-nowrap">
-                          {tx.previousAvailable} → <span className="text-gray-900 font-extrabold">{tx.newAvailable}</span>
+
+                        {/* Available Stock Flow */}
+                        <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1 font-bold text-gray-600">
+                            <span className="text-gray-500">{tx.previousAvailable}</span>
+                            <span className="text-gray-400">→</span>
+                            <span className={`font-black ${isRestock ? "text-emerald-700" : "text-gray-900"}`}>
+                              {tx.newAvailable} {itemUnit}
+                            </span>
+                            {isRestock && (
+                              <span className="ml-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-100 px-1 py-0.2 rounded">
+                                (+{tx.quantity})
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-3.5 py-3 text-gray-700 max-w-[150px] truncate">
-                          {tx.event ? tx.event.eventName : "Warehouse Restock"}
+
+                        {/* Event / Context */}
+                        <td className="px-3.5 py-3 text-gray-700 max-w-[160px] truncate">
+                          {isRestock ? (
+                            <div className="flex items-center gap-1 text-emerald-800 font-semibold text-[11px]">
+                              <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                              <span>Warehouse Restock</span>
+                            </div>
+                          ) : tx.event ? (
+                            <span className="font-medium text-gray-800">{tx.event.eventName}</span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
+
+                        {/* Performed By */}
                         <td className="px-3.5 py-3 text-gray-600 whitespace-nowrap">
-                          {tx.performedBy?.name || "System"}
+                          <div className="font-semibold text-[#29241f]">{tx.performedBy?.name || "System"}</div>
+                          {tx.performedBy?.role && (
+                            <div className="text-[10px] text-gray-400 capitalize">{tx.performedBy.role}</div>
+                          )}
                         </td>
-                        <td className="px-3.5 py-3 text-gray-500 max-w-[200px] truncate">
-                          {tx.notes || "—"}
+
+                        {/* Notes */}
+                        <td className="px-3.5 py-3 text-gray-600 max-w-[220px]">
+                          {tx.notes ? (
+                            <p className="text-xs text-gray-700 line-clamp-2" title={tx.notes}>
+                              {tx.notes}
+                            </p>
+                          ) : isRestock ? (
+                            <span className="text-gray-400 italic">Inventory replenishment</span>
+                          ) : (
+                            "—"
+                          )}
                         </td>
                       </tr>
                     );

@@ -155,6 +155,7 @@ const PERMISSION_OPTIONS = [
     label: "Manage Shoot & Media Delivery Tasks",
     depts: ["Photography", "Operations"],
   },
+
   {
     id: "staff:manage",
     label: "Staff Duty & Task Management",

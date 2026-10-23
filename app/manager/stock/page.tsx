@@ -17,6 +17,10 @@ import {
   ArrowRight,
   TrendingDown,
   FileText,
+  History,
+  ExternalLink,
+  TrendingUp,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getManagerScope } from "@/lib/manager-navigation";
@@ -24,11 +28,13 @@ import {
   getStockItems,
   createStockItem,
   getManagerStockSummary,
+  getStockTransactions,
 } from "@/lib/stock.api";
 import type {
   StockItem,
   StockCategory,
   ManagerStockSummary,
+  StockTransaction,
 } from "@/types/stock";
 
 const KITCHEN_CATEGORIES: StockCategory[] = [
@@ -105,6 +111,63 @@ export default function ManagerStockPage() {
     location: "Central Kitchen Pantry",
     description: "",
   });
+
+  // Audit Ledger Modal State
+  const [auditModalOpen, setAuditModalOpen] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditTransactions, setAuditTransactions] = useState<StockTransaction[]>([]);
+  const [auditFilter, setAuditFilter] = useState<"ADDED" | "ALL">("ADDED");
+  const [auditSearch, setAuditSearch] = useState("");
+
+  const loadAuditHistory = useCallback(
+    async (filterType: "ADDED" | "ALL" = auditFilter) => {
+      if (!token) return;
+      try {
+        setAuditLoading(true);
+        const res = await getStockTransactions(token, {
+          type: filterType === "ALL" ? undefined : "ADDED",
+          limit: 100,
+        });
+        setAuditTransactions(res.data || []);
+      } catch (err) {
+        console.error("Failed to load audit history:", err);
+      } finally {
+        setAuditLoading(false);
+      }
+    },
+    [token, auditFilter]
+  );
+
+  const handleOpenAuditModal = () => {
+    setAuditModalOpen(true);
+    void loadAuditHistory(auditFilter);
+  };
+
+  const handleAuditFilterChange = (filterType: "ADDED" | "ALL") => {
+    setAuditFilter(filterType);
+    void loadAuditHistory(filterType);
+  };
+
+  const filteredAuditTransactions = useMemo(() => {
+    return auditTransactions.filter((tx) => {
+      if (auditSearch.trim()) {
+        const q = auditSearch.toLowerCase();
+        const itemName = (typeof tx.stockItem === "object" && tx.stockItem?.name) || "";
+        const note = tx.notes || "";
+        const user = tx.performedBy?.name || "";
+        const category = (typeof tx.stockItem === "object" && tx.stockItem?.category) || "";
+        if (
+          !itemName.toLowerCase().includes(q) &&
+          !note.toLowerCase().includes(q) &&
+          !user.toLowerCase().includes(q) &&
+          !category.toLowerCase().includes(q)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [auditTransactions, auditSearch]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -245,16 +308,27 @@ export default function ManagerStockPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreateModal}
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-4 text-xs font-extrabold text-white shadow-xs hover:bg-black transition active:scale-95 cursor-pointer"
-        >
-          <PackagePlus size={16} />
-          <span>
-            {activeTab === "kitchen" ? "New Kitchen Item" : "New Rentable Asset"}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleOpenAuditModal}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#e8e1d8] bg-white px-3.5 text-xs font-extrabold text-[#29241f] shadow-2xs hover:bg-[#faf7f2] transition active:scale-95 cursor-pointer"
+          >
+            <History size={16} className="text-[#9a6c37]" />
+            <span>Restock Audit History</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#29241f] px-4 text-xs font-extrabold text-white shadow-xs hover:bg-black transition active:scale-95 cursor-pointer"
+          >
+            <PackagePlus size={16} />
+            <span>
+              {activeTab === "kitchen" ? "New Kitchen Item" : "New Rentable Asset"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Module Navigation Tabs */}
@@ -986,6 +1060,312 @@ export default function ManagerStockPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: STOCK RESTOCK AUDIT HISTORY LEDGER */}
+      {auditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-5xl max-h-[90vh] flex flex-col rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 p-5 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
+                  <PackagePlus size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-[#29241f]">
+                      Stock Transaction Audit History
+                    </h3>
+                    <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-extrabold">
+                      Item Restock Ledger
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Real-time audit log of restocked items, quantity additions, and inventory transactions.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAuditModalOpen(false)}
+                className="rounded-lg p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 bg-[#faf8f5] border-b border-gray-200/80 shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleAuditFilterChange("ADDED")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    auditFilter === "ADDED"
+                      ? "bg-emerald-700 text-white shadow-xs"
+                      : "bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-50"
+                  }`}
+                >
+                  <PackagePlus size={13} />
+                  <span>Restocked Items Only (ADDED)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAuditFilterChange("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    auditFilter === "ALL"
+                      ? "bg-[#29241f] text-white shadow-xs"
+                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  All Transactions
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="relative min-w-[220px]">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by item, user, notes..."
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs focus:outline-hidden focus:border-[#9a6c37]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadAuditHistory(auditFilter)}
+                  disabled={auditLoading}
+                  className="rounded-xl border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-50 cursor-pointer transition"
+                  title="Refresh"
+                >
+                  <RefreshCw size={14} className={auditLoading ? "animate-spin text-[#9a6c37]" : ""} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / Table */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {auditLoading ? (
+                <div className="py-16 text-center text-gray-400">
+                  <Loader2 size={32} className="mx-auto animate-spin text-[#9a6c37]" />
+                  <p className="mt-2 text-xs font-bold text-gray-600">Loading audit history...</p>
+                </div>
+              ) : filteredAuditTransactions.length === 0 ? (
+                <div className="py-16 text-center text-gray-400 border border-dashed border-gray-200 rounded-2xl">
+                  <History size={36} className="mx-auto text-gray-300" />
+                  <p className="mt-2 text-sm font-bold text-gray-700">No transactions found</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {auditFilter === "ADDED"
+                      ? "No item restocks recorded yet."
+                      : "No inventory audit records match the current filter."}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-gray-200 bg-[#faf8f5] text-[11px] font-bold text-gray-600">
+                      <tr>
+                        <th className="px-3.5 py-3">Timestamp</th>
+                        <th className="px-3.5 py-3">Item Restocked / Inventory Item</th>
+                        <th className="px-3.5 py-3">Action</th>
+                        <th className="px-3.5 py-3 text-center">Qty Added / Changed</th>
+                        <th className="px-3.5 py-3 text-center">Available Stock Flow</th>
+                        <th className="px-3.5 py-3">Restocked By</th>
+                        <th className="px-3.5 py-3">Audit Notes</th>
+                        <th className="px-3.5 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredAuditTransactions.map((tx) => {
+                        const isRestock = tx.type === "ADDED";
+                        const isPositive =
+                          tx.quantity > 0 &&
+                          (isRestock || tx.type === "RETURNED" || tx.type === "UNRESERVED");
+                        const itemObj = typeof tx.stockItem === "object" ? tx.stockItem : null;
+                        const itemName = itemObj?.name || "Inventory Item";
+                        const itemCategory = itemObj?.category || "";
+                        const itemUnit = itemObj?.unit || "";
+                        const itemId = itemObj?._id || (typeof tx.stockItem === "string" ? tx.stockItem : "");
+
+                        return (
+                          <tr
+                            key={tx._id}
+                            className={`transition ${
+                              isRestock
+                                ? "bg-emerald-50/40 hover:bg-emerald-50/70 border-l-4 border-l-emerald-500"
+                                : "hover:bg-gray-50/70"
+                            }`}
+                          >
+                            {/* Timestamp */}
+                            <td className="px-3.5 py-3 text-gray-500 whitespace-nowrap font-medium">
+                              {new Date(tx.createdAt).toLocaleString(undefined, {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })}
+                            </td>
+
+                            {/* Item Restocked Column */}
+                            <td className="px-3.5 py-3 min-w-[210px]">
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {isRestock ? (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                                      <PackagePlus size={11} className="text-emerald-700 shrink-0" />
+                                      Restocked Item
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-stone-100 text-stone-700 px-1.5 py-0.5 text-[10px] font-bold">
+                                      <Package size={10} className="text-stone-500 shrink-0" />
+                                      Inventory Item
+                                    </span>
+                                  )}
+                                  <span className="font-extrabold text-[#29241f] text-xs">
+                                    {itemName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 pl-0.5">
+                                  {itemCategory && (
+                                    <span className="rounded bg-gray-100 px-1 py-0.2 text-gray-600 font-medium">
+                                      {itemCategory}
+                                    </span>
+                                  )}
+                                  {itemUnit && <span>• Unit: {itemUnit}</span>}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Action */}
+                            <td className="px-3.5 py-3 whitespace-nowrap">
+                              {isRestock ? (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 text-white px-2 py-0.5 text-[10px] font-extrabold uppercase shadow-2xs">
+                                  <PackagePlus size={10} />
+                                  RESTOCKED
+                                </span>
+                              ) : (
+                                <span
+                                  className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                                    tx.type === "RETURNED"
+                                      ? "bg-teal-100 text-teal-800"
+                                      : tx.type === "TAKEN"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : tx.type === "DAMAGED" || tx.type === "LOST"
+                                      ? "bg-rose-100 text-rose-800"
+                                      : "bg-stone-100 text-stone-800"
+                                  }`}
+                                >
+                                  {tx.type}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Qty Added / Changed */}
+                            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              {isRestock ? (
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="text-xs font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">
+                                    +{tx.quantity} {itemUnit}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-emerald-700 mt-0.5 uppercase tracking-wider">
+                                    Restocked
+                                  </span>
+                                </div>
+                              ) : (
+                                <span
+                                  className={`font-extrabold ${
+                                    isPositive ? "text-emerald-700" : "text-gray-900"
+                                  }`}
+                                >
+                                  {isPositive ? `+${tx.quantity}` : tx.quantity} {itemUnit}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Available Stock Transition */}
+                            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1 font-bold text-gray-600">
+                                <span className="text-gray-500">{tx.previousAvailable}</span>
+                                <span className="text-gray-400">→</span>
+                                <span
+                                  className={`font-black ${
+                                    isRestock ? "text-emerald-700" : "text-gray-900"
+                                  }`}
+                                >
+                                  {tx.newAvailable} {itemUnit}
+                                </span>
+                                {isRestock && (
+                                  <span className="ml-1 text-[10px] font-extrabold text-emerald-600 bg-emerald-100 px-1 py-0.2 rounded">
+                                    (+{tx.quantity})
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Restocked By */}
+                            <td className="px-3.5 py-3 text-gray-600 whitespace-nowrap">
+                              <div className="font-semibold text-[#29241f]">
+                                {tx.performedBy?.name || "System"}
+                              </div>
+                              {tx.performedBy?.role && (
+                                <div className="text-[10px] text-gray-400 capitalize">
+                                  {tx.performedBy.role}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Notes */}
+                            <td className="px-3.5 py-3 text-gray-600 max-w-[200px]">
+                              {tx.notes ? (
+                                <p className="text-xs text-gray-700 line-clamp-2" title={tx.notes}>
+                                  {tx.notes}
+                                </p>
+                              ) : isRestock ? (
+                                <span className="text-gray-400 italic">Inventory replenishment</span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+
+                            {/* Action Link to Item */}
+                            <td className="px-3.5 py-3 text-right whitespace-nowrap">
+                              {itemId ? (
+                                <Link
+                                  href={`/manager/stock/${itemId}`}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#9a6c37] hover:underline"
+                                >
+                                  <span>View Item</span>
+                                  <ExternalLink size={12} />
+                                </Link>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-gray-100 px-5 py-3 bg-[#faf8f5] shrink-0 text-xs text-gray-500">
+              <span>
+                Showing <b>{filteredAuditTransactions.length}</b> transaction entries
+              </span>
+              <button
+                type="button"
+                onClick={() => setAuditModalOpen(false)}
+                className="rounded-xl bg-[#29241f] px-4 py-2 font-bold text-white hover:bg-black transition cursor-pointer"
+              >
+                Close Audit History
+              </button>
+            </div>
           </div>
         </div>
       )}
