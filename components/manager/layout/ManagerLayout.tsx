@@ -110,6 +110,7 @@ export default function ManagerLayout({
         isOpen={isMenuOpen}
         isDesktopOpen={isDesktopSidebarOpen}
         onClose={closeMenu}
+        onToggle={toggleMenu}
         onLogout={handleLogout}
       />
 

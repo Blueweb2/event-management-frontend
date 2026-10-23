@@ -20,19 +20,22 @@ export default function ManagerHeader({
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-        {/* Menu / Hamburger Toggle Button */}
-        <button
-          type="button"
-          onClick={onMenuClick}
-          aria-label={isDesktopSidebarOpen ? "Toggle sidebar menu" : "Open menu"}
-          title={isDesktopSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 active:scale-95 cursor-pointer"
+        {/* Menu / Hamburger Toggle Button & Logo */}
+        <div
+          className={`flex items-center gap-3 ${
+            isDesktopSidebarOpen ? "lg:hidden" : ""
+          }`}
         >
-          <Menu size={22} strokeWidth={2} />
-        </button>
+          <button
+            type="button"
+            onClick={onMenuClick}
+            aria-label={isDesktopSidebarOpen ? "Toggle sidebar menu" : "Open menu"}
+            title={isDesktopSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-gray-700 transition hover:bg-gray-100 active:scale-95 cursor-pointer"
+          >
+            <Menu size={22} strokeWidth={2} />
+          </button>
 
-        {/* Logo */}
-        <div className="flex flex-1 justify-center lg:justify-start lg:pl-3">
           <img
             src="/images/logo.svg"
             alt="Logo"

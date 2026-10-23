@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Users,
   CalendarDays,
@@ -8,6 +9,7 @@ import {
   ClipboardList,
   IndianRupee,
   FileText,
+  Plus,
 } from "lucide-react";
 
 import ManagerStatCard from "./ManagerStatCard";
@@ -174,17 +176,27 @@ export default function ManagerStats() {
 
   return (
     <section aria-labelledby="manager-stats-heading">
-      <div className="mb-3">
-        <h2
-          id="manager-stats-heading"
-          className="text-base font-semibold text-[#1F1F1F]"
-        >
-          Overview
-        </h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2
+            id="manager-stats-heading"
+            className="text-base font-semibold text-[#1F1F1F]"
+          >
+            Overview
+          </h2>
 
-        <p className="mt-0.5 text-xs text-gray-500">
-          Your live event and staffing management summary
-        </p>
+          <p className="mt-0.5 text-xs text-gray-500">
+            Your live event and staffing management summary
+          </p>
+        </div>
+
+        <Link
+          href="/manager/booking"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 text-xs font-bold text-white shadow-2xs transition hover:bg-black active:scale-[0.98] cursor-pointer"
+        >
+          <Plus size={15} />
+          <span>New Booking</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

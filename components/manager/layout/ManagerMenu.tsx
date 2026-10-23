@@ -5,13 +5,9 @@ import { usePathname } from "next/navigation";
 
 import {
   X,
+  Menu,
   LogOut,
   ChevronRight,
-  ChefHat,
-  Palette,
-  Camera,
-  ShieldCheck,
-  User,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +24,7 @@ interface ManagerMenuProps {
   isOpen: boolean;
   isDesktopOpen?: boolean;
   onClose: () => void;
+  onToggle?: () => void;
   onLogout?: () => void;
 }
 
@@ -39,6 +36,7 @@ export default function ManagerMenu({
   isOpen,
   isDesktopOpen = true,
   onClose,
+  onToggle,
   onLogout,
 }: ManagerMenuProps) {
   const pathname = usePathname();
@@ -82,51 +80,30 @@ export default function ManagerMenu({
         aria-label="Manager navigation menu"
       >
         {/* ======================================
-            Header
+            Header: Hamburger Icon & Logo
         ====================================== */}
 
-        <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-200 px-5">
-          <div className="flex min-w-0 items-center gap-3">
-            {/* Scoped Manager Avatar */}
-            {scope.isChefManager ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-600 text-white shadow-sm ring-2 ring-amber-100">
-                <ChefHat size={22} strokeWidth={2.2} />
-              </div>
-            ) : scope.departmentType === "decoration" ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-100">
-                <Palette size={20} strokeWidth={2.2} />
-              </div>
-            ) : scope.departmentType === "photography" ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-sm ring-2 ring-sky-100">
-                <Camera size={20} strokeWidth={2.2} />
-              </div>
-            ) : scope.isSuperAdmin ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-sm ring-2 ring-rose-100">
-                <ShieldCheck size={22} strokeWidth={2.2} />
-              </div>
-            ) : (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#6B5B95] text-sm font-semibold text-white shadow-sm">
-                {user?.name ? user.name.charAt(0).toUpperCase() : <User size={20} />}
-              </div>
-            )}
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onToggle || onClose}
+              aria-label={isDesktopOpen ? "Collapse sidebar" : "Toggle sidebar menu"}
+              title={isDesktopOpen ? "Collapse sidebar" : "Toggle sidebar menu"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-700 transition hover:bg-gray-100 active:scale-95 cursor-pointer"
+            >
+              <Menu size={22} strokeWidth={2} />
+            </button>
 
-            {/* Manager Information */}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900">
-                {user?.name || "Manager"}
-              </p>
-
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold border truncate ${scope.badgeColor}`}
-                >
-                  {scope.roleTitle} · {scope.departmentDisplay}
-                </span>
-              </div>
-            </div>
+            <Link href="/manager" className="flex items-center">
+              <img
+                src="/images/logo.svg"
+                alt="Logo"
+                className="h-8 sm:h-9 w-auto object-contain"
+              />
+            </Link>
           </div>
 
-          {/* Close Button */}
           {/* Close Button (Mobile Only) */}
           <button
             type="button"
@@ -134,7 +111,7 @@ export default function ManagerMenu({
             aria-label="Close menu"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 active:scale-95 lg:hidden cursor-pointer"
           >
-            <X size={22} strokeWidth={2} />
+            <X size={20} strokeWidth={2} />
           </button>
         </div>
 
@@ -142,16 +119,7 @@ export default function ManagerMenu({
             Navigation (Role & Department Scoped)
         ====================================== */}
 
-        <nav className="flex-1 overflow-y-auto px-3 py-5">
-          <div className="mb-3 flex items-center justify-between px-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              {scope.isChefManager ? "Chef & Kitchen Menus" : `${scope.roleTitle} Menus`}
-            </p>
-            <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
-              {menuItems.length} items
-            </span>
-          </div>
-
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -220,16 +188,30 @@ export default function ManagerMenu({
         </nav>
 
         {/* ======================================
-            Logout
+            User Profile & Logout
         ====================================== */}
 
-        <div className="shrink-0 border-t border-gray-200 p-4">
+        <div className="shrink-0 border-t border-gray-200 p-3 space-y-1.5">
+          <div className="flex items-center gap-3 rounded-xl bg-stone-50 p-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#29241f] text-xs font-bold text-white shadow-xs">
+              {user?.name ? user.name.charAt(0).toUpperCase() : "M"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-bold text-gray-900">
+                {user?.name || "Manager"}
+              </p>
+              <p className="truncate text-[10px] text-gray-500 font-medium">
+                {user?.email || scope.roleTitle}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onLogout}
-            className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 active:scale-[0.99] cursor-pointer"
+            className="flex min-h-10 w-full items-center gap-2.5 rounded-xl px-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 active:scale-[0.99] cursor-pointer"
           >
-            <LogOut size={20} strokeWidth={2} className="shrink-0" />
+            <LogOut size={16} strokeWidth={2} className="shrink-0" />
             <span className="flex-1 text-left">Logout</span>
           </button>
         </div>
