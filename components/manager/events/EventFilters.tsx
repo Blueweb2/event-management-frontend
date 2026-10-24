@@ -6,22 +6,28 @@ interface EventFiltersProps {
   value: EventFilterStatus;
   onChange: (value: EventFilterStatus) => void;
   estimatesCount?: number;
+  ongoingCount?: number;
+  isOperationsManager?: boolean;
 }
 
 export default function EventFilters({
   value,
   onChange,
   estimatesCount = 0,
+  ongoingCount = 0,
+  isOperationsManager = false,
 }: EventFiltersProps) {
-  const filters: {
+  const allFilters: {
     label: string;
     value: EventFilterStatus;
     badge?: number;
     badgeColor?: string;
   }[] = [
-     {
+    {
       label: "Ongoing",
       value: "Ongoing",
+      badge: ongoingCount,
+      badgeColor: "bg-emerald-100 text-emerald-900 border border-emerald-300",
     },
     {
       label: "Upcoming",
@@ -33,7 +39,6 @@ export default function EventFilters({
       badge: estimatesCount,
       badgeColor: "bg-amber-100 text-amber-900 border border-amber-300",
     },
-   
     {
       label: "Completed",
       value: "Completed",
@@ -43,6 +48,10 @@ export default function EventFilters({
       value: "Cancelled",
     },
   ];
+
+  const filters = isOperationsManager
+    ? allFilters.filter((f) => f.value === "Ongoing" || f.value === "Upcoming")
+    : allFilters;
 
   return (
     <div className="-mx-4 overflow-x-auto px-4 scrollbar-none">

@@ -16,7 +16,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   useEffect(() => {
     if (!loading) {
       if (!token) {
-        router.push("/login?redirect=%2Fmanager%2Fstaff%3Ftab%3Dmanagers");
+        router.push("/login");
         return;
       }
 

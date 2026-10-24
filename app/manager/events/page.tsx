@@ -35,14 +35,18 @@ import {
   type ClientDocumentData,
 } from "@/lib/document-formatter";
 import { useAuth } from "@/hooks/useAuth";
+import { getManagerScope } from "@/lib/manager-navigation";
 
 function ManagerEventsContent() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const scope = getManagerScope(user);
+  const isOperationsManager = scope.departmentType === "operations";
 
   const [events, setEvents] = useState<Event[]>([]);
   const [allEstimates, setAllEstimates] = useState<Estimate[]>([]);
+  const [ongoingCount, setOngoingCount] = useState(0);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<EventFilterStatus>("Upcoming");
+  const [status, setStatus] = useState<EventFilterStatus>("Ongoing");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -56,41 +60,88 @@ function ManagerEventsContent() {
     message: string;
   } | null>(null);
 
+  // Operational manager is restricted to only viewing Ongoing and Upcoming events
+  useEffect(() => {
+    if (isOperationsManager && status !== "Ongoing" && status !== "Upcoming") {
+      setStatus("Ongoing");
+    }
+  }, [isOperationsManager, status]);
+
   // Fetch events and estimates
   const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const isEstimateTab = status === "Estimates";
+      if (isOperationsManager) {
+        // Operational manager only needs ongoing and upcoming events
+        const activeStatus = status === "Ongoing" ? "Ongoing" : "Upcoming";
 
-      // Parallel fetch events & estimates
-      const [eventsResponse, estimatesResponse] = await Promise.all([
-        getEvents({
-          search: isEstimateTab ? undefined : search.trim() || undefined,
-          status: isEstimateTab ? undefined : status,
-          page: 1,
-          limit: 100,
-        }).catch((err) => {
-          console.error("Events fetch warning:", err);
-          return { data: [] };
-        }),
-        getEstimates({ limit: 100 }, token || undefined).catch((err) => {
-          console.error("Estimates fetch warning:", err);
-          return { data: [] };
-        }),
-      ]);
+        const [eventsResponse, ongoingResponse] = await Promise.all([
+          getEvents({
+            search: search.trim() || undefined,
+            status: activeStatus,
+            page: 1,
+            limit: 100,
+          }).catch((err) => {
+            console.error("Events fetch warning:", err);
+            return { data: [] };
+          }),
+          activeStatus === "Ongoing"
+            ? Promise.resolve(null)
+            : getEvents({ status: "Ongoing", limit: 50 }).catch(() => ({ data: [] })),
+        ]);
 
-      setEvents(eventsResponse.data || []);
-      setAllEstimates(estimatesResponse.data || []);
+        const currentEvents = eventsResponse.data || [];
+        setEvents(currentEvents);
+        setAllEstimates([]);
+
+        if (activeStatus === "Ongoing") {
+          setOngoingCount(currentEvents.length);
+        } else if (ongoingResponse?.data) {
+          setOngoingCount(ongoingResponse.data.length);
+        }
+      } else {
+        const isEstimateTab = status === "Estimates";
+
+        // Parallel fetch events & estimates for superadmin / executive
+        const [eventsResponse, estimatesResponse, ongoingResponse] = await Promise.all([
+          getEvents({
+            search: isEstimateTab ? undefined : search.trim() || undefined,
+            status: isEstimateTab ? undefined : status,
+            page: 1,
+            limit: 100,
+          }).catch((err) => {
+            console.error("Events fetch warning:", err);
+            return { data: [] };
+          }),
+          getEstimates({ limit: 100 }, token || undefined).catch((err) => {
+            console.error("Estimates fetch warning:", err);
+            return { data: [] };
+          }),
+          status === "Ongoing"
+            ? Promise.resolve(null)
+            : getEvents({ status: "Ongoing", limit: 50 }).catch(() => ({ data: [] })),
+        ]);
+
+        const currentEvents = eventsResponse.data || [];
+        setEvents(currentEvents);
+        setAllEstimates(estimatesResponse.data || []);
+
+        if (status === "Ongoing") {
+          setOngoingCount(currentEvents.length);
+        } else if (ongoingResponse?.data) {
+          setOngoingCount(ongoingResponse.data.length);
+        }
+      }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to load events and estimates";
+        err instanceof Error ? err.message : "Failed to load events";
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [search, status, token]);
+  }, [search, status, token, isOperationsManager]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -207,6 +258,7 @@ function ManagerEventsContent() {
         type: "success",
         message: `Operations for "${event.eventName}" have been started successfully!`,
       });
+      setStatus("Ongoing");
       await fetchAllData();
     } catch (err) {
       setActionFeedback({
@@ -255,7 +307,7 @@ function ManagerEventsContent() {
       <div className="w-full">
         {/* Unified Header */}
         <div className="border-b border-gray-200 pb-5">
-          <EventsHeader />
+          <EventsHeader isOperationsManager={isOperationsManager} />
         </div>
 
         {/* Action Feedback Banner */}
@@ -285,8 +337,8 @@ function ManagerEventsContent() {
           </div>
         )}
 
-        {/* Prominent Banner for Pending Booking Estimates */}
-        {pendingEstimates.length > 0 && status !== "Estimates" && (
+        {/* Prominent Banner for Pending Booking Estimates (Hidden for Operations Manager) */}
+        {!isOperationsManager && pendingEstimates.length > 0 && status !== "Estimates" && (
           <div className="mt-4 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-amber-50/80 to-amber-100/50 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200 text-amber-950 font-black text-sm shadow-2xs">
@@ -333,6 +385,8 @@ function ManagerEventsContent() {
             value={status}
             onChange={setStatus}
             estimatesCount={pendingEstimates.length}
+            ongoingCount={ongoingCount}
+            isOperationsManager={isOperationsManager}
           />
         </section>
 

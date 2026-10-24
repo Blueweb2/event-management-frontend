@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import ManagerStats from "@/components/manager/dashboard/ManagerStats";
 import UpcomingEvents from "@/components/manager/dashboard/UpcomingEvents";
@@ -9,11 +10,20 @@ import DecorationDashboard from "@/components/manager/departments/DecorationDash
 import PhotographyDashboard from "@/components/manager/departments/PhotographyDashboard";
 
 export default function ManagerDashboardPage() {
+  const router = useRouter();
   const { user, token } = useAuth();
 
   const userDept = (user?.department || "").toLowerCase().trim();
   const role = (user?.role || "").toLowerCase().trim();
-  const isExecutive = role === "superadmin" || role === "admin" || userDept.includes("operation");
+  const isOperationsManager =
+    userDept.includes("operation") && role !== "superadmin" && role !== "admin";
+  const isExecutive = role === "superadmin" || role === "admin";
+
+  useEffect(() => {
+    if (isOperationsManager) {
+      router.replace("/manager/events");
+    }
+  }, [isOperationsManager, router]);
 
   // Determine initial view based on user department
   const getInitialView = () => {
@@ -33,7 +43,7 @@ export default function ManagerDashboardPage() {
     "OVERVIEW" | "KITCHEN" | "DECORATION" | "PHOTOGRAPHY"
   >(getInitialView());
 
-  if (!token) {
+  if (!token || isOperationsManager) {
     return null;
   }
 

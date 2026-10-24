@@ -226,6 +226,7 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
             shortageQuantity: s.shortageQuantity || s.requiredQuantity,
             unit: s.unit || "kg",
             urgency: "HIGH",
+            stockItem: s.stockItemId || undefined,
             notes: `Missing ingredient for ${calcModalEvent.eventName}`,
           })),
           notes: `Grocery order for ${calcModalEvent.eventName} (${calcModalEvent.guests} guests)`,
@@ -1101,14 +1102,22 @@ export default function KitchenDashboard({ token }: KitchenDashboardProps) {
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
-                        req.status === "APPROVED" || req.status === "FULFILLED"
+                        req.status === "FULFILLED"
                           ? "bg-emerald-100 text-emerald-800"
+                          : req.status === "APPROVED"
+                          ? "bg-sky-100 text-sky-800"
+                          : req.status === "PARTIALLY_FULFILLED"
+                          ? "bg-indigo-100 text-indigo-800"
                           : req.status === "REJECTED"
                           ? "bg-rose-100 text-rose-800"
+                          : req.status === "CANCELLED"
+                          ? "bg-gray-100 text-gray-600"
                           : "bg-amber-100 text-amber-900"
                       }`}
                     >
-                      {req.status}
+                      {req.status === "PARTIALLY_FULFILLED"
+                        ? "PARTIAL"
+                        : req.status}
                     </span>
                   </div>
                 ))

@@ -78,6 +78,10 @@ export const useAuth = () => {
       token: null,
       loading: false,
     });
+
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
   }, []);
 
   // ==========================================

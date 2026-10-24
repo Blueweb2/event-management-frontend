@@ -66,8 +66,7 @@ function handleUnauthorized(endpoint: string): void {
     ? `${currentPathname}?${queryString}`
     : currentPathname;
 
-  const encodedTarget = encodeURIComponent(safePath);
-  window.location.assign(`/login?expired=1&redirect=${encodedTarget}`);
+  window.location.assign("/login?expired=1");
 }
 
 export async function api<T>(

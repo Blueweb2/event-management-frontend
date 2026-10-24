@@ -31,62 +31,19 @@ interface LoginResponse {
  * and enforce role boundaries.
  */
 function getSafeRedirectUrl(
-  target: string | null | undefined,
   userRole: string,
+  userDepartment: string = "",
 ): string {
   const role = (userRole || "").toLowerCase();
-  let defaultPath = "/staff";
+  const dept = (userDepartment || "").toLowerCase();
+  const isOperationsManager = dept.includes("operation") && role !== "superadmin" && role !== "admin";
+
   if (role === "superadmin") {
-    defaultPath = "/manager/staff?tab=managers";
+    return "/manager";
   } else if (role === "admin" || role === "manager") {
-    defaultPath = "/manager";
+    return isOperationsManager ? "/manager/events" : "/manager";
   } else {
-    defaultPath = "/staff";
-  }
-
-  if (!target) return defaultPath;
-
-  try {
-    const decoded = decodeURIComponent(target).trim();
-
-    // Must start with single '/' and not protocol-relative '//' or '/\'
-    if (!decoded.startsWith("/") || decoded.startsWith("//") || decoded.startsWith("/\\")) {
-      return defaultPath;
-    }
-
-    // Disallow protocols (javascript:, http:, https:) or path traversal
-    if (decoded.includes(":") || decoded.includes("..")) {
-      return defaultPath;
-    }
-
-    // Prevent loops back to auth pages
-    if (decoded.startsWith("/login") || decoded.startsWith("/register")) {
-      return defaultPath;
-    }
-
-    // Handle legacy /superadmin requests
-    if (decoded === "/superadmin" || decoded.startsWith("/superadmin/")) {
-      return "/manager/staff?tab=managers";
-    }
-
-    // Enforce role boundaries on redirect destination
-    if (role === "staff") {
-      if (decoded.startsWith("/manager") || decoded.startsWith("/superadmin")) {
-        return "/staff";
-      }
-    } else if (role === "manager" || role === "admin") {
-      if (decoded.startsWith("/staff") || decoded.startsWith("/superadmin")) {
-        return "/manager";
-      }
-    } else if (role === "superadmin") {
-      if (decoded.startsWith("/staff") && !decoded.startsWith("/manager/staff")) {
-        return "/manager/staff?tab=managers";
-      }
-    }
-
-    return decoded;
-  } catch {
-    return defaultPath;
+    return "/staff";
   }
 }
 
@@ -95,7 +52,6 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
 
   const isExpired = searchParams?.get("expired") === "1";
-  const redirectParam = searchParams?.get("redirect");
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -159,8 +115,11 @@ export default function LoginForm() {
       resetLogoutState();
       writeAuth(token, user, true);
 
-      // Redirect safely to intended destination or role default
-      const destination = getSafeRedirectUrl(redirectParam, user.role || "");
+      // Always route to the primary first page for the user's role and department
+      const destination = getSafeRedirectUrl(
+        user.role || "",
+        user.department || ""
+      );
       router.push(destination);
     } catch (error) {
       console.error("Login error:", error);

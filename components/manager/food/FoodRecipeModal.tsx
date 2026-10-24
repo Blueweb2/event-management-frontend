@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   X,
   Loader2,
@@ -12,7 +11,6 @@ import {
   AlertCircle,
   Package,
   RefreshCw,
-  ExternalLink,
   Layers,
   Sparkles,
 } from "lucide-react";
@@ -27,6 +25,7 @@ import {
 } from "@/lib/department.api";
 import { getStockItems } from "@/lib/stock.api";
 import type { StockItem } from "@/types/stock";
+import StockIngredientCombobox from "./StockIngredientCombobox";
 
 interface FoodRecipeModalProps {
   isOpen: boolean;
@@ -237,6 +236,30 @@ export default function FoodRecipeModal({
     });
   };
 
+  const handleSelectStockItem = (index: number, stockItem: StockItem) => {
+    setIngredients((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        stockItemId: stockItem._id,
+        name: stockItem.name,
+        unit: stockItem.unit || updated[index].unit || "kg",
+      };
+      return updated;
+    });
+  };
+
+  const handleUnlinkStockItem = (index: number) => {
+    setIngredients((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        stockItemId: "",
+      };
+      return updated;
+    });
+  };
+
   const handleSaveRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -246,7 +269,7 @@ export default function FoodRecipeModal({
 
     // Validation 1: Ingredients existence
     if (ingredients.length === 0) {
-      setError("Please add at least one ingredient to standard recipe formula.");
+      setError("Please add at least one item to the recipe.");
       return;
     }
 
@@ -255,18 +278,18 @@ export default function FoodRecipeModal({
     for (let i = 0; i < ingredients.length; i++) {
       const ing = ingredients[i];
       if (!ing.name.trim()) {
-        setError(`Ingredient #${i + 1} requires a valid name.`);
+        setError(`Item #${i + 1} requires a name.`);
         return;
       }
       const qty = Number(ing.quantityPerServing);
       if (isNaN(qty) || qty <= 0) {
         setError(
-          `Ingredient "${ing.name || `#${i + 1}`}" quantity per serving must be greater than zero.`
+          `Item "${ing.name || `#${i + 1}`}" quantity must be greater than zero.`
         );
         return;
       }
       if (!ing.unit.trim()) {
-        setError(`Ingredient "${ing.name}" requires a measurement unit.`);
+        setError(`Item "${ing.name}" requires a unit.`);
         return;
       }
 
@@ -274,7 +297,7 @@ export default function FoodRecipeModal({
         if (seenStockIds.has(ing.stockItemId)) {
           const dup = stockItems.find((s) => s._id === ing.stockItemId);
           setError(
-            `Duplicate stock item detected: "${dup?.name || ing.stockItemId}" is already linked in this recipe.`
+            `"${dup?.name || ing.stockItemId}" is already added to this recipe.`
           );
           return;
         }
@@ -301,7 +324,7 @@ export default function FoodRecipeModal({
       };
 
       const res = await upsertRecipe(payload, token);
-      setSuccessMsg("Standard recipe formula saved successfully!");
+      setSuccessMsg("Recipe saved successfully!");
       if (onRecipeSaved && res.data) {
         onRecipeSaved(res.data);
       }
@@ -337,7 +360,7 @@ export default function FoodRecipeModal({
                 </span>
                 <span className="text-xs text-gray-300">·</span>
                 <span className="text-xs font-semibold text-[#6B5B95]">
-                  Standard Recipe & Inventory Mapping
+                  Recipe Details
                 </span>
               </div>
               <h2 className="text-lg font-black text-[#29241f] leading-tight">
@@ -360,7 +383,7 @@ export default function FoodRecipeModal({
           <div className="flex h-64 flex-col items-center justify-center text-center">
             <Loader2 size={32} className="animate-spin text-[#6B5B95]" />
             <p className="mt-3 text-xs font-semibold text-gray-500">
-              Loading recipe and inventory records...
+              Loading recipe details...
             </p>
           </div>
         ) : (
@@ -385,71 +408,46 @@ export default function FoodRecipeModal({
               </div>
             )}
 
-            {/* Live Stock Management Status Banner */}
-            <div className="rounded-2xl border border-stone-200 bg-[#faf8f5] p-3 text-stone-700">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Package size={16} className="text-[#9a6c37]" />
-                  <span className="font-bold text-stone-800">
-                    Live Stock Inventory Status:
+            {/* Live Kitchen Stock Banner */}
+            <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-[#faf8f5] px-3.5 py-2 text-stone-700">
+              <div className="flex items-center gap-2">
+                <Package size={15} className="text-[#6B5B95]" />
+                <span className="font-bold text-xs text-stone-800">
+                  Store Stock:
+                </span>
+                {stockLoading ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500">
+                    <Loader2 size={12} className="animate-spin text-[#9a6c37]" />
+                    Checking stock...
                   </span>
-                  {stockLoading ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-stone-500">
-                      <Loader2 size={12} className="animate-spin text-[#9a6c37]" />
-                      Connecting to warehouse stock...
-                    </span>
-                  ) : stockError ? (
-                    <span className="text-[11px] font-semibold text-rose-600">
-                      Stock sync warning: {stockError}
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                      {stockItems.length} eligible kitchen ingredients loaded
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={fetchEligibleStockItems}
-                    disabled={stockLoading}
-                    title="Refresh stock inventory list from warehouse"
-                    className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 hover:bg-stone-100 transition disabled:opacity-50"
-                  >
-                    <RefreshCw size={11} className={stockLoading ? "animate-spin" : ""} />
-                    <span>Sync Stock</span>
-                  </button>
-
-                  <Link
-                    href="/manager/stock?category=Raw%20Ingredients"
-                    target="_blank"
-                    className="inline-flex items-center gap-1 rounded-lg border border-[#6B5B95]/30 bg-[#6B5B95]/10 px-2.5 py-1 text-[11px] font-bold text-[#6B5B95] hover:bg-[#6B5B95]/20 transition"
-                  >
-                    <span>Stock Management</span>
-                    <ExternalLink size={10} />
-                  </Link>
-                </div>
+                ) : stockError ? (
+                  <span className="text-[11px] font-semibold text-rose-600">
+                    Warning: {stockError}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                    {stockItems.length} items available
+                  </span>
+                )}
               </div>
 
-              {/* Empty stock inventory notice */}
-              {!stockLoading && !stockError && stockItems.length === 0 && (
-                <div className="mt-2.5 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-amber-900 text-[11px]">
-                  <p className="font-bold">
-                    Notice: No kitchen raw ingredients found in Stock Management.
-                  </p>
-                  <p className="mt-0.5 text-amber-800">
-                    To link recipe ingredients to inventory tracking, please add raw ingredients or kitchen supplies under Manager → Stock Management.
-                  </p>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={fetchEligibleStockItems}
+                disabled={stockLoading}
+                title="Refresh stock"
+                className="inline-flex items-center gap-1 rounded-lg border border-stone-300 bg-white px-2.5 py-1 text-[11px] font-bold text-stone-700 hover:bg-stone-100 transition disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw size={11} className={stockLoading ? "animate-spin" : ""} />
+                <span>Refresh</span>
+              </button>
             </div>
 
-            {/* Yield & Wastage Settings */}
+            {/* Servings & Wastage Settings */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3 rounded-2xl border border-stone-200 shadow-xs">
               <div>
                 <label className="block font-bold text-stone-700 mb-1">
-                  Recipe Yield Servings (Batch Yield) *
+                  Number of Plates / Servings *
                 </label>
                 <div className="flex items-center gap-1.5">
                   <input
@@ -462,17 +460,17 @@ export default function FoodRecipeModal({
                     className="w-full rounded-xl border border-stone-300 bg-white p-2 text-xs font-bold text-stone-900 outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95]"
                   />
                   <span className="text-stone-400 text-[11px] shrink-0 font-medium">
-                    servings / batch
+                    plates
                   </span>
                 </div>
                 <p className="mt-1 text-[10px] text-gray-400">
-                  Total guest portions produced by the ingredient quantities below.
+                  How many plates this recipe is prepared for.
                 </p>
               </div>
 
               <div>
                 <label className="block font-bold text-stone-700 mb-1">
-                  Standard Cooking Wastage Buffer (%) *
+                  Extra Wastage Margin (%)
                 </label>
                 <div className="flex items-center gap-1.5">
                   <input
@@ -486,11 +484,11 @@ export default function FoodRecipeModal({
                     className="w-full rounded-xl border border-stone-300 bg-white p-2 text-xs font-bold text-stone-900 outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95]"
                   />
                   <span className="text-stone-400 text-[11px] shrink-0 font-medium">
-                    % buffer allowance
+                    % extra
                   </span>
                 </div>
                 <p className="mt-1 text-[10px] text-gray-400">
-                  Applied during catering calculations for peeling, trimming & cooking shrinkage.
+                  Extra margin for cleaning, cutting, and cooking loss.
                 </p>
               </div>
             </div>
@@ -501,10 +499,10 @@ export default function FoodRecipeModal({
                 <div>
                   <h3 className="font-black text-[#29241f] text-xs uppercase tracking-wider flex items-center gap-1.5">
                     <Layers size={14} className="text-[#6B5B95]" />
-                    <span>Recipe Ingredients ({ingredients.length})</span>
+                    <span>Ingredients ({ingredients.length})</span>
                   </h3>
                   <p className="text-[11px] text-gray-500">
-                    Quantities specified for {yieldServings} {yieldServings === 1 ? "serving" : "servings"}.
+                    Amounts needed for {yieldServings} {yieldServings === 1 ? "plate" : "plates"}.
                   </p>
                 </div>
 
@@ -514,7 +512,7 @@ export default function FoodRecipeModal({
                   className="inline-flex items-center gap-1 rounded-xl bg-[#6B5B95] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#594980] transition shadow-xs cursor-pointer"
                 >
                   <Plus size={14} />
-                  <span>Add Ingredient</span>
+                  <span>Add Item</span>
                 </button>
               </div>
 
@@ -522,14 +520,14 @@ export default function FoodRecipeModal({
                 <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50/50 p-8 text-center text-gray-500">
                   <ChefHat size={28} className="mx-auto text-gray-400 mb-2" />
                   <p className="font-bold text-xs text-gray-700">
-                    No ingredients configured yet for this dish.
+                    No items added yet for this dish.
                   </p>
                   <p className="text-[11px] text-gray-500 mt-1">
-                    Click &quot;+ Add Ingredient&quot; above to select live ingredients from warehouse stock and set standard ratios.
+                    Click &quot;+ Add Item&quot; above to search and add ingredients from store stock.
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-xs">
+                <div className="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white shadow-xs">
                   {ingredients.map((ing, idx) => {
                     const linkedStockDoc = ing.stockItemId
                       ? stockItems.find((s) => s._id === ing.stockItemId)
@@ -538,76 +536,24 @@ export default function FoodRecipeModal({
                     return (
                       <div key={idx} className="p-3 space-y-2 hover:bg-stone-50/50 transition">
                         <div className="grid grid-cols-12 gap-2.5 items-start">
-                          {/* Stock Inventory Linkage Dropdown */}
-                          <div className="col-span-12 sm:col-span-5">
-                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
-                              Stock Item Mapping *
-                            </label>
-                            <select
-                              value={ing.stockItemId}
-                              onChange={(e) =>
-                                handleIngredientChange(idx, "stockItemId", e.target.value)
+                          {/* Unified Item Search Combobox */}
+                          <div className="col-span-12 sm:col-span-7">
+                            <StockIngredientCombobox
+                              name={ing.name}
+                              stockItemId={ing.stockItemId}
+                              stockItems={stockItems}
+                              usedStockIds={linkedStockIds}
+                              onChangeName={(newName) =>
+                                handleIngredientChange(idx, "name", newName)
                               }
-                              className={`w-full rounded-xl border p-2 text-xs font-semibold outline-none focus:border-[#6B5B95] ${
-                                ing.stockItemId
-                                  ? "border-emerald-300 bg-emerald-50/30 text-stone-900"
-                                  : "border-gray-200 bg-white text-stone-700"
-                              }`}
-                            >
-                              <option value="">
-                                {stockItems.length > 0
-                                  ? "-- Select from Live Stock Inventory --"
-                                  : "-- No stock inventory loaded --"}
-                              </option>
-                              {stockItems.map((s) => {
-                                const isAlreadyUsed =
-                                  linkedStockIds.has(s._id) && ing.stockItemId !== s._id;
-                                return (
-                                  <option
-                                    key={s._id}
-                                    value={s._id}
-                                    disabled={isAlreadyUsed}
-                                  >
-                                    {s.name} ({s.availableQuantity} {s.unit} in stock - {s.category})
-                                    {isAlreadyUsed ? " — [already selected]" : ""}
-                                  </option>
-                                );
-                              })}
-                            </select>
-
-                            {/* Status indicator for inventory tracking */}
-                            {linkedStockDoc ? (
-                              <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
-                                <CheckCircle2 size={11} className="shrink-0" />
-                                <span>
-                                  Tracked: {linkedStockDoc.availableQuantity} {linkedStockDoc.unit} in warehouse ({linkedStockDoc.location || "Central Warehouse"})
-                                </span>
-                              </p>
-                            ) : (
-                              <p className="mt-1 text-[10px] text-amber-600 font-medium">
-                                ⚠️ Untracked recipe note: not linked to warehouse stock.
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Ingredient Display Name */}
-                          <div className="col-span-12 sm:col-span-3">
-                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
-                              Recipe Display Name *
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              placeholder="e.g. Basmati Rice"
-                              value={ing.name}
-                              onChange={(e) =>
-                                handleIngredientChange(idx, "name", e.target.value)
+                              onSelectStockItem={(selected) =>
+                                handleSelectStockItem(idx, selected)
                               }
-                              className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-bold text-stone-900 outline-none focus:border-[#6B5B95]"
+                              onUnlinkStockItem={() => handleUnlinkStockItem(idx)}
                             />
                           </div>
 
-                          {/* Quantity per batch */}
+                          {/* Quantity */}
                           <div className="col-span-6 sm:col-span-2">
                             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                               Quantity *
@@ -626,7 +572,7 @@ export default function FoodRecipeModal({
                           </div>
 
                           {/* Unit */}
-                          <div className="col-span-5 sm:col-span-1">
+                          <div className="col-span-5 sm:col-span-2">
                             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                               Unit *
                             </label>
@@ -635,7 +581,7 @@ export default function FoodRecipeModal({
                               onChange={(e) =>
                                 handleIngredientChange(idx, "unit", e.target.value)
                               }
-                              className="w-full rounded-xl border border-gray-200 bg-white p-2 text-xs font-semibold outline-none focus:border-[#6B5B95]"
+                              className="w-full rounded-xl border border-gray-200 bg-white px-2.5 py-2 text-xs font-semibold outline-none focus:border-[#6B5B95] cursor-pointer min-w-[70px]"
                             >
                               {COMMON_UNITS.map((u) => (
                                 <option key={u} value={u}>
@@ -657,18 +603,18 @@ export default function FoodRecipeModal({
                               type="button"
                               onClick={() => handleRemoveIngredient(idx)}
                               className="rounded-lg p-1 text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-                              title="Remove ingredient"
+                              title="Remove item"
                             >
                               <Trash2 size={16} />
                             </button>
                           </div>
                         </div>
 
-                        {/* Optional preparation note */}
+                        {/* Optional notes */}
                         <div>
                           <input
                             type="text"
-                            placeholder="Preparation notes (e.g. soaked 30 mins, peeled & julienned)..."
+                            placeholder="Notes (optional - e.g. chopped, fried, boiled)..."
                             value={ing.notes}
                             onChange={(e) =>
                               handleIngredientChange(idx, "notes", e.target.value)
@@ -683,14 +629,14 @@ export default function FoodRecipeModal({
               )}
             </div>
 
-            {/* Chef Preparation Notes */}
+            {/* Cooking Instructions / Notes */}
             <div>
               <label className="block font-bold text-stone-700 mb-1">
-                Chef Preparation Instructions / Special Notes
+                Cooking Instructions / Notes (optional)
               </label>
               <textarea
                 rows={2}
-                placeholder="Cooking procedures, temperature instructions, allergen warnings, or station guidelines..."
+                placeholder="Cooking steps, masala mixing tips, boiling time, or special instructions..."
                 value={chefNotes}
                 onChange={(e) => setChefNotes(e.target.value)}
                 className="w-full rounded-xl border border-stone-300 p-2.5 text-xs text-stone-800 outline-none focus:border-[#6B5B95] focus:ring-1 focus:ring-[#6B5B95]"
@@ -714,12 +660,12 @@ export default function FoodRecipeModal({
                 {saving ? (
                   <>
                     <Loader2 size={14} className="animate-spin text-white" />
-                    <span>Saving Recipe...</span>
+                    <span>Saving...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles size={14} className="text-amber-300" />
-                    <span>Save Recipe Formula</span>
+                    <span>Save Recipe</span>
                   </>
                 )}
               </button>

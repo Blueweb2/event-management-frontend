@@ -27,6 +27,11 @@ import {
   FileText,
   BadgeAlert,
   SlidersHorizontal,
+  Check,
+  X,
+  Truck,
+  ArrowDownToLine,
+  CheckCheck,
 } from "lucide-react";
 
 import { getEventById, type Event } from "@/lib/event.api";
@@ -34,6 +39,8 @@ import {
   getEventStaffingRequirements,
   calculateKitchenIngredients,
   getKitchenPurchaseRequests,
+  reviewKitchenPurchaseRequest,
+  receiveKitchenPurchaseRequest,
   type IngredientCalculationResult,
   type EventStaffingResponse,
   type PurchaseRequestRecord,
@@ -44,7 +51,7 @@ import { formatINR } from "@/lib/document-formatter";
 export default function EventCateringPage() {
   const router = useRouter();
   const params = useParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const eventId = typeof params?.id === "string" ? params.id : "";
 
@@ -58,10 +65,20 @@ export default function EventCateringPage() {
   const [loading, setLoading] = useState(true);
   const [calcLoading, setCalcLoading] = useState(false);
   const [error, setError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [wastagePercent, setWastagePercent] = useState<number>(5);
   const [activeTab, setActiveTab] = useState<"all" | "menu" | "recipe_calc" | "groceries">("all");
   const [menuSearch, setMenuSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+
+  // Purchase request review & receive states
+  const [reviewModalPr, setReviewModalPr] = useState<PurchaseRequestRecord | null>(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [receiveModalPr, setReceiveModalPr] = useState<PurchaseRequestRecord | null>(null);
+  const [receiveQuantities, setReceiveQuantities] = useState<Record<string, number | string>>({});
+  const [receiveNotes, setReceiveNotes] = useState("");
+  const [receiveSubmitting, setReceiveSubmitting] = useState(false);
 
   // Fetch all primary event data
   const fetchEventData = useCallback(async () => {
@@ -262,32 +279,143 @@ export default function EventCateringPage() {
   // Status badge for purchase requests
   const renderPurchaseStatusBadge = (status: string) => {
     const s = (status || "").toUpperCase();
-    if (s === "APPROVED") {
+    if (s === "FULFILLED") {
       return (
-        <span className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-          Approved
+        <span className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-800">
+          Fulfilled / Stocked
         </span>
       );
     }
-    if (s === "ORDERED" || s === "FULFILLED") {
+    if (s === "PARTIALLY_FULFILLED") {
       return (
-        <span className="rounded-md border border-blue-300 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800">
-          {s === "FULFILLED" ? "Received / Fulfilled" : "Ordered"}
+        <span className="rounded-md border border-indigo-300 bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-800">
+          Partially Received
+        </span>
+      );
+    }
+    if (s === "APPROVED") {
+      return (
+        <span className="rounded-md border border-sky-300 bg-sky-50 px-2 py-0.5 text-[10px] font-black text-sky-800">
+          Approved (Ready to Restock)
         </span>
       );
     }
     if (s === "REJECTED") {
       return (
-        <span className="rounded-md border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-800">
+        <span className="rounded-md border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-black text-rose-800">
           Rejected
         </span>
       );
     }
+    if (s === "CANCELLED") {
+      return (
+        <span className="rounded-md border border-gray-300 bg-gray-100 px-2 py-0.5 text-[10px] font-black text-gray-600">
+          Cancelled
+        </span>
+      );
+    }
     return (
-      <span className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-        Pending Approval
+      <span className="rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-800">
+        Pending Review
       </span>
     );
+  };
+
+  const handleApproveRequest = async (pr: PurchaseRequestRecord) => {
+    if (!token) return;
+    try {
+      setReviewSubmitting(true);
+      await reviewKitchenPurchaseRequest(pr._id, { status: "APPROVED" }, token);
+      setActionSuccess(`Grocery order #${pr._id.slice(-6).toUpperCase()} approved! You can now receive goods.`);
+      setReviewModalPr(null);
+      await fetchEventData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to approve request");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleRejectRequest = async (pr: PurchaseRequestRecord) => {
+    if (!token) return;
+    if (!rejectionReasonInput.trim()) {
+      alert("Please provide a reason for rejecting this grocery request.");
+      return;
+    }
+    try {
+      setReviewSubmitting(true);
+      await reviewKitchenPurchaseRequest(
+        pr._id,
+        { status: "REJECTED", rejectionReason: rejectionReasonInput.trim() },
+        token
+      );
+      setActionSuccess(`Grocery order #${pr._id.slice(-6).toUpperCase()} marked as rejected.`);
+      setReviewModalPr(null);
+      setRejectionReasonInput("");
+      await fetchEventData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to reject request");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const openReceiveModal = (pr: PurchaseRequestRecord) => {
+    const initialQty: Record<string, number | string> = {};
+    (pr.items || []).forEach((item) => {
+      const target =
+        item.approvedQuantity !== null && item.approvedQuantity !== undefined
+          ? item.approvedQuantity
+          : item.shortageQuantity;
+      const remaining = Math.max(0, target - (item.receivedQuantity || 0));
+      initialQty[item._id] = remaining;
+    });
+    setReceiveQuantities(initialQty);
+    setReceiveNotes("");
+    setReceiveModalPr(pr);
+  };
+
+  const handleReceiveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !receiveModalPr) return;
+
+    const receivedItems = Object.entries(receiveQuantities)
+      .map(([itemId, qty]) => {
+        const num = Number(qty);
+        const origItem = receiveModalPr.items.find((i) => i._id === itemId);
+        return {
+          itemId,
+          quantityReceived: num,
+          unit: origItem?.unit || "kg",
+        };
+      })
+      .filter((i) => i.quantityReceived > 0);
+
+    if (receivedItems.length === 0) {
+      alert("Please enter a positive delivery quantity for at least one item.");
+      return;
+    }
+
+    try {
+      setReceiveSubmitting(true);
+      const idempotencyKey = `rcpt_${receiveModalPr._id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      await receiveKitchenPurchaseRequest(
+        receiveModalPr._id,
+        {
+          receivedItems,
+          notes: receiveNotes.trim() || undefined,
+          idempotencyKey,
+        },
+        token
+      );
+      setActionSuccess("Goods received and warehouse stock successfully updated!");
+      setReceiveModalPr(null);
+      await fetchEventData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to receive goods");
+    } finally {
+      setReceiveSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -877,69 +1005,408 @@ export default function EventCateringPage() {
             </div>
           ) : (
             <div className="mt-5 space-y-4">
-              {purchaseRequests.map((pr, pIdx) => (
-                <div
-                  key={pr._id || pIdx}
-                  className="rounded-2xl border border-amber-200/90 bg-[#faf8f5]/60 p-4 shadow-2xs"
-                >
-                  {/* PR Header */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#ede5d8] pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-xs text-[#29241f]">
-                        Request #{String(pr._id).slice(-6).toUpperCase()}
-                      </span>
-                      {renderPurchaseStatusBadge(pr.status)}
+              {actionSuccess && (
+                <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 flex items-center justify-between animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span className="font-semibold">{actionSuccess}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActionSuccess(null)}
+                    className="text-emerald-700 hover:text-emerald-900 p-1"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {purchaseRequests.map((pr, pIdx) => {
+                const isPending = pr.status === "PENDING";
+                const isReadyToReceive =
+                  pr.status === "APPROVED" || pr.status === "PARTIALLY_FULFILLED";
+
+                return (
+                  <div
+                    key={pr._id || pIdx}
+                    className="rounded-2xl border border-amber-200/90 bg-[#faf8f5]/60 p-4 shadow-2xs space-y-3"
+                  >
+                    {/* PR Header */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#ede5d8] pb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-xs text-[#29241f]">
+                          Request #{String(pr._id).slice(-6).toUpperCase()}
+                        </span>
+                        {renderPurchaseStatusBadge(pr.status)}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isPending && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveRequest(pr)}
+                              disabled={reviewSubmitting}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition disabled:opacity-50 cursor-pointer"
+                            >
+                              <Check size={13} />
+                              <span>Approve</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReviewModalPr(pr);
+                                setRejectionReasonInput("");
+                              }}
+                              disabled={reviewSubmitting}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold shadow-2xs transition disabled:opacity-50 cursor-pointer"
+                            >
+                              <X size={13} />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        )}
+
+                        {isReadyToReceive && (
+                          <button
+                            type="button"
+                            onClick={() => openReceiveModal(pr)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-800 hover:bg-[#29241f] text-white text-xs font-bold shadow-2xs transition cursor-pointer"
+                          >
+                            <Truck size={14} />
+                            <span>Receive Goods / Restock Store</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-[11px] text-gray-500">
-                      <span>Requested by: <strong className="text-gray-700">{pr.requestedBy?.name || "Kitchen Staff"}</strong></span>
-                      {pr.createdAt && (
-                        <span>{new Date(pr.createdAt).toLocaleDateString()}</span>
+
+                    {/* Metadata & Audit Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-500">
+                      <div>
+                        Requested by:{" "}
+                        <strong className="text-gray-700">
+                          {pr.requestedBy?.name || "Kitchen Staff"}
+                        </strong>
+                        {pr.createdAt && (
+                          <span className="ml-2 text-gray-400">
+                            ({new Date(pr.createdAt).toLocaleDateString()})
+                          </span>
+                        )}
+                      </div>
+
+                      {pr.approvedBy && (
+                        <div>
+                          Approved by:{" "}
+                          <strong className="text-gray-700">
+                            {pr.approvedBy.name}
+                          </strong>
+                          {pr.approvedAt && (
+                            <span className="ml-1 text-gray-400">
+                              on {new Date(pr.approvedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {pr.notes && (
-                    <div className="mt-2 text-xs text-amber-900 italic bg-amber-50/80 border border-amber-200/60 rounded-xl p-2">
-                      Request Notes: {pr.notes}
+                    {/* Notes */}
+                    {pr.notes && (
+                      <div className="text-xs text-amber-900 italic bg-amber-50/80 border border-amber-200/60 rounded-xl p-2.5">
+                        <strong>Notes:</strong> {pr.notes}
+                      </div>
+                    )}
+
+                    {/* Rejection notice */}
+                    {pr.status === "REJECTED" && pr.rejectionReason && (
+                      <div className="text-xs text-rose-900 bg-rose-50 border border-rose-200 rounded-xl p-2.5">
+                        <strong>Rejection Reason:</strong> {pr.rejectionReason}
+                      </div>
+                    )}
+
+                    {/* Items Grid */}
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {(pr.items || []).map((it, iIdx) => {
+                        const targetQty =
+                          it.approvedQuantity !== null && it.approvedQuantity !== undefined
+                            ? it.approvedQuantity
+                            : it.shortageQuantity;
+                        const receivedQty = it.receivedQuantity || 0;
+                        const isFulfilled = receivedQty >= targetQty;
+
+                        return (
+                          <div
+                            key={it.itemName + iIdx}
+                            className="rounded-xl border border-white bg-white p-3 shadow-2xs flex flex-col justify-between text-xs space-y-1.5"
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <span className="font-bold text-gray-800 truncate">
+                                {it.itemName}
+                              </span>
+                              {isFulfilled ? (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+                                  <CheckCheck size={11} /> Stocked
+                                </span>
+                              ) : receivedQty > 0 ? (
+                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md">
+                                  Partial
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-gray-100">
+                              <span>
+                                Shortage:{" "}
+                                <strong className="text-gray-800">
+                                  {it.shortageQuantity} {it.unit}
+                                </strong>
+                              </span>
+                              <span>
+                                Received:{" "}
+                                <strong
+                                  className={
+                                    receivedQty > 0 ? "text-emerald-700" : "text-gray-400"
+                                  }
+                                >
+                                  {receivedQty} / {targetQty} {it.unit}
+                                </strong>
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
 
-                  {/* Items Grid */}
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {(pr.items || []).map((it, iIdx) => (
-                      <div
-                        key={it.itemName + iIdx}
-                        className="rounded-xl border border-white bg-white p-2.5 shadow-2xs flex items-center justify-between text-xs"
-                      >
-                        <div className="truncate pr-2">
-                          <span className="font-bold text-gray-800 block truncate">{it.itemName}</span>
-                          {it.notes && (
-                            <span className="text-[10px] text-gray-400 block truncate">{it.notes}</span>
-                          )}
-                          {it.urgency && (
-                            <span className="inline-block mt-0.5 text-[9px] font-extrabold uppercase text-amber-700">
-                              Urgency: {it.urgency}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="font-extrabold text-amber-900 block">
-                            {it.requiredQuantity} {it.unit}
-                          </span>
-                          {it.estimatedCost ? (
-                            <span className="text-[10px] text-gray-400 block">
-                              {formatINR(it.estimatedCost)}
-                            </span>
-                          ) : null}
+                    {/* Receipt History Log */}
+                    {pr.receipts && pr.receipts.length > 0 && (
+                      <div className="pt-2 border-t border-[#ede5d8] text-[11px] text-gray-500">
+                        <span className="font-bold text-[#29241f] block mb-1">
+                          Delivery Receipts ({pr.receipts.length}):
+                        </span>
+                        <div className="space-y-1">
+                          {pr.receipts.map((rc, rIdx) => (
+                            <div
+                              key={rc.receiptId || rIdx}
+                              className="bg-white/80 rounded-lg p-1.5 px-2 border border-stone-200/60 flex items-center justify-between"
+                            >
+                              <span>
+                                Received on{" "}
+                                {new Date(rc.receivedAt).toLocaleDateString()} by{" "}
+                                <strong className="text-gray-700">
+                                  {rc.receivedBy?.name || "Storekeeper"}
+                                </strong>
+                                {rc.notes ? ` (${rc.notes})` : ""}:{" "}
+                                <span className="text-amber-900 font-medium">
+                                  {rc.items
+                                    .map(
+                                      (it) =>
+                                        `${it.itemName}: +${it.quantityReceived} ${it.unit}`
+                                    )
+                                    .join(", ")}
+                                </span>
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: REJECT PURCHASE REQUEST REASON */}
+      {/* ========================================================================= */}
+      {reviewModalPr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-base font-bold text-rose-800 flex items-center gap-2">
+                <XCircle size={18} />
+                <span>Reject Grocery Request</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setReviewModalPr(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600">
+              Please provide a clear reason why Request #
+              {reviewModalPr._id.slice(-6).toUpperCase()} cannot be fulfilled. This
+              will be shared with the kitchen team.
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Reason for Rejection *
+              </label>
+              <textarea
+                rows={3}
+                value={rejectionReasonInput}
+                onChange={(e) => setRejectionReasonInput(e.target.value)}
+                placeholder="e.g. Budget exhausted, item unavailable with vendor, or sufficient alternative available in pantry..."
+                className="w-full rounded-xl border border-gray-200 p-2.5 text-xs focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setReviewModalPr(null)}
+                className="px-3.5 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRejectRequest(reviewModalPr)}
+                disabled={reviewSubmitting || !rejectionReasonInput.trim()}
+                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-2xs transition disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {reviewSubmitting && <Loader2 size={13} className="animate-spin" />}
+                <span>Confirm Rejection</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: RECEIVE GOODS & RESTOCK INVENTORY */}
+      {/* ========================================================================= */}
+      {receiveModalPr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <form
+            onSubmit={handleReceiveSubmit}
+            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95"
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-800 border border-amber-200">
+                  <Truck size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#29241f]">
+                    Receive Goods & Restock Store
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Request #{receiveModalPr._id.slice(-6).toUpperCase()} • Master
+                    Warehouse Inventory Update
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiveModalPr(null)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-amber-50/70 border border-amber-200/80 p-2.5 text-xs text-amber-900">
+              Entering delivery counts will instantly credit available quantities in
+              the master inventory and record a tamper-proof audit ledger transaction.
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-gray-700">
+                Delivered Items & Quantities
+              </label>
+
+              {receiveModalPr.items.map((it) => {
+                const target =
+                  it.approvedQuantity !== null && it.approvedQuantity !== undefined
+                    ? it.approvedQuantity
+                    : it.shortageQuantity;
+                const previouslyReceived = it.receivedQuantity || 0;
+                const pending = Math.max(0, target - previouslyReceived);
+
+                return (
+                  <div
+                    key={it._id}
+                    className="p-3 rounded-2xl border border-stone-200 bg-[#faf8f5] flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 truncate">{it.itemName}</p>
+                      <p className="text-[11px] text-gray-500">
+                        Requested: {target} {it.unit} • Received so far:{" "}
+                        <strong className="text-emerald-700">
+                          {previouslyReceived} {it.unit}
+                        </strong>{" "}
+                        • Remaining: {pending} {it.unit}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[11px] font-bold text-gray-500">
+                        Deliver:
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={receiveQuantities[it._id] ?? ""}
+                        onChange={(e) =>
+                          setReceiveQuantities({
+                            ...receiveQuantities,
+                            [it._id]: e.target.value,
+                          })
+                        }
+                        className="w-20 rounded-xl border border-stone-300 bg-white p-1.5 px-2 text-center text-xs font-bold text-gray-900 focus:border-amber-600 focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-gray-600 w-8">
+                        {it.unit}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">
+                Delivery Notes / Vendor Invoice Number (Optional)
+              </label>
+              <input
+                type="text"
+                value={receiveNotes}
+                onChange={(e) => setReceiveNotes(e.target.value)}
+                placeholder="e.g. Metro Cash & Carry, Invoice #58209, fresh stock"
+                className="w-full rounded-xl border border-gray-200 p-2 text-xs focus:border-amber-600 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setReceiveModalPr(null)}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={receiveSubmitting}
+                className="px-5 py-2 rounded-xl bg-amber-800 hover:bg-[#29241f] text-white text-xs font-bold shadow-sm transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {receiveSubmitting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <ArrowDownToLine size={14} />
+                )}
+                <span>Confirm Delivery & Restock</span>
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </div>
   );

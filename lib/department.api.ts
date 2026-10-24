@@ -354,8 +354,22 @@ export interface PurchaseRequestPayload {
 export interface PurchaseRequestRecord {
   _id: string;
   department: string;
-  status: "PENDING" | "APPROVED" | "ORDERED" | "FULFILLED" | "REJECTED";
+  status:
+    | "PENDING"
+    | "APPROVED"
+    | "ORDERED"
+    | "PARTIALLY_FULFILLED"
+    | "FULFILLED"
+    | "REJECTED"
+    | "CANCELLED";
   notes?: string;
+  rejectionReason?: string;
+  event?: {
+    _id: string;
+    eventName: string;
+    eventDate: string;
+    location?: string;
+  };
   items: Array<{
     _id: string;
     itemName: string;
@@ -365,14 +379,54 @@ export interface PurchaseRequestRecord {
     unit: string;
     estimatedCost: number;
     urgency: string;
+    stockItem?:
+      | string
+      | {
+          _id: string;
+          name: string;
+          category?: string;
+          unit?: string;
+          totalQuantity?: number;
+          availableQuantity?: number;
+        };
+    approvedQuantity?: number | null;
+    receivedQuantity?: number;
+    status?: string;
     notes?: string;
   }>;
   requestedBy?: {
+    _id?: string;
     name: string;
     email: string;
     role: string;
     department: string;
   };
+  approvedBy?: {
+    _id?: string;
+    name: string;
+    email: string;
+    role?: string;
+    department?: string;
+  };
+  approvedAt?: string;
+  receipts?: Array<{
+    _id?: string;
+    receiptId: string;
+    receivedBy: {
+      _id?: string;
+      name: string;
+      email: string;
+    };
+    receivedAt: string;
+    items: Array<{
+      itemId: string;
+      itemName: string;
+      quantityReceived: number;
+      unit: string;
+      stockItem?: string;
+    }>;
+    notes?: string;
+  }>;
   createdAt: string;
 }
 
@@ -525,6 +579,56 @@ export async function getKitchenPurchaseRequests(
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   return get<ApiResponse<PurchaseRequestRecord[]>>(
     `/departments/kitchen/purchase-requests${query}`,
+    token
+  );
+}
+
+export async function getKitchenPurchaseRequestById(
+  id: string,
+  token?: string
+): Promise<ApiResponse<PurchaseRequestRecord>> {
+  return get<ApiResponse<PurchaseRequestRecord>>(
+    `/departments/kitchen/purchase-requests/${encodeURIComponent(id)}`,
+    token
+  );
+}
+
+export async function reviewKitchenPurchaseRequest(
+  id: string,
+  payload: {
+    status: "APPROVED" | "REJECTED" | "CANCELLED";
+    rejectionReason?: string;
+    itemApprovals?: Array<{
+      itemId: string;
+      approvedQuantity?: number;
+      status?: string;
+    }>;
+  },
+  token?: string
+): Promise<ApiResponse<PurchaseRequestRecord>> {
+  return patch<ApiResponse<PurchaseRequestRecord>>(
+    `/departments/kitchen/purchase-requests/${encodeURIComponent(id)}/review`,
+    payload,
+    token
+  );
+}
+
+export async function receiveKitchenPurchaseRequest(
+  id: string,
+  payload: {
+    receivedItems: Array<{
+      itemId: string;
+      quantityReceived: number;
+      unit?: string;
+    }>;
+    notes?: string;
+    idempotencyKey?: string;
+  },
+  token?: string
+): Promise<ApiResponse<PurchaseRequestRecord>> {
+  return post<ApiResponse<PurchaseRequestRecord>>(
+    `/departments/kitchen/purchase-requests/${encodeURIComponent(id)}/receive`,
+    payload,
     token
   );
 }

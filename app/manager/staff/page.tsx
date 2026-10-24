@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   Users,
   Clock3,
-  UserCheck,
   IndianRupee,
   Sparkles,
   Loader2,
@@ -14,7 +13,6 @@ import {
 
 import StaffDirectoryTab from "@/components/manager/staff/StaffDirectoryTab";
 import StaffAvailabilityTab from "@/components/manager/staff/StaffAvailabilityTab";
-import StaffAttendanceTab from "@/components/manager/staff/StaffAttendanceTab";
 import StaffPayrollTab from "@/components/manager/staff/StaffPayrollTab";
 import DepartmentManagersTab from "@/components/manager/staff/DepartmentManagersTab";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +20,6 @@ import { useAuth } from "@/hooks/useAuth";
 type StaffTabType =
   | "directory"
   | "availability"
-  | "attendance"
   | "payroll"
   | "managers";
 
@@ -39,8 +36,8 @@ function ManagerStaffContent() {
     searchParams.get("staffId") || searchParams.get("staff") || undefined;
 
   const validTabs: StaffTabType[] = isSuperAdmin
-    ? ["directory", "availability", "attendance", "payroll", "managers"]
-    : ["directory", "availability", "attendance", "payroll"];
+    ? ["directory", "availability", "payroll", "managers"]
+    : ["directory", "availability", "payroll"];
 
   const [activeTab, setActiveTab] = useState<StaffTabType>(
     validTabs.includes(tabParam) ? tabParam : "directory"
@@ -48,6 +45,12 @@ function ManagerStaffContent() {
 
   useEffect(() => {
     const rawTab = searchParams.get("tab");
+    if (rawTab === "attendance") {
+      router.replace("/manager/staff");
+      setActiveTab("directory");
+      return;
+    }
+
     if (rawTab === "assignments" || rawTab === "schedule") {
       const staffId = searchParams.get("staffId") || searchParams.get("staff");
       if (staffId) {
@@ -69,7 +72,7 @@ function ManagerStaffContent() {
 
     if (
       rawTab &&
-      ["directory", "availability", "attendance", "payroll"].includes(rawTab)
+      ["directory", "availability", "payroll"].includes(rawTab)
     ) {
       setActiveTab(rawTab as StaffTabType);
     }
@@ -101,7 +104,7 @@ function ManagerStaffContent() {
             Staff Members & Operations
           </h1>
           <p className="mt-1 text-xs text-gray-500">
-            Centralized staff directory, working availability, daily attendance logs, staff payroll compensation
+            Centralized staff directory, working availability, staff payroll compensation
             {isSuperAdmin ? ", and Super Admin department manager provisioning." : "."}
           </p>
         </div>
@@ -137,19 +140,6 @@ function ManagerStaffContent() {
 
             <button
               type="button"
-              onClick={() => switchTab("attendance")}
-              className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3 sm:px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "attendance"
-                  ? "bg-[#29241f] text-white shadow-xs"
-                  : "text-gray-600 hover:bg-[#faf7f2] hover:text-gray-900"
-              }`}
-            >
-              <UserCheck size={14} className="shrink-0" />
-              <span>3. Attendance Logs</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => switchTab("payroll")}
               className={`inline-flex items-center gap-1.5 shrink-0 rounded-xl px-3.5 sm:px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "payroll"
@@ -158,7 +148,7 @@ function ManagerStaffContent() {
               }`}
             >
               <IndianRupee size={14} className="shrink-0" />
-              <span>4. Hours & Payroll</span>
+              <span>3. Hours & Payroll</span>
             </button>
 
             {/* Superadmin Only: Department Managers Tab */}
@@ -173,7 +163,7 @@ function ManagerStaffContent() {
                 }`}
               >
                 <ShieldCheck size={14} className="shrink-0 text-amber-600" />
-                <span>5. Department Managers</span>
+                <span>4. Department Managers</span>
                 <span className="rounded-md bg-amber-200/80 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-amber-950 tracking-wider">
                   Super Admin
                 </span>
@@ -190,13 +180,6 @@ function ManagerStaffContent() {
 
       {activeTab === "availability" && (
         <StaffAvailabilityTab
-          initialDate={initialDate}
-          initialStaffId={initialStaffId}
-        />
-      )}
-
-      {activeTab === "attendance" && (
-        <StaffAttendanceTab
           initialDate={initialDate}
           initialStaffId={initialStaffId}
         />

@@ -245,14 +245,60 @@ export function canViewExpenses(user: AuthUser | null): boolean {
 export function getAuthorizedMenuItems(user: AuthUser | null): ManagerMenuItem[] {
   const scope = getManagerScope(user);
 
-  // 1. Super Admin / Executive Operations — Organization-wide menus
-  if (scope.isSuperAdmin || scope.departmentType === "operations") {
+  // 1. Super Admin — Full organization-wide management console
+  if (scope.isSuperAdmin) {
     return [
       {
         label: "Dashboard",
         href: "/manager",
         icon: LayoutDashboard,
       },
+      {
+        label: "Events",
+        href: "/manager/events",
+        icon: CalendarCheck,
+      },
+      {
+        label: "Services",
+        href: "/manager/services",
+        icon: BriefcaseBusiness,
+      },
+      {
+        label: "Food Menu",
+        href: "/manager/food",
+        icon: Utensils,
+      },
+      {
+        label: "Stock & Equipment",
+        href: "/manager/stock",
+        icon: Package,
+      },
+      {
+        label: "Staff Members",
+        href: "/manager/staff",
+        icon: Users,
+      },
+      {
+        label: "Expenses",
+        href: "/manager/expenses",
+        icon: Wallet,
+      },
+      {
+        label: "Reports",
+        href: "/manager/reports",
+        icon: BarChart3,
+      },
+      {
+        label: "Settings",
+        href: "/manager/settings",
+        icon: Settings,
+      },
+    ];
+  }
+
+  // 2. Operational Manager — Starts directly with Events (Dashboard removed)
+  if (scope.departmentType === "operations") {
+    return [
       {
         label: "Events",
         href: "/manager/events",
@@ -563,8 +609,34 @@ export function getAuthorizedBottomNavItems(user: AuthUser | null): Array<{
     ];
   }
 
+  // Operations Manager: Starts directly with Events (no Home/Dashboard), Stock, Staff, Expenses
+  if (scope.departmentType === "operations") {
+    return [
+      {
+        label: "Events",
+        href: "/manager/events",
+        icon: CalendarDays,
+      },
+      {
+        label: "Stock",
+        href: "/manager/stock",
+        icon: Package,
+      },
+      {
+        label: "Staff",
+        href: "/manager/staff",
+        icon: Users,
+      },
+      {
+        label: "Expenses",
+        href: "/manager/expenses",
+        icon: Wallet,
+      },
+    ];
+  }
+
   // Generic department managers: Home, Events, Stock, Staff
-  if (!scope.isSuperAdmin && scope.departmentType !== "operations") {
+  if (!scope.isSuperAdmin) {
     return [
       {
         label: "Home",
@@ -589,7 +661,7 @@ export function getAuthorizedBottomNavItems(user: AuthUser | null): Array<{
     ];
   }
 
-  // Super Admin / Operations: Home, Events, Staff, Expenses
+  // Super Admin: Home, Events, Staff, Expenses
   return [
     {
       label: "Home",

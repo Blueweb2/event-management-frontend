@@ -22,10 +22,7 @@ export default function StaffLayout({
 
   useEffect(() => {
     if (!loading && !token) {
-      const fullPath = typeof window !== "undefined"
-        ? window.location.pathname + window.location.search
-        : "/staff";
-      router.push(`/login?redirect=${encodeURIComponent(fullPath)}`);
+      router.push("/login");
     }
   }, [loading, token, router]);
 

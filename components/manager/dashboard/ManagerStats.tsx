@@ -199,7 +199,7 @@ export default function ManagerStats() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="flex gap-3 overflow-x-auto pb-2 pt-0.5 -mx-3 px-3 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 lg:grid-cols-5 sm:overflow-visible sm:pb-0 scrollbar-none snap-x snap-mandatory">
         {stats.map((stat) => (
           <ManagerStatCard
             key={stat.label}
@@ -207,6 +207,7 @@ export default function ManagerStats() {
             value={stat.value}
             icon={stat.icon}
             description={stat.description}
+            className="w-[180px] min-w-[180px] shrink-0 snap-start sm:w-auto sm:min-w-0 sm:shrink"
           />
         ))}
       </div>

@@ -49,6 +49,7 @@ export default function ManagerMenu({
 
   const scope = getManagerScope(user);
   const menuItems = getAuthorizedMenuItems(user);
+  const homeHref = scope.departmentType === "operations" ? "/manager/events" : "/manager";
 
   return (
     <>
@@ -95,7 +96,7 @@ export default function ManagerMenu({
               <Menu size={22} strokeWidth={2} />
             </button>
 
-            <Link href="/manager" className="flex items-center">
+            <Link href={homeHref} className="flex items-center">
               <img
                 src="/images/logo.svg"
                 alt="Logo"

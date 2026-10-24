@@ -7,21 +7,29 @@ import { Plus } from "lucide-react";
 // Events Header
 // ==========================================
 
-export default function EventsHeader() {
+interface EventsHeaderProps {
+  isOperationsManager?: boolean;
+}
+
+export default function EventsHeader({
+  isOperationsManager = false,
+}: EventsHeaderProps) {
   const router = useRouter();
 
   return (
     <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8C7A55]">
-          Operations & Financials
+          {isOperationsManager ? "Event Operations" : "Operations & Financials"}
         </p>
 
         <h1 className="mt-1 text-2xl font-black tracking-tight text-[#252525]">
           Events
         </h1>
         <p className="mt-0.5 text-xs text-gray-500">
-          Manage estimates, live operations, client payments, and documentation in one place.
+          {isOperationsManager
+            ? "Manage live operations, execution schedules, and upcoming events."
+            : "Manage estimates, live operations, client payments, and documentation in one place."}
         </p>
       </div>
 

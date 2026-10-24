@@ -87,7 +87,7 @@ export default function RecentActivity() {
         </div>
 
         <Link
-          href="/manager/staff?tab=attendance"
+          href="/manager/staff"
           className="text-xs font-medium text-[#9A7B4F] transition hover:text-[#7D623E]"
         >
           View All

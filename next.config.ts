@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/manager/attendance",
-        destination: "/manager/staff?tab=attendance",
+        destination: "/manager/staff",
         permanent: false,
       },
       {
