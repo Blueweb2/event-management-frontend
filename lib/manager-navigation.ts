@@ -232,11 +232,12 @@ export function canViewClientPayments(user: AuthUser | null): boolean {
 
 /**
  * Determines whether the user is authorized to view or manage event expenses.
- * All managers are authorized to view and add event operational expenses.
+ * Strictly restricted to Super Admin only.
  */
 export function canViewExpenses(user: AuthUser | null): boolean {
   if (!user) return false;
-  return true;
+  const role = (user.role || "").toLowerCase().trim();
+  return role === "superadmin" || role === "admin";
 }
 
 /**
@@ -296,7 +297,7 @@ export function getAuthorizedMenuItems(user: AuthUser | null): ManagerMenuItem[]
     ];
   }
 
-  // 2. Operational Manager — Starts directly with Events (Dashboard removed)
+  // 2. Operational Manager — Starts directly with Events (Dashboard, Expenses, Reports, Settings removed)
   if (scope.departmentType === "operations") {
     return [
       {
@@ -323,21 +324,6 @@ export function getAuthorizedMenuItems(user: AuthUser | null): ManagerMenuItem[]
         label: "Staff Members",
         href: "/manager/staff",
         icon: Users,
-      },
-      {
-        label: "Expenses",
-        href: "/manager/expenses",
-        icon: Wallet,
-      },
-      {
-        label: "Reports",
-        href: "/manager/reports",
-        icon: BarChart3,
-      },
-      {
-        label: "Settings",
-        href: "/manager/settings",
-        icon: Settings,
       },
     ];
   }
@@ -609,13 +595,18 @@ export function getAuthorizedBottomNavItems(user: AuthUser | null): Array<{
     ];
   }
 
-  // Operations Manager: Starts directly with Events (no Home/Dashboard), Stock, Staff, Expenses
+  // Operations Manager: Starts directly with Events, Services, Stock, Staff (no Expenses)
   if (scope.departmentType === "operations") {
     return [
       {
         label: "Events",
         href: "/manager/events",
         icon: CalendarDays,
+      },
+      {
+        label: "Services",
+        href: "/manager/services",
+        icon: BriefcaseBusiness,
       },
       {
         label: "Stock",
@@ -626,11 +617,6 @@ export function getAuthorizedBottomNavItems(user: AuthUser | null): Array<{
         label: "Staff",
         href: "/manager/staff",
         icon: Users,
-      },
-      {
-        label: "Expenses",
-        href: "/manager/expenses",
-        icon: Wallet,
       },
     ];
   }
@@ -699,37 +685,37 @@ export function isRouteAuthorizedForUser(
 
   const scope = getManagerScope(user);
 
-  // Superadmin and Executive Operations can access all manager pages
-  if (scope.isSuperAdmin || scope.departmentType === "operations") {
+  // Superadmin can access all manager pages
+  if (scope.isSuperAdmin) {
     return { authorized: true };
   }
 
-  // Base manager dashboard is always authorized
-  if (pathname === "/manager" || pathname === "/manager/") {
-    return { authorized: true };
-  }
-
-  // Routes strictly prohibited for non-executive managers:
+  // Routes strictly restricted to Super Admin only (prohibited for all other managers):
   // Expenses (financials), Reports (financial analytics), Settings (global system settings)
   if (pathname.startsWith("/manager/expenses")) {
     return {
       authorized: false,
-      reason: "Expenses and financial disbursement records are restricted to Super Admin and Finance administrators.",
+      reason: "Expenses and financial disbursement records are restricted to Super Admin only.",
     };
   }
 
   if (pathname.startsWith("/manager/reports")) {
     return {
       authorized: false,
-      reason: "Organization-wide analytics and financial reports are restricted to Super Admin.",
+      reason: "Organization-wide analytics and financial reports are restricted to Super Admin only.",
     };
   }
 
   if (pathname.startsWith("/manager/settings")) {
     return {
       authorized: false,
-      reason: "System settings and global company configuration are restricted to Super Admin.",
+      reason: "System settings and global company configuration are restricted to Super Admin only.",
     };
+  }
+
+  // Operations Manager can access operational pages (Events, Services, Food, Stock, Staff, Booking)
+  if (scope.departmentType === "operations") {
+    return { authorized: true };
   }
 
   if (pathname.startsWith("/manager/booking") || pathname.startsWith("/manager/estimates") || pathname.startsWith("/manager/clients")) {
