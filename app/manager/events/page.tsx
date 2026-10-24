@@ -417,10 +417,26 @@ function ManagerEventsContent() {
               acceptingId={acceptingEstimateId}
             />
           ) : events.length === 0 ? (
-            <EmptyEvents />
+            <EmptyEvents
+              title={
+                status === "Ongoing"
+                  ? "No ongoing events today"
+                  : status === "Upcoming"
+                  ? "No upcoming events"
+                  : "No events found"
+              }
+              description={
+                status === "Ongoing"
+                  ? "There are no live events currently running."
+                  : status === "Upcoming"
+                  ? "No upcoming events scheduled."
+                  : "Confirmed bookings will appear here as events."
+              }
+            />
           ) : (
             <EventList
               events={events}
+              activeStatus={status}
               onEdit={(evt) => setEditingEvent(evt)}
               onDelete={(evt) => setDeletingEvent(evt)}
               onStart={handleStartEvent}

@@ -83,34 +83,46 @@ export default function EventCard({
   const isSettled = event.paymentStatus === "PAID" || (eventBalance === 0 && eventTotal > 0);
   const isPartiallyPaid = event.paymentStatus === "PARTIAL" || (eventPaid > 0 && eventBalance > 0);
 
-  // COMPACT SMALL CARD (For Completed / Past Events)
+  // COMPACT SMALL CARD (For Upcoming / List Events)
   if (compact && !isExpanded) {
+    const canStart =
+      onStart &&
+      !isCompleted &&
+      (event.status === "CONFIRMED" ||
+        event.status === "Upcoming" ||
+        event.status === "READY_TO_START");
+
     return (
       <div
-        onClick={() => setIsExpanded(true)}
+        onClick={() => router.push(`/manager/events/${event._id}`)}
         className="group w-full cursor-pointer text-left transition"
       >
-        <article className="relative flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200/80 bg-white/90 p-3 sm:px-4 sm:py-3 shadow-xs transition hover:border-[#9A7B4F]/40 hover:bg-[#FAF8F5] hover:shadow-sm active:scale-[0.995]">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 group-hover:bg-[#F4EBDD] group-hover:text-[#9A7B4F] transition">
+        <article className="relative flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200/90 bg-white p-3.5 sm:px-4 sm:py-3 shadow-xs transition hover:border-[#9A7B4F]/50 hover:bg-[#FAF8F5]/80 hover:shadow-sm active:scale-[0.995]">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500 group-hover:bg-[#F4EBDD] group-hover:text-[#9A7B4F] transition">
               <CalendarIcon />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="truncate text-xs sm:text-sm font-bold text-gray-800 group-hover:text-[#9A7B4F]">
                   {event.eventName}
                 </h4>
-                <span className="shrink-0 text-[10px] font-medium text-gray-400">
+                <span className="shrink-0 text-[11px] font-semibold text-gray-400">
                   · {formatDate(event.eventDate)}
                 </span>
+                {event.eventTime && (
+                  <span className="shrink-0 text-[10px] font-medium text-gray-400 hidden xs:inline">
+                    ({formatTime24to12(event.eventTime)})
+                  </span>
+                )}
               </div>
-              <p className="truncate text-[11px] text-gray-400">
+              <p className="truncate text-[11px] text-gray-400 mt-0.5">
                 {event.eventType} · {clientName} {event.location ? `· ${event.location}` : ""}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t border-gray-100 sm:border-0">
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t border-gray-100 sm:border-0">
             {showPayments && eventTotal > 0 && (
               <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
                 isSettled ? "bg-emerald-50 text-emerald-700" : isPartiallyPaid ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
@@ -118,7 +130,24 @@ export default function EventCard({
                 {isSettled ? "Paid" : `₹${eventBalance.toLocaleString("en-IN")} Due`}
               </span>
             )}
+
             <EventStatusBadge status={event.status} />
+
+            {canStart && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStart(event);
+                }}
+                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
+                title="Start Live Event Operations"
+              >
+                <Play size={10} fill="currentColor" />
+                <span>Start</span>
+              </button>
+            )}
+
             {onExport && (
               <button
                 type="button"
@@ -133,6 +162,38 @@ export default function EventCard({
                 <span>Export</span>
               </button>
             )}
+
+            {(onEdit || onDelete) && (
+              <div className="flex items-center gap-0.5">
+                {onEdit && (
+                  <button
+                    type="button"
+                    title="Edit Event"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(event);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-[#F4EBDD] hover:text-[#9A7B4F] transition"
+                  >
+                    <Edit size={13} />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    title="Delete Event"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(event);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+            )}
+
             <button
               type="button"
               onClick={(e) => {
@@ -140,6 +201,7 @@ export default function EventCard({
                 setIsExpanded(true);
               }}
               className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#9A7B4F] hover:bg-[#F4EBDD] transition"
+              title="Expand to full card details"
             >
               <span>Elaborate</span>
               <ChevronDown size={13} />

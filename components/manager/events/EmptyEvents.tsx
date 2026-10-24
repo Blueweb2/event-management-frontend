@@ -2,14 +2,22 @@
 // Empty Events
 // ==========================================
 
-export default function EmptyEvents() {
+interface EmptyEventsProps {
+  title?: string;
+  description?: string;
+}
+
+export default function EmptyEvents({
+  title = "No events found",
+  description = "Confirmed bookings will appear here as events.",
+}: EmptyEventsProps) {
   return (
-    <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm">
+    <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-xs border border-gray-100">
       {/* ======================================
           Icon
       ====================================== */}
 
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#F8F7F3] text-[#8C7A55]">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F8F7F3] text-[#8C7A55]">
         <CalendarIcon />
       </div>
 
@@ -17,13 +25,12 @@ export default function EmptyEvents() {
           Text
       ====================================== */}
 
-      <h3 className="mt-5 text-base font-bold text-[#252525]">
-        No events found
+      <h3 className="mt-4 text-base font-bold text-[#252525]">
+        {title}
       </h3>
 
-      <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-gray-500">
-        Confirmed bookings will appear here as
-        events.
+      <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-gray-500">
+        {description}
       </p>
     </div>
   );
