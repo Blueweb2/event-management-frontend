@@ -399,8 +399,11 @@ export default function ServiceList({
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#FEFEFE] p-5"
+                  className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5E7EB] bg-[#FEFEFE] p-5"
                 >
+                  {/* Banner skeleton */}
+                  <div className="-mx-5 -mt-5 mb-4 h-36 shrink-0 animate-pulse bg-[#F3F4F8]" />
+
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -416,22 +419,18 @@ export default function ServiceList({
                   </div>
 
                   {/* Content */}
-                  <div className="mt-5 space-y-3">
+                  <div className="mt-4 min-h-[40px] space-y-2">
                     <div className="h-3 w-full animate-pulse rounded-md bg-[#F3F4F8]" />
-                    <div className="h-3 w-5/6 animate-pulse rounded-md bg-[#F3F4F8]" />
-                    <div className="h-3 w-2/3 animate-pulse rounded-md bg-[#F3F4F8]" />
+                    <div className="h-3 w-4/5 animate-pulse rounded-md bg-[#F3F4F8]" />
                   </div>
 
-                  {/* Price */}
-                  <div className="mt-5">
-                    <div className="h-6 w-24 animate-pulse rounded-md bg-[#F3F4F8]" />
-                  </div>
-
-                  {/* Footer */}
-                  <div className="mt-6 flex items-center justify-between border-t border-[#F0F1F3] pt-4">
-                    <div className="h-3 w-20 animate-pulse rounded-md bg-[#F3F4F8]" />
-
-                    <div className="h-8 w-20 animate-pulse rounded-lg bg-[#F3F4F8]" />
+                  {/* Bottom section */}
+                  <div className="mt-auto space-y-4 pt-4">
+                    <div className="h-20 animate-pulse rounded-xl bg-[#F3F4F8]" />
+                    <div className="flex h-7 items-center justify-between border-t border-[#F0F1F3] pt-4">
+                      <div className="h-3 w-20 animate-pulse rounded-md bg-[#F3F4F8]" />
+                      <div className="h-7 w-16 animate-pulse rounded-full bg-[#F3F4F8]" />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -483,7 +482,7 @@ export default function ServiceList({
               {filteredServices.map((service, index) => (
                 <div
                   key={service._id}
-                  className={`transition-all duration-300 ${
+                  className={`flex h-full flex-col transition-all duration-300 ${
                     deactivatingId === service._id
                       ? "pointer-events-none opacity-50"
                       : "animate-[fadeIn_0.35s_ease-out]"

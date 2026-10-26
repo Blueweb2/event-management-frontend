@@ -37,7 +37,7 @@ import { useStaff } from "@/hooks/useStaff";
 
 import type { CreateAssignmentPayload } from "@/types/assignment";
 import { getSocket } from "@/lib/socket";
-import { canViewClientPayments, canViewExpenses } from "@/lib/manager-navigation";
+import { canViewClientPayments } from "@/lib/manager-navigation";
 
 // ==========================================
 // Page
@@ -601,8 +601,8 @@ export default function ManagerEventDetailsPage() {
               </button>
             )}
 
-            {/* Export Studio Trigger */}
-            {eventDocumentData && (
+            {/* Export Studio Trigger (Super Admin Only) */}
+            {canViewPayments && eventDocumentData && (
               <button
                 type="button"
                 onClick={() => setExportModalOpen(true)}
@@ -802,16 +802,14 @@ export default function ManagerEventDetailsPage() {
         )}
 
         {/* ======================================
-            Event Expenses & Operational Costs (Super Admin Only)
+            Event Expenses & Operational Costs
         ====================================== */}
-        {canViewExpenses(user) && (
-          <section className="mt-6">
-            <EventProfitabilityCard
-              eventId={eventId}
-              eventName={event.eventName}
-            />
-          </section>
-        )}
+        <section className="mt-6">
+          <EventProfitabilityCard
+            eventId={eventId}
+            eventName={event.eventName}
+          />
+        </section>
 
         {/* ======================================
             Dynamic Service & Catering Staffing Matrix

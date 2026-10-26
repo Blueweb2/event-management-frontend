@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import {
   Edit3,
-  MoreVertical,
   Power,
   Tag,
 } from "lucide-react";
@@ -31,6 +31,8 @@ export default function ServiceCard({
   onEdit,
   onDeactivate,
 }: ServiceCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   const pricingLabel =
     pricingLabels[service.pricingType] ||
     service.pricingType;
@@ -43,27 +45,36 @@ export default function ServiceCard({
   const imageUrl = getServiceImageUrl(service.imageUrl);
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5">
-      {/* Service Image Preview */}
-      {imageUrl && (
-        <div className="-mx-5 -mt-5 mb-4 h-36 overflow-hidden bg-[#F3F4F8]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E6E7EA] bg-[#FEFEFE] p-5 shadow-xs transition duration-200 hover:shadow-md">
+      {/* Service Image / Category Banner */}
+      <div className="relative -mx-5 -mt-5 mb-4 flex h-36 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-[#F8F9FA] to-[#EAECEF]">
+        {imageUrl && !imageError ? (
           <img
             src={imageUrl}
             alt={service.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            onError={(e) => {
-              // Hide image container on load error
-              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
-            }}
+            onError={() => setImageError(true)}
           />
-        </div>
-      )}
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-1.5 text-[#96979A]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 shadow-xs">
+              <Tag size={18} strokeWidth={2} className="text-[#7A7B7F]" />
+            </div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8A8B8F]">
+              {service.category}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">
-            <h3 className="truncate text-base font-semibold text-[#5F6062]">
+            <h3
+              className="truncate text-base font-semibold text-[#5F6062]"
+              title={service.name}
+            >
               {service.name}
             </h3>
 
@@ -113,68 +124,80 @@ export default function ServiceCard({
       </div>
 
       {/* Description */}
-      {service.description && (
-        <p className="mt-4 line-clamp-2 text-sm leading-6 text-[#85868A]">
-          {service.description}
-        </p>
-      )}
-
-      {/* Pricing */}
-      <div className="mt-5 rounded-xl bg-[#F3F4F8] p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8B8F]">
-          Pricing
-        </p>
-
-        <div className="mt-1.5 flex items-baseline gap-1.5">
-          <span className="text-xl font-semibold tracking-tight text-[#5F6062]">
-            ₹{formattedPrice}
-          </span>
-
-          {service.pricingType !== "FIXED" && (
-            <span className="text-xs text-[#85868A]">
-              / {service.unitLabel || "unit"}
-            </span>
-          )}
-        </div>
-
-        <p className="mt-1 text-xs text-[#85868A]">
-          {pricingLabel}
-        </p>
+      <div className="mt-3 min-h-[40px]">
+        {service.description ? (
+          <p
+            className="line-clamp-2 text-sm leading-5 text-[#85868A]"
+            title={service.description}
+          >
+            {service.description}
+          </p>
+        ) : (
+          <p className="text-xs italic leading-5 text-[#B0B2B6]">
+            No description provided
+          </p>
+        )}
       </div>
 
-      {/* Options */}
-      <div className="mt-4 flex items-center justify-between border-t border-[#ECEDEF] pt-4">
-        <span className="text-xs font-medium text-[#85868A]">
-          {service.options?.length || 0}{" "}
-          {service.options?.length === 1
-            ? "option"
-            : "options"}
-        </span>
+      {/* Bottom section pinned to bottom */}
+      <div className="mt-auto space-y-4 pt-4">
+        {/* Pricing */}
+        <div className="rounded-xl bg-[#F3F4F8] p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8A8B8F]">
+            Pricing
+          </p>
 
-        {service.options &&
-          service.options.length > 0 && (
-            <div className="flex -space-x-1.5">
-              {service.options
-                .slice(0, 3)
-                .map((option, index) => (
-                  <span
-                    key={option._id || index}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#5F6062] text-[9px] font-semibold text-white"
-                    title={option.name}
-                  >
-                    {option.name
-                      .charAt(0)
-                      .toUpperCase()}
+          <div className="mt-1.5 flex items-baseline gap-1.5">
+            <span className="text-xl font-semibold tracking-tight text-[#5F6062]">
+              ₹{formattedPrice}
+            </span>
+
+            {service.pricingType !== "FIXED" && (
+              <span className="text-xs text-[#85868A]">
+                / {service.unitLabel || "unit"}
+              </span>
+            )}
+          </div>
+
+          <p className="mt-1 text-xs text-[#85868A]">
+            {pricingLabel}
+          </p>
+        </div>
+
+        {/* Options */}
+        <div className="flex h-7 items-center justify-between border-t border-[#ECEDEF] pt-4">
+          <span className="text-xs font-medium text-[#85868A]">
+            {service.options?.length || 0}{" "}
+            {service.options?.length === 1
+              ? "option"
+              : "options"}
+          </span>
+
+          {service.options &&
+            service.options.length > 0 && (
+              <div className="flex -space-x-1.5">
+                {service.options
+                  .slice(0, 3)
+                  .map((option, index) => (
+                    <span
+                      key={option._id || index}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#5F6062] text-[9px] font-semibold text-white"
+                      title={option.name}
+                    >
+                      {option.name
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                  ))}
+
+                {service.options.length > 3 && (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#F3F4F8] text-[9px] font-semibold text-[#5F6062]">
+                    +{service.options.length - 3}
                   </span>
-                ))}
-
-              {service.options.length > 3 && (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#FEFEFE] bg-[#F3F4F8] text-[9px] font-semibold text-[#5F6062]">
-                  +{service.options.length - 3}
-                </span>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+        </div>
       </div>
     </div>
   );
