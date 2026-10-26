@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
-import StaffHeader from "@/components/staff/StaffHeader";
+import Link from "next/link";
+import { AlertCircle, Loader2, Sparkles, ClipboardList, Clock3 } from "lucide-react";
 import StaffStats from "@/components/staff/StaffStats";
 import UpcomingEvents from "@/components/staff/UpcomingEvents";
 import HeroActiveShiftWidget from "@/components/staff/shift/HeroActiveShiftWidget";
@@ -110,17 +110,45 @@ export default function StaffHomePage() {
   }, [assignments, loadDashboard, user]);
 
   return (
-    <main className="space-y-4 sm:space-y-6 lg:space-y-8 py-3.5 sm:py-6">
-      <StaffHeader assignments={assignments} />
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 py-3.5 sm:py-6">
+      {/* Top Welcome Section */}
+      <section className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-7 shadow-xs overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="pointer-events-none absolute -right-10 -bottom-10 h-36 w-36 rounded-full bg-gradient-to-br from-[#9a6c37]/10 to-transparent" />
 
-      <section>
-        <p className="text-xs sm:text-sm font-semibold text-[#9a6c37]">Staff Portal</p>
-        <h1 className="mt-0.5 text-xl font-black tracking-tight text-[#29241f] sm:text-2xl lg:text-3xl">
-          Good morning, {user?.name || "Staff Member"} 👋
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#756d64]">
-          Here&apos;s your active shift overview and upcoming schedule.
-        </p>
+        <div className="relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-[#9a6c37] border border-amber-200">
+              <Sparkles size={12} />
+              Staff Operations
+            </span>
+            <span className="text-xs text-gray-400 font-medium hidden sm:inline">• Live Workspace</span>
+          </div>
+
+          <h1 className="mt-2 text-xl font-black tracking-tight text-[#29241f] sm:text-2xl lg:text-3xl">
+            Welcome back, {user?.name || "Staff Member"} 👋
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm leading-relaxed text-[#756d64]">
+            Here&apos;s your active shift overview, today&apos;s assignments, and quick actions.
+          </p>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-2.5 self-start sm:self-center shrink-0">
+          <Link
+            href="/staff/duties"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#29241f] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95"
+          >
+            <ClipboardList size={15} />
+            <span>My Shifts</span>
+          </Link>
+          <Link
+            href="/staff/attendance"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8e1d8] bg-[#faf8f5] px-4 py-2.5 text-xs font-bold text-[#29241f] hover:bg-white hover:border-[#9a6c37] transition active:scale-95"
+          >
+            <Clock3 size={15} className="text-[#9a6c37]" />
+            <span>Clock In / Logs</span>
+          </Link>
+        </div>
       </section>
 
       {error && (
@@ -140,7 +168,7 @@ export default function StaffHomePage() {
         </div>
       ) : (
         <>
-          {/* 1. Hero Active Shift Widget (Shows today's shift if any, otherwise 'No shift scheduled today') */}
+          {/* 1. Hero Active Shift Widget */}
           <div id="active-shift">
             <HeroActiveShiftWidget
               assignments={assignments}
@@ -149,15 +177,15 @@ export default function StaffHomePage() {
             />
           </div>
 
-          {/* Quick Stats Bar */}
+          {/* 2. Quick Stats Bar */}
           <StaffStats assignments={assignments} attendance={attendance} />
 
-          {/* Upcoming Events / Schedule */}
+          {/* 3. Upcoming Events / Schedule */}
           <div id="upcoming-events">
             <UpcomingEvents assignments={assignments} />
           </div>
         </>
       )}
-    </main>
+    </div>
   );
 }

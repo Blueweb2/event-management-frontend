@@ -1,5 +1,5 @@
-const CACHE_NAME = 'pircello-staff-v1';
-const STATIC_CACHE_NAME = 'pircello-staff-static-v1';
+const CACHE_NAME = 'pircello-staff-v2';
+const STATIC_CACHE_NAME = 'pircello-staff-static-v2';
 
 // Critical assets to pre-cache on install
 const PRECACHE_ASSETS = [
@@ -72,8 +72,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Handle Next.js static assets and media (CSS, JS bundles, images, icons, fonts)
-  const isNextStatic = url.pathname.startsWith('/_next/static/');
+  // 5. CRITICAL: Never cache Next.js Turbopack / HMR dev chunks (prevents module mismatch)
+  if (
+    url.pathname.includes('/_next/static/chunks/') ||
+    url.pathname.includes('/_next/static/development') ||
+    url.pathname.includes('/_next/static/webpack') ||
+    url.pathname.includes('hot-update') ||
+    url.pathname.includes('turbopack')
+  ) {
+    return;
+  }
+
+  // 6. Handle static media (CSS, images, icons, fonts)
   const isStaticMedia =
     url.pathname.startsWith('/icons/') ||
     url.pathname.startsWith('/images/') ||
@@ -85,7 +95,7 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.woff') ||
     url.pathname.endsWith('.ttf');
 
-  if (isNextStatic || isStaticMedia) {
+  if (isStaticMedia) {
     event.respondWith(
       caches.open(STATIC_CACHE_NAME).then(async (cache) => {
         const cachedResponse = await cache.match(request);
@@ -113,7 +123,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 6. Navigation requests within the Staff PWA scope: Network-First with cache fallback
+  // 7. Navigation requests within the Staff PWA scope: Network-First with cache fallback
   if (request.mode === 'navigate' && url.pathname.startsWith('/staff')) {
     event.respondWith(
       fetch(request)
