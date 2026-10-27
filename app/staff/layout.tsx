@@ -23,9 +23,11 @@ export default function StaffLayout({
   const router = useRouter();
   const { user, token, loading } = useAuth();
 
-  // Navigation UI States (Matches ManagerLayout pattern)
+  // Navigation UI States
+  // isCollapsed: controls desktop sidebar width (false = expanded w-64, true = collapsed w-20)
+  // isMobileDrawerOpen: controls mobile slide-over drawer
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [isNotifsOpen, setIsNotifsOpen] = useState(false);
 
   // Authenticate user & role check
@@ -64,14 +66,14 @@ export default function StaffLayout({
   }, [assignments]);
 
   const toggleMenu = () => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-      setIsDesktopSidebarOpen((prev) => !prev);
-    } else {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setIsMobileDrawerOpen((prev) => !prev);
+    } else {
+      setIsCollapsed((prev) => !prev);
     }
   };
 
-  const closeMenu = () => {
+  const closeMobileDrawer = () => {
     setIsMobileDrawerOpen(false);
   };
 
@@ -97,21 +99,19 @@ export default function StaffLayout({
       {/* ======================================================= */}
       <StaffSidebar
         isOpen={isMobileDrawerOpen}
-        isDesktopOpen={isDesktopSidebarOpen}
-        onClose={closeMenu}
+        isCollapsed={isCollapsed}
+        onClose={closeMobileDrawer}
         onToggle={toggleMenu}
         assignments={assignments}
         attendance={attendance}
-        unreadCount={unreadCount}
-        onOpenNotifications={() => setIsNotifsOpen(true)}
       />
 
       {/* ======================================================= */}
       {/* 2. Main Wrapper (Offset by sidebar width on desktop)    */}
       {/* ======================================================= */}
       <div
-        className={`flex min-h-screen flex-col transition-[padding] duration-200 ${
-          isDesktopSidebarOpen ? "lg:pl-64" : "lg:pl-0"
+        className={`flex min-h-screen flex-col transition-[padding] duration-300 ease-in-out ${
+          isCollapsed ? "lg:pl-20" : "lg:pl-64"
         }`}
       >
         {/* Sticky Top Header Nav */}
@@ -119,8 +119,6 @@ export default function StaffLayout({
           onMenuClick={toggleMenu}
           onNotificationClick={() => setIsNotifsOpen(true)}
           unreadCount={unreadCount}
-          attendance={attendance}
-          isDesktopOpen={isDesktopSidebarOpen}
         />
 
         {/* Page Content Container */}

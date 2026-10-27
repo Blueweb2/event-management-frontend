@@ -1,35 +1,24 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Menu,
   Bell,
   Clock,
-  LogOut,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import type { Attendance } from "@/types/attendance";
 
 interface StaffHeaderNavProps {
   onMenuClick: () => void;
   onNotificationClick: () => void;
   unreadCount?: number;
-  attendance?: Attendance[];
-  isDesktopOpen?: boolean;
 }
 
 export default function StaffHeaderNav({
   onMenuClick,
   onNotificationClick,
   unreadCount = 0,
-  attendance = [],
-  isDesktopOpen = true,
 }: StaffHeaderNavProps) {
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
   // Live Clock State (updates every 30 seconds)
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
@@ -58,37 +47,18 @@ export default function StaffHeaderNav({
     return () => clearInterval(interval);
   }, []);
 
-  // Compute Active Attendance / Shift Status
-  const activeAttendance = useMemo(() => {
-    return attendance.find((item) => item.checkIn && !item.checkOut);
-  }, [attendance]);
-
-  const isClockedIn = Boolean(activeAttendance);
-  const isShiftPaused = Boolean(activeAttendance?.isPaused);
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
-  };
-
   return (
     <header className="sticky top-0 z-30 border-b border-[#e8e1d8] bg-white">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* ======================================================= */}
-        {/* Left: Menu / Hamburger Toggle Button & Logo             */}
-        {/* (Identical to Manager Header: visible on mobile, and on  */}
-        {/* desktop when the sidebar is collapsed/closed)           */}
+        {/* Left: Hamburger Button & Brand Logo (Mobile only)       */}
         {/* ======================================================= */}
-        <div
-          className={`flex items-center gap-3 ${
-            isDesktopOpen ? "lg:hidden" : ""
-          }`}
-        >
+        <div className="flex items-center gap-3 lg:hidden">
           <button
             type="button"
             onClick={onMenuClick}
-            aria-label={isDesktopOpen ? "Toggle sidebar menu" : "Open menu"}
-            title={isDesktopOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label="Open menu"
+            title="Open menu"
             className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-700 transition hover:bg-[#fbf6ef] hover:text-[#9a6c37] active:scale-95 cursor-pointer"
           >
             <Menu size={22} strokeWidth={2} />
@@ -104,23 +74,20 @@ export default function StaffHeaderNav({
         </div>
 
         {/* ======================================================= */}
-        {/* Right: Icons like in Manager Dashboard                  */}
+        {/* Right: Time & Notification Button                       */}
         {/* ======================================================= */}
         <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-          {/* Live Clock Badge */}
+          {/* Live Clock (Time) */}
           {currentTime && (
-            <div className="hidden md:flex items-center gap-2 rounded-xl border border-[#ede5d8] bg-[#fbf8f4] px-3 py-1.5 text-xs">
+            <div className="flex items-center gap-2 rounded-xl border border-[#ede5d8] bg-[#fbf8f4] px-2.5 sm:px-3 py-1.5 text-xs">
               <Clock size={13} className="text-[#9a6c37]" />
               <span className="font-extrabold text-[#29241f]">{currentTime}</span>
-              <span className="text-gray-400">·</span>
-              <span className="text-gray-500 font-medium">{currentDate}</span>
+              <span className="hidden sm:inline text-gray-400">·</span>
+              <span className="hidden sm:inline text-gray-500 font-medium">{currentDate}</span>
             </div>
           )}
 
-          {/* Live Duty Status Badge */}
-       
-
-          {/* Notification Bell Button with Badge */}
+          {/* Notifications Bell Button */}
           <button
             type="button"
             onClick={onNotificationClick}
@@ -137,36 +104,6 @@ export default function StaffHeaderNav({
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
-          </button>
-
-          {/* User Profile Mini Badge */}
-          <Link
-            href="/staff/profile"
-            className="flex items-center gap-2 rounded-xl p-1 sm:px-2.5 sm:py-1 hover:bg-[#fbf6ef] transition"
-            title="My Profile"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#9a6c37] to-[#ba8a4d] text-xs font-black text-white shadow-2xs">
-              {user?.name ? user.name.charAt(0).toUpperCase() : "S"}
-            </div>
-            <div className="hidden xl:block text-left min-w-0">
-              <p className="truncate text-xs font-bold text-gray-900 max-w-[110px]">
-                {user?.name || "Staff Member"}
-              </p>
-              <p className="truncate text-[10px] text-gray-400 font-medium">
-                {user?.role || "Staff"}
-              </p>
-            </div>
-          </Link>
-
-          {/* Quick Logout Button */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Logout"
-            title="Sign out of Staff Portal"
-            className="hidden sm:flex h-9 w-9 items-center justify-center rounded-xl text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
-          >
-            <LogOut size={16} strokeWidth={2} />
           </button>
         </div>
       </div>
