@@ -514,14 +514,14 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
       </div>
 
       {/* Main Stock Table & Queue Section */}
-      <div className="rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-xs">
+      <div className="rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-6 shadow-xs">
         {/* Navigation Tabs & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:pb-0 scrollbar-none">
             <button
               type="button"
               onClick={() => setActiveQueueTab("all")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
                 activeQueueTab === "all"
                   ? "bg-[#252525] text-white shadow-2xs"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -533,7 +533,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
             <button
               type="button"
               onClick={() => setActiveQueueTab("pending")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
                 activeQueueTab === "pending"
                   ? "bg-purple-700 text-white shadow-2xs"
                   : "bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200"
@@ -547,7 +547,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
             <button
               type="button"
               onClick={() => setActiveQueueTab("in_custody")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
                 activeQueueTab === "in_custody"
                   ? "bg-blue-700 text-white shadow-2xs"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -559,7 +559,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
             <button
               type="button"
               onClick={() => setActiveQueueTab("verified")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
+              className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
                 activeQueueTab === "verified"
                   ? "bg-emerald-700 text-white shadow-2xs"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -589,8 +589,8 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
               <span className="mt-3 text-xs font-semibold text-gray-600">Loading stock data and verification queues...</span>
             </div>
           ) : filteredStocks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-              <Package size={40} className="mx-auto text-gray-300" />
+            <div className="rounded-2xl border border-dashed border-gray-200 p-8 sm:p-12 text-center">
+              <Package size={36} className="mx-auto text-gray-300" />
               <p className="mt-3 text-sm font-bold text-gray-700">
                 {searchQuery ? "No matching stock items found" : "No items in this queue"}
               </p>
@@ -603,215 +603,392 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-600">
-                <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase text-gray-400">
-                  <tr>
-                    <th className="px-4 py-3">Item / Category</th>
-                    <th className="px-3 py-3 text-center">Required</th>
-                    <th className="px-3 py-3 text-center">Reserved</th>
-                    <th className="px-3 py-3 text-center">Taken</th>
-                    <th className="px-3 py-3 text-center">Good / Dmg / Lost</th>
-                    <th className="px-4 py-3">Staff Custody &amp; Return Time</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
-                  {filteredStocks.map((stock) => {
-                    const item = (stock.stockItemId || stock.stockItem) as StockItem;
-                    const staff = stock.assignedStaff;
-                    const isOverdue =
-                      stock.expectedReturnAt &&
-                      new Date(stock.expectedReturnAt) < now &&
-                      stock.status !== "VERIFIED" &&
-                      stock.status !== "CLOSED";
+            <>
+              {/* Mobile Cards List View (under md breakpoint) */}
+              <div className="space-y-3.5 md:hidden">
+                {filteredStocks.map((stock) => {
+                  const item = (stock.stockItemId || stock.stockItem) as StockItem;
+                  const staff = stock.assignedStaff;
+                  const isOverdue =
+                    stock.expectedReturnAt &&
+                    new Date(stock.expectedReturnAt) < now &&
+                    stock.status !== "VERIFIED" &&
+                    stock.status !== "CLOSED";
 
-                    return (
-                      <tr
-                        key={stock._id}
-                        className={`transition ${
-                          stock.status === "RETURN_PENDING"
-                            ? "bg-purple-50/20 hover:bg-purple-50/40"
-                            : "hover:bg-gray-50/60"
-                        }`}
-                      >
-                        <td className="px-4 py-3.5">
-                          <div className="font-bold text-[#252525]">{item?.name || "Unknown Item"}</div>
-                          <div className="text-[11px] text-gray-400">
-                            {item?.category || "Equipment"} {item?.sku && <span>&bull; SKU: {item.sku}</span>}
-                          </div>
-                        </td>
+                  return (
+                    <div
+                      key={stock._id}
+                      className={`rounded-2xl border p-4 space-y-3 transition ${
+                        stock.status === "RETURN_PENDING"
+                          ? "border-purple-200 bg-purple-50/20"
+                          : "border-gray-200 bg-[#faf8f5]/40"
+                      }`}
+                    >
+                      {/* Top: Item Title & Status Badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-[#252525] text-sm truncate">
+                            {item?.name || "Unknown Item"}
+                          </h4>
+                          <p className="text-[11px] text-gray-500">
+                            {item?.category || "Equipment"} {item?.sku ? `· SKU: ${item.sku}` : ""}
+                          </p>
+                        </div>
+                        <div className="shrink-0">{getStatusBadge(stock.status)}</div>
+                      </div>
 
-                        <td className="px-3 py-3.5 text-center font-bold text-gray-900">
-                          {stock.requiredQuantity} <span className="text-[10px] font-normal text-gray-400">{item?.unit || "pcs"}</span>
-                        </td>
+                      {/* Quantities Grid */}
+                      <div className="grid grid-cols-4 gap-1.5 text-center bg-white p-2.5 rounded-xl border border-gray-100 text-xs">
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">Req</span>
+                          <p className="font-bold text-gray-900 mt-0.5">
+                            {stock.requiredQuantity}{" "}
+                            <span className="text-[9px] font-normal text-gray-400">{item?.unit || "pcs"}</span>
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-amber-600 font-bold uppercase">Rsrv</span>
+                          <p className="font-bold text-amber-700 mt-0.5">{stock.reservedQuantity}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-blue-600 font-bold uppercase">Taken</span>
+                          <p className="font-bold text-blue-700 mt-0.5">{stock.takenQuantity}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-emerald-600 font-bold uppercase">Ret / Dmg</span>
+                          <p className="font-bold text-emerald-700 mt-0.5">
+                            {stock.status === "VERIFIED"
+                              ? `${stock.approvedReturnedQuantity ?? stock.returnedQuantity}/${stock.approvedDamagedQuantity ?? stock.damagedQuantity}`
+                              : `${stock.returnedQuantity}/${stock.damagedQuantity}`}
+                          </p>
+                        </div>
+                      </div>
 
-                        <td className="px-3 py-3.5 text-center font-semibold text-amber-700">
-                          {stock.reservedQuantity}
-                        </td>
-
-                        <td className="px-3 py-3.5 text-center font-semibold text-blue-700">
-                          <div>{stock.takenQuantity}</div>
-                          {stock.takenAt && (
-                            <div className="text-[10px] text-gray-400 font-normal">
-                              {formatTime24to12(stock.takenAt)}
-                            </div>
-                          )}
-                        </td>
-
-                        <td className="px-3 py-3.5 text-center text-[11px]">
-                          {stock.status === "VERIFIED" ? (
-                            <div>
-                              <span className="text-emerald-700 font-bold" title="Approved Good Condition">
-                                {stock.approvedReturnedQuantity ?? stock.returnedQuantity}
-                              </span>{" "}
-                              /{" "}
-                              <span className="text-amber-700 font-bold" title="Approved Damaged">
-                                {stock.approvedDamagedQuantity ?? stock.damagedQuantity}
-                              </span>{" "}
-                              /{" "}
-                              <span className="text-red-700 font-bold" title="Approved Lost">
-                                {stock.approvedLostQuantity ?? stock.lostQuantity}
+                      {/* Staff Custody Info */}
+                      <div className="text-xs bg-white p-2.5 rounded-xl border border-gray-100">
+                        {staff ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-gray-800 flex items-center gap-1.5 truncate">
+                                <User size={12} className="text-gray-400 shrink-0" />
+                                <span className="truncate">{staff.name}</span>
                               </span>
-                              <div className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">Approved</div>
-                            </div>
-                          ) : (
-                            <div>
-                              <span className="text-emerald-700 font-bold" title="Staff Reported Good">
-                                {stock.returnedQuantity}
-                              </span>{" "}
-                              /{" "}
-                              <span className="text-amber-700 font-bold" title="Staff Reported Damaged">
-                                {stock.damagedQuantity}
-                              </span>{" "}
-                              /{" "}
-                              <span className="text-red-700 font-bold" title="Staff Reported Lost">
-                                {stock.lostQuantity}
-                              </span>
-                            </div>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3.5">
-                          {staff ? (
-                            <div className="space-y-1">
-                              <div className="font-semibold text-gray-800 flex items-center gap-1.5">
-                                <User size={12} className="text-gray-400" />
-                                <span>{staff.name}</span>
-                              </div>
                               {staff.phone && (
-                                <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                                <span className="text-[11px] text-gray-500 flex items-center gap-1 shrink-0">
                                   <Phone size={10} />
                                   <span>{staff.phone}</span>
-                                </div>
+                                </span>
                               )}
-                              {stock.expectedReturnAt ? (
-                                <div
-                                  className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md inline-flex ${
-                                    isOverdue
-                                      ? "bg-red-100 text-red-800 border border-red-200"
-                                      : "bg-indigo-50 text-indigo-700 border border-indigo-100"
-                                  }`}
-                                >
-                                  <Clock size={11} className={isOverdue ? "text-red-600" : "text-indigo-500"} />
-                                  <span>
-                                    {isOverdue ? "Overdue: " : "Due: "}
-                                    {new Date(stock.expectedReturnAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
-                                    {formatTime24to12(stock.expectedReturnAt)}
-                                  </span>
+                            </div>
+                            {stock.expectedReturnAt && (
+                              <div
+                                className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md inline-flex ${
+                                  isOverdue
+                                    ? "bg-red-100 text-red-800 border border-red-200"
+                                    : "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                }`}
+                              >
+                                <Clock size={11} className={isOverdue ? "text-red-600" : "text-indigo-500"} />
+                                <span>
+                                  {isOverdue ? "Overdue: " : "Due: "}
+                                  {new Date(stock.expectedReturnAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
+                                  {formatTime24to12(stock.expectedReturnAt)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-[11px]">No staff custodian assigned yet</span>
+                        )}
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {/* Inspect & Approve Button for RETURN_PENDING */}
+                        {(stock.status === "RETURN_PENDING" || stock.status === "RETURNED") && (
+                          <button
+                            type="button"
+                            onClick={() => openVerifyModal(stock)}
+                            disabled={actionLoading}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-purple-700 px-3 py-2 text-xs font-bold text-white hover:bg-purple-800 shadow-xs transition disabled:opacity-50"
+                          >
+                            <ShieldCheck size={14} />
+                            <span>Inspect Return</span>
+                          </button>
+                        )}
+
+                        {/* Assign / Reschedule Button */}
+                        {stock.status !== "VERIFIED" && stock.status !== "CLOSED" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStock(stock);
+                              let formattedDate = "";
+                              if (stock.expectedReturnAt) {
+                                const dt = new Date(stock.expectedReturnAt);
+                                formattedDate = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                              }
+                              setAssignForm({
+                                staffId: stock.assignedStaff?._id || "",
+                                expectedReturnAt: formattedDate,
+                                notes: stock.takeNotes || "",
+                              });
+                              setIsAssignOpen(true);
+                            }}
+                            disabled={actionLoading}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-2xs transition disabled:opacity-50"
+                          >
+                            <UserCheck size={13} className="text-indigo-600" />
+                            <span>{staff ? "Reschedule" : "Assign Staff"}</span>
+                          </button>
+                        )}
+
+                        {/* Discrepancy Button */}
+                        {stock.status === "RETURN_PENDING" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStock(stock);
+                              setIsDiscrepancyOpen(true);
+                            }}
+                            disabled={actionLoading}
+                            className="inline-flex items-center justify-center gap-1 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 shadow-2xs transition disabled:opacity-50"
+                          >
+                            <AlertTriangle size={13} />
+                            <span>Discrepancy</span>
+                          </button>
+                        )}
+
+                        {/* Remove Allocation (Only if planned / reserved) */}
+                        {stock.status === "PLANNED" || stock.status === "RESERVED" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveRequirement(stock)}
+                            disabled={actionLoading}
+                            className="inline-flex items-center justify-center p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition border border-gray-200 bg-white"
+                            title="Remove requirement"
+                            aria-label="Remove requirement"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View (md breakpoint and up) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-gray-600">
+                  <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase text-gray-400">
+                    <tr>
+                      <th className="px-4 py-3">Item / Category</th>
+                      <th className="px-3 py-3 text-center">Required</th>
+                      <th className="px-3 py-3 text-center">Reserved</th>
+                      <th className="px-3 py-3 text-center">Taken</th>
+                      <th className="px-3 py-3 text-center">Good / Dmg / Lost</th>
+                      <th className="px-4 py-3">Staff Custody &amp; Return Time</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-medium">
+                    {filteredStocks.map((stock) => {
+                      const item = (stock.stockItemId || stock.stockItem) as StockItem;
+                      const staff = stock.assignedStaff;
+                      const isOverdue =
+                        stock.expectedReturnAt &&
+                        new Date(stock.expectedReturnAt) < now &&
+                        stock.status !== "VERIFIED" &&
+                        stock.status !== "CLOSED";
+
+                      return (
+                        <tr
+                          key={stock._id}
+                          className={`transition ${
+                            stock.status === "RETURN_PENDING"
+                              ? "bg-purple-50/20 hover:bg-purple-50/40"
+                              : "hover:bg-gray-50/60"
+                          }`}
+                        >
+                          <td className="px-4 py-3.5">
+                            <div className="font-bold text-[#252525]">{item?.name || "Unknown Item"}</div>
+                            <div className="text-[11px] text-gray-400">
+                              {item?.category || "Equipment"} {item?.sku && <span>&bull; SKU: {item.sku}</span>}
+                            </div>
+                          </td>
+
+                          <td className="px-3 py-3.5 text-center font-bold text-gray-900">
+                            {stock.requiredQuantity} <span className="text-[10px] font-normal text-gray-400">{item?.unit || "pcs"}</span>
+                          </td>
+
+                          <td className="px-3 py-3.5 text-center font-semibold text-amber-700">
+                            {stock.reservedQuantity}
+                          </td>
+
+                          <td className="px-3 py-3.5 text-center font-semibold text-blue-700">
+                            <div>{stock.takenQuantity}</div>
+                            {stock.takenAt && (
+                              <div className="text-[10px] text-gray-400 font-normal">
+                                {formatTime24to12(stock.takenAt)}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="px-3 py-3.5 text-center text-[11px]">
+                            {stock.status === "VERIFIED" ? (
+                              <div>
+                                <span className="text-emerald-700 font-bold" title="Approved Good Condition">
+                                  {stock.approvedReturnedQuantity ?? stock.returnedQuantity}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-amber-700 font-bold" title="Approved Damaged">
+                                  {stock.approvedDamagedQuantity ?? stock.damagedQuantity}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-red-700 font-bold" title="Approved Lost">
+                                  {stock.approvedLostQuantity ?? stock.lostQuantity}
+                                </span>
+                                <div className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">Approved</div>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="text-emerald-700 font-bold" title="Staff Reported Good">
+                                  {stock.returnedQuantity}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-amber-700 font-bold" title="Staff Reported Damaged">
+                                  {stock.damagedQuantity}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-red-700 font-bold" title="Staff Reported Lost">
+                                  {stock.lostQuantity}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-3.5">
+                            {staff ? (
+                              <div className="space-y-1">
+                                <div className="font-semibold text-gray-800 flex items-center gap-1.5">
+                                  <User size={12} className="text-gray-400" />
+                                  <span>{staff.name}</span>
                                 </div>
+                                {staff.phone && (
+                                  <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                                    <Phone size={10} />
+                                    <span>{staff.phone}</span>
+                                  </div>
+                                )}
+                                {stock.expectedReturnAt ? (
+                                  <div
+                                    className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md inline-flex ${
+                                      isOverdue
+                                        ? "bg-red-100 text-red-800 border border-red-200"
+                                        : "bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                    }`}
+                                  >
+                                    <Clock size={11} className={isOverdue ? "text-red-600" : "text-indigo-500"} />
+                                    <span>
+                                      {isOverdue ? "Overdue: " : "Due: "}
+                                      {new Date(stock.expectedReturnAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
+                                      {formatTime24to12(stock.expectedReturnAt)}
+                                    </span>
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center text-gray-400 italic text-[11px]">
+                                Not Assigned
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-4 py-3.5">{getStatusBadge(stock.status)}</td>
+
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Inspect & Approve Button for RETURN_PENDING */}
+                              {(stock.status === "RETURN_PENDING" || stock.status === "RETURNED") && (
+                                <button
+                                  type="button"
+                                  onClick={() => openVerifyModal(stock)}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 rounded-xl bg-purple-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-800 shadow-xs transition disabled:opacity-50"
+                                  title="Inspect & Approve Return"
+                                >
+                                  <ShieldCheck size={13} />
+                                  Inspect Return
+                                </button>
+                              )}
+
+                              {/* Assign / Reschedule Button */}
+                              {stock.status !== "VERIFIED" && stock.status !== "CLOSED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedStock(stock);
+                                    let formattedDate = "";
+                                    if (stock.expectedReturnAt) {
+                                      const dt = new Date(stock.expectedReturnAt);
+                                      formattedDate = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                                    }
+                                    setAssignForm({
+                                      staffId: stock.assignedStaff?._id || "",
+                                      expectedReturnAt: formattedDate,
+                                      notes: stock.takeNotes || "",
+                                    });
+                                    setIsAssignOpen(true);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 shadow-2xs transition disabled:opacity-50"
+                                  title="Assign Staff Member & Return Schedule"
+                                >
+                                  <UserCheck size={12} className="text-indigo-600" />
+                                  {staff ? "Schedule" : "Assign"}
+                                </button>
+                              )}
+
+                              {/* Discrepancy Button */}
+                              {stock.status === "RETURN_PENDING" && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedStock(stock);
+                                    setIsDiscrepancyOpen(true);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 rounded-xl bg-red-50 border border-red-200 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 shadow-2xs transition disabled:opacity-50"
+                                  title="Flag Discrepancy"
+                                >
+                                  <AlertTriangle size={12} />
+                                  Discrepancy
+                                </button>
+                              )}
+
+                              {/* Remove Allocation (Only if not taken or completed) */}
+                              {stock.status === "PLANNED" || stock.status === "RESERVED" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveRequirement(stock)}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                                  title="Remove requirement"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
                               ) : null}
                             </div>
-                          ) : (
-                            <span className="inline-flex items-center text-gray-400 italic text-[11px]">
-                              Not Assigned
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3.5">{getStatusBadge(stock.status)}</td>
-
-                        <td className="px-4 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Inspect & Approve Button for RETURN_PENDING */}
-                            {(stock.status === "RETURN_PENDING" || stock.status === "RETURNED") && (
-                              <button
-                                type="button"
-                                onClick={() => openVerifyModal(stock)}
-                                disabled={actionLoading}
-                                className="inline-flex items-center gap-1 rounded-xl bg-purple-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-800 shadow-xs transition disabled:opacity-50"
-                                title="Inspect & Approve Return"
-                              >
-                                <ShieldCheck size={13} />
-                                Inspect Return
-                              </button>
-                            )}
-
-                            {/* Assign / Reschedule Button */}
-                            {stock.status !== "VERIFIED" && stock.status !== "CLOSED" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedStock(stock);
-                                  let formattedDate = "";
-                                  if (stock.expectedReturnAt) {
-                                    const dt = new Date(stock.expectedReturnAt);
-                                    formattedDate = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                                  }
-                                  setAssignForm({
-                                    staffId: stock.assignedStaff?._id || "",
-                                    expectedReturnAt: formattedDate,
-                                    notes: stock.takeNotes || "",
-                                  });
-                                  setIsAssignOpen(true);
-                                }}
-                                disabled={actionLoading}
-                                className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 shadow-2xs transition disabled:opacity-50"
-                                title="Assign Staff Member & Return Schedule"
-                              >
-                                <UserCheck size={12} className="text-indigo-600" />
-                                {staff ? "Schedule" : "Assign"}
-                              </button>
-                            )}
-
-                            {/* Discrepancy Button */}
-                            {stock.status === "RETURN_PENDING" && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedStock(stock);
-                                  setIsDiscrepancyOpen(true);
-                                }}
-                                disabled={actionLoading}
-                                className="inline-flex items-center gap-1 rounded-xl bg-red-50 border border-red-200 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 hover:bg-red-100 shadow-2xs transition disabled:opacity-50"
-                                title="Flag Discrepancy"
-                              >
-                                <AlertTriangle size={12} />
-                                Discrepancy
-                              </button>
-                            )}
-
-                            {/* Remove Allocation (Only if not taken or completed) */}
-                            {stock.status === "PLANNED" || stock.status === "RESERVED" ? (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveRequirement(stock)}
-                                disabled={actionLoading}
-                                className="inline-flex items-center p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
-                                title="Remove requirement"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -990,9 +1167,9 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
       {/* MODAL: Return Inspection & Approval                       */}
       {/* ========================================================= */}
       {isVerifyOpen && selectedStock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl border border-gray-100 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
-            <div className="flex items-start justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 sm:p-4 backdrop-blur-xs overflow-y-auto">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-4 sm:p-6 shadow-2xl border border-gray-100 max-h-[92dvh] overflow-y-auto animate-in fade-in zoom-in duration-150">
+            <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="text-base font-bold text-[#252525]">Stock Return Inspection &amp; Approval</h3>
                 <p className="mt-0.5 text-xs text-gray-500">
@@ -1000,13 +1177,13 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
                   <span className="font-semibold text-gray-800">{selectedStock.assignedStaff?.name || "Staff"}</span>.
                 </p>
               </div>
-              <span className="rounded-full bg-purple-100 border border-purple-200 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 uppercase">
+              <span className="rounded-full bg-purple-100 border border-purple-200 px-2.5 py-0.5 text-[10px] font-bold text-purple-800 uppercase shrink-0">
                 Awaiting Approval
               </span>
             </div>
 
             {/* Staff Reported Breakdown Display */}
-            <div className="mt-4 rounded-2xl bg-[#faf8f5] p-4 text-xs space-y-3 border border-[#e8e1d8]">
+            <div className="mt-4 rounded-2xl bg-[#faf8f5] p-3.5 sm:p-4 text-xs space-y-3 border border-[#e8e1d8]">
               <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                 <span>Staff Reported Breakdown</span>
                 {selectedStock.returnedAt && (
@@ -1016,7 +1193,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
                 )}
               </div>
 
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                 <div className="rounded-xl bg-white p-2.5 border border-gray-200">
                   <div className="text-[10px] text-gray-400 font-bold uppercase">Taken</div>
                   <div className="font-extrabold text-gray-900 text-sm mt-0.5">{selectedStock.takenQuantity}</div>
@@ -1058,7 +1235,7 @@ export default function EventStockTab({ eventId, eventName, token: propToken }: 
                 Manager Verification &amp; Master Restock Counts
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-emerald-800 mb-1">
                     Approved Good (Restock) *

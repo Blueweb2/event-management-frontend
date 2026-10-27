@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Event } from "@/lib/event.api";
-import { Edit, Trash2, ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity, CreditCard, Plus, Play, CheckCircle2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ArrowRight, Sparkles, Activity, CreditCard, Plus, Play, CheckCircle2 } from "lucide-react";
 import EventStatusBadge from "./EventStatusBadge";
 import { formatTime24to12 } from "@/lib/time-utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,6 @@ import { canViewClientPayments } from "@/lib/manager-navigation";
 
 interface EventCardProps {
   event: Event;
-  onEdit?: (event: Event) => void;
-  onDelete?: (event: Event) => void;
   onStart?: (event: Event) => void;
   onAccept?: (event: Event) => void;
   onExport?: (event: Event) => void;
@@ -26,8 +24,6 @@ interface EventCardProps {
 
 export default function EventCard({
   event,
-  onEdit,
-  onDelete,
   onStart,
   onAccept,
   onExport,
@@ -95,16 +91,17 @@ export default function EventCard({
     return (
       <div
         onClick={() => router.push(`/manager/events/${event._id}`)}
-        className="group w-full cursor-pointer text-left transition"
+        className="group w-full max-w-full min-w-0 cursor-pointer text-left transition"
       >
-        <article className="relative flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200/90 bg-white p-3.5 sm:px-4 sm:py-3 shadow-xs transition hover:border-[#9A7B4F]/50 hover:bg-[#FAF8F5]/80 hover:shadow-sm active:scale-[0.995]">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <article className="relative flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200/90 bg-white p-3 sm:px-4 sm:py-3 shadow-xs transition hover:border-[#9A7B4F]/50 hover:bg-[#FAF8F5]/80 hover:shadow-sm active:scale-[0.995] w-full max-w-full min-w-0 overflow-hidden">
+          {/* Main Info */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500 group-hover:bg-[#F4EBDD] group-hover:text-[#9A7B4F] transition">
               <CalendarIcon />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="truncate text-xs sm:text-sm font-bold text-gray-800 group-hover:text-[#9A7B4F]">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                <h4 className="truncate text-xs sm:text-sm font-bold text-gray-800 group-hover:text-[#9A7B4F] max-w-full" title={event.eventName}>
                   {event.eventName}
                 </h4>
                 <span className="shrink-0 text-[11px] font-semibold text-gray-400">
@@ -116,96 +113,72 @@ export default function EventCard({
                   </span>
                 )}
               </div>
-              <p className="truncate text-[11px] text-gray-400 mt-0.5">
+              <p className="truncate text-[11px] text-gray-400 mt-0.5 max-w-full min-w-0" title={`${event.eventType} · ${clientName} ${event.location ? `· ${event.location}` : ""}`}>
                 {event.eventType} · {clientName} {event.location ? `· ${event.location}` : ""}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t border-gray-100 sm:border-0">
-            {showPayments && eventTotal > 0 && (
-              <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                isSettled ? "bg-emerald-50 text-emerald-700" : isPartiallyPaid ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
-              }`}>
-                {isSettled ? "Paid" : `₹${eventBalance.toLocaleString("en-IN")} Due`}
-              </span>
-            )}
+          {/* Action Row - Responsive: Stacks neatly on mobile, inline on sm: screens */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between sm:justify-end gap-2 shrink-0 pt-2.5 sm:pt-0 border-t border-gray-100 sm:border-0 w-full sm:w-auto min-w-0">
+            {/* Badges strip on mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-between sm:justify-start min-w-0">
+              {showPayments && eventTotal > 0 && (
+                <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold shrink-0 ${
+                  isSettled ? "bg-emerald-50 text-emerald-700" : isPartiallyPaid ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
+                }`}>
+                  {isSettled ? "Paid" : `₹${eventBalance.toLocaleString("en-IN")} Due`}
+                </span>
+              )}
 
-            <EventStatusBadge status={event.status} />
+              <EventStatusBadge status={event.status} />
+            </div>
 
-            {canStart && (
+            {/* Action buttons strip */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap justify-end min-w-0">
+              {canStart && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStart(event);
+                  }}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer shrink-0"
+                  title="Start Live Event Operations"
+                >
+                  <Play size={10} fill="currentColor" />
+                  <span>Start</span>
+                </button>
+              )}
+
+              {onExport && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExport(event);
+                  }}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
+                  title="Export Invoice / Quotation"
+                >
+                  <Sparkles size={11} className="text-[#D4AF37]" />
+                  <span>Export</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onStart(event);
+                  setIsExpanded(true);
                 }}
-                className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-2xs transition active:scale-95 cursor-pointer"
-                title="Start Live Event Operations"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#9A7B4F] hover:bg-[#F4EBDD] transition shrink-0"
+                title="Expand to full card details"
               >
-                <Play size={10} fill="currentColor" />
-                <span>Start</span>
+                <span>Elaborate</span>
+                <ChevronDown size={13} />
               </button>
-            )}
-
-            {onExport && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExport(event);
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
-                title="Export Invoice / Quotation"
-              >
-                <Sparkles size={11} className="text-[#D4AF37]" />
-                <span>Export</span>
-              </button>
-            )}
-
-            {(onEdit || onDelete) && (
-              <div className="flex items-center gap-0.5">
-                {onEdit && (
-                  <button
-                    type="button"
-                    title="Edit Event"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(event);
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-[#F4EBDD] hover:text-[#9A7B4F] transition"
-                  >
-                    <Edit size={13} />
-                  </button>
-                )}
-                {onDelete && (
-                  <button
-                    type="button"
-                    title="Delete Event"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(event);
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(true);
-              }}
-              className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#9A7B4F] hover:bg-[#F4EBDD] transition"
-              title="Expand to full card details"
-            >
-              <span>Elaborate</span>
-              <ChevronDown size={13} />
-            </button>
+            </div>
           </div>
         </article>
       </div>
@@ -215,47 +188,48 @@ export default function EventCard({
   return (
     <div
       onClick={() => router.push(`/manager/events/${event._id}`)}
-      className="group w-full cursor-pointer text-left"
+      className="group w-full max-w-full min-w-0 cursor-pointer text-left"
     >
       <article
-        className={`relative rounded-2xl transition border active:scale-[0.995] ${
+        className={`relative rounded-2xl transition border active:scale-[0.995] w-full max-w-full min-w-0 overflow-hidden ${
           isOngoing
-            ? "border-[#9A7B4F] bg-gradient-to-br from-white via-[#faf7f2] to-[#f5ede3]/40 p-5 sm:p-6 shadow-md ring-1 ring-[#9A7B4F]/20"
+            ? "border-[#9A7B4F] bg-gradient-to-br from-white via-[#faf7f2] to-[#f5ede3]/40 p-4 sm:p-6 shadow-md ring-1 ring-[#9A7B4F]/20"
             : compact && isExpanded
-            ? "border-[#9A7B4F]/40 bg-white p-5 shadow-md"
-            : "border-transparent bg-white p-5 shadow-sm hover:border-gray-300 hover:shadow-md"
+            ? "border-[#9A7B4F]/40 bg-white p-4 sm:p-5 shadow-md"
+            : "border-transparent bg-white p-4 sm:p-5 shadow-sm hover:border-gray-300 hover:shadow-md"
         }`}
       >
         {/* In-Progress Live Badge Header */}
         {isOngoing && (
-          <div className="mb-3.5 flex items-center justify-between border-b border-[#ebdccb] pb-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#29241f] px-3 py-1 text-[10px] font-extrabold tracking-wider text-amber-200 uppercase">
+          <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-[#ebdccb] pb-2.5 w-full max-w-full min-w-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#29241f] px-3 py-1 text-[10px] font-extrabold tracking-wider text-amber-200 uppercase shrink-0">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               Live In-Progress Event
             </span>
-            <span className="text-[11px] font-bold text-[#9A7B4F] flex items-center gap-1">
+            <span className="text-[11px] font-bold text-[#9A7B4F] flex items-center gap-1 shrink-0">
               <Activity size={13} /> Active Operations
             </span>
           </div>
         )}
 
         {/* Top Row */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 w-full max-w-full min-w-0">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8C7A55]">
               {event.eventType}
             </p>
 
             <h3
-              className={`mt-1 truncate font-bold text-[#252525] group-hover:text-[#9A7B4F] transition-colors ${
-                isOngoing ? "text-lg sm:text-xl font-black" : "text-base"
+              className={`mt-1 truncate font-bold text-[#252525] group-hover:text-[#9A7B4F] transition-colors max-w-full ${
+                isOngoing ? "text-base sm:text-xl font-black" : "text-sm sm:text-base"
               }`}
+              title={event.eventName}
             >
               {event.eventName}
             </h3>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <EventStatusBadge status={event.status} />
 
             {/* Collapse toggle if expanded from compact */}
@@ -266,50 +240,18 @@ export default function EventCard({
                   e.stopPropagation();
                   setIsExpanded(false);
                 }}
-                className="rounded-lg bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200"
+                className="rounded-lg bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200 shrink-0"
                 title="Collapse to small card"
               >
                 <ChevronUp size={15} />
               </button>
             )}
 
-            {/* Action Buttons */}
-            {(onEdit || onDelete) && (
-              <div className="flex items-center gap-1 pl-1">
-                {onEdit && (
-                  <button
-                    type="button"
-                    title="Edit Event"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(event);
-                    }}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-[#F4EBDD] hover:text-[#9A7B4F] transition"
-                  >
-                    <Edit size={14} />
-                  </button>
-                )}
-
-                {onDelete && (
-                  <button
-                    type="button"
-                    title="Delete Event"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(event);
-                    }}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Event Details */}
-        <div className="mt-4 sm:mt-5 space-y-2.5">
+        <div className="mt-4 sm:mt-5 space-y-2.5 w-full max-w-full min-w-0">
           <InfoRow
             icon={<CalendarIcon />}
             value={formatDate(event.eventDate)}
@@ -333,12 +275,12 @@ export default function EventCard({
 
         {/* Payment & Financial Ledger Strip (Super Admin Only) */}
         {showPayments ? (
-          <div className="mt-4 rounded-xl border border-gray-100 bg-[#faf8f5] p-2.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="mt-4 rounded-xl border border-gray-100 bg-[#faf8f5] p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-2 w-full max-w-full min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
               <CreditCard size={15} className="text-[#9a6c37] shrink-0" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Payment Status</p>
-                <p className="text-xs font-black text-gray-900">
+                <p className="text-xs font-black text-gray-900 truncate">
                   {eventTotal > 0 ? (
                     <>
                       <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
@@ -352,9 +294,9 @@ export default function EventCard({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 justify-start sm:justify-end w-full sm:w-auto min-w-0">
               {eventTotal > 0 && (
-                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold shrink-0 ${
                   isSettled
                     ? "bg-emerald-100 text-emerald-800"
                     : isPartiallyPaid
@@ -373,7 +315,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onAccept(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95 shrink-0"
                   title="Accept / Confirm booking"
                 >
                   <CheckCircle2 size={12} />
@@ -389,7 +331,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onStart(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95 shrink-0"
                   title="Start event operations now"
                 >
                   <Play size={11} className="fill-white" />
@@ -405,7 +347,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onExport(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
                   title="Export Quotation, Invoice & WhatsApp Summary"
                 >
                   <Sparkles size={11} className="text-[#D4AF37]" />
@@ -419,7 +361,7 @@ export default function EventCard({
                   e.stopPropagation();
                   router.push(`/manager/events/${event._id}#payments`);
                 }}
-                className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95"
+                className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95 shrink-0"
                 title="Record or view client payment for this event"
               >
                 <Plus size={11} className="text-[#9a6c37]" />
@@ -432,7 +374,7 @@ export default function EventCard({
           (Boolean(onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending")) ||
             Boolean(onStart && !isCompleted && !isOngoing) ||
             Boolean(onExport)) ? (
-            <div className="mt-3.5 flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 pt-2.5">
+            <div className="mt-3.5 flex flex-wrap items-center justify-start sm:justify-end gap-1.5 sm:gap-2 border-t border-gray-100 pt-2.5 w-full sm:w-auto min-w-0">
               {onAccept && !isDateOver && ((event.status as string) === "Pending" || (bookingObj as any)?.status === "Pending") && (
                 <button
                   type="button"
@@ -440,7 +382,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onAccept(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95 shrink-0"
                   title="Accept / Confirm booking"
                 >
                   <CheckCircle2 size={12} />
@@ -455,7 +397,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onStart(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95 shrink-0"
                   title="Start event operations now"
                 >
                   <Play size={11} className="fill-white" />
@@ -470,7 +412,7 @@ export default function EventCard({
                     e.stopPropagation();
                     onExport(event);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
                   title="Export Quotation, Invoice & WhatsApp Summary"
                 >
                   <Sparkles size={11} className="text-[#D4AF37]" />
@@ -482,17 +424,17 @@ export default function EventCard({
         )}
 
         {/* Client & Navigation Footer */}
-        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-          <div>
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 w-full max-w-full min-w-0">
+          <div className="min-w-0 flex-1 pr-2">
             <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400">
               Client
             </p>
-            <p className="mt-0.5 text-xs sm:text-sm font-bold text-[#252525]">
+            <p className="mt-0.5 text-xs sm:text-sm font-bold text-[#252525] truncate" title={clientName}>
               {clientName}
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1 text-xs font-bold text-[#9A7B4F] group-hover:translate-x-0.5 transition">
+          <div className="inline-flex items-center gap-1 text-xs font-bold text-[#9A7B4F] group-hover:translate-x-0.5 transition shrink-0">
             <span>Manage Event</span>
             <ArrowRight size={13} />
           </div>
@@ -516,12 +458,12 @@ function InfoRow({
   value,
 }: InfoRowProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 min-w-0 w-full">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#F8F7F3] text-[#8C7A55]">
         {icon}
       </span>
 
-      <span className="truncate text-sm text-gray-600">
+      <span className="truncate text-xs sm:text-sm text-gray-600 min-w-0 flex-1" title={value}>
         {value}
       </span>
     </div>

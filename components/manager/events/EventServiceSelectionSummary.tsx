@@ -189,38 +189,38 @@ export default function EventServiceSelectionSummary({
       <Link
         href={`/manager/events/${eventId}/catering`}
         id="catering-menu-ingredients-btn"
-        className={`mt-3.5 group flex w-full items-center justify-between gap-3 rounded-2xl border p-3.5 text-left shadow-2xs transition-all duration-200 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer ${theme.containerClass}`}
+        className={`mt-3.5 group flex w-full max-w-full min-w-0 items-center justify-between gap-2.5 sm:gap-3 rounded-2xl border p-3 sm:p-3.5 text-left shadow-2xs transition-all duration-200 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer overflow-hidden ${theme.containerClass}`}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border group-hover:scale-105 transition-transform ${theme.iconBoxClass}`}
+            className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border group-hover:scale-105 transition-transform ${theme.iconBoxClass}`}
           >
-            <IconComponent size={18} className={theme.iconClass} />
+            <IconComponent size={17} className={theme.iconClass} />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 min-w-0">
               <span
-                className={`text-xs font-bold text-[#29241f] transition-colors ${theme.headingHoverClass}`}
+                className={`text-xs font-bold text-[#29241f] transition-colors truncate max-w-full ${theme.headingHoverClass}`}
               >
                 Catering Menu & Ingredients
               </span>
               {dishesCount > 0 && (
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${theme.badgeClass}`}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0 ${theme.badgeClass}`}
                 >
                   {dishesCount} {dishesCount === 1 ? "dish" : "dishes"}
                 </span>
               )}
             </div>
-            <p className={`text-[11px] truncate mt-0.5 ${theme.textClass}`}>
+            <p className={`text-[11px] truncate max-w-full min-w-0 mt-0.5 ${theme.textClass}`}>
               View selected dishes, quantities, and kitchen ingredients
             </p>
           </div>
         </div>
         <div
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border shadow-2xs transition-colors ${theme.actionBtnClass}`}
+          className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border shadow-2xs transition-colors ${theme.actionBtnClass}`}
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={15} />
         </div>
       </Link>
     );
@@ -269,39 +269,39 @@ export default function EventServiceSelectionSummary({
     <button
       type="button"
       onClick={() => onOpenDetails(stream)}
-      className={`mt-3.5 group flex w-full items-center justify-between gap-3 rounded-2xl border p-3.5 text-left shadow-2xs transition-all duration-200 hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer ${theme.containerClass}`}
+      className={`mt-3.5 group flex w-full max-w-full min-w-0 items-center justify-between gap-2.5 sm:gap-3 rounded-2xl border p-3 sm:p-3.5 text-left shadow-2xs transition-all duration-200 hover:shadow-xs active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-amber-500/30 cursor-pointer overflow-hidden ${theme.containerClass}`}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
         <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border group-hover:scale-105 transition-transform ${theme.iconBoxClass}`}
+          className={`flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl border group-hover:scale-105 transition-transform ${theme.iconBoxClass}`}
         >
-          <IconComponent size={18} className={theme.iconClass} />
+          <IconComponent size={17} className={theme.iconClass} />
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 min-w-0">
             <span
-              className={`text-xs font-bold text-[#29241f] transition-colors ${theme.headingHoverClass}`}
+              className={`text-xs font-bold text-[#29241f] transition-colors truncate max-w-full ${theme.headingHoverClass}`}
             >
               {theme.title}
             </span>
             {badgeText && (
               <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold border truncate max-w-[140px] sm:max-w-[200px] ${theme.badgeClass}`}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold border shrink-0 truncate max-w-[120px] sm:max-w-[200px] ${theme.badgeClass}`}
                 title={badgeText}
               >
                 {badgeText}
               </span>
             )}
           </div>
-          <p className={`text-[11px] truncate mt-0.5 ${theme.textClass}`}>
+          <p className={`text-[11px] truncate max-w-full min-w-0 mt-0.5 ${theme.textClass}`}>
             {subtitleText}
           </p>
         </div>
       </div>
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border shadow-2xs transition-colors ${theme.actionBtnClass}`}
+        className={`flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-white/90 border shadow-2xs transition-colors ${theme.actionBtnClass}`}
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={15} />
       </div>
     </button>
   );

@@ -104,21 +104,21 @@ export default function EventProfitabilityCard({
       {/* Main Financial Analytics Card */}
       <section className="overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white shadow-sm">
         {/* Header */}
-        <div className="border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-5 sm:p-6">
+        <div className="border-b border-[#f1ece5] bg-gradient-to-r from-[#faf8f5] to-white p-4 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-lg font-black tracking-tight text-[#29241f] sm:text-xl">
+              <h3 className="text-base sm:text-xl font-black tracking-tight text-[#29241f]">
                 Event Expenses
               </h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => void handleRefresh()}
                 disabled={loading || expensesLoading}
                 title="Refresh expenses"
                 aria-label="Refresh expenses"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#ded5cb] bg-white text-[#756d64] hover:bg-[#f7f2ec] transition disabled:opacity-50"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#ded5cb] bg-white text-[#756d64] hover:bg-[#f7f2ec] transition disabled:opacity-50"
               >
                 <RefreshCw
                   size={14}
@@ -129,7 +129,7 @@ export default function EventProfitabilityCard({
               <button
                 type="button"
                 onClick={handleAddExpense}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-black"
+                className="flex-1 sm:flex-initial inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#29241f] px-3.5 text-xs font-bold text-white shadow-xs transition hover:bg-black active:scale-95"
               >
                 <Plus size={14} />
                 <span>Add Expense</span>

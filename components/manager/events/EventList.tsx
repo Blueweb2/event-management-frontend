@@ -7,8 +7,6 @@ import EmptyEvents from "./EmptyEvents";
 interface EventListProps {
   events: Event[];
   activeStatus?: EventFilterStatus;
-  onEdit?: (event: Event) => void;
-  onDelete?: (event: Event) => void;
   onStart?: (event: Event) => void;
   onAccept?: (event: Event) => void;
   onExport?: (event: Event) => void;
@@ -21,8 +19,6 @@ interface EventListProps {
 export default function EventList({
   events,
   activeStatus = "Ongoing",
-  onEdit,
-  onDelete,
   onStart,
   onAccept,
   onExport,
@@ -60,20 +56,18 @@ export default function EventList({
     }
 
     return (
-      <section className="space-y-3">
+      <section className="space-y-3 w-full max-w-full min-w-0">
         <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-[#29241f]">
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-[#29241f] truncate">
             Live Ongoing Events ({ongoingEvents.length})
           </h3>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 w-full max-w-full min-w-0">
           {ongoingEvents.map((event) => (
             <EventCard
               key={event._id}
               event={event}
-              onEdit={onEdit}
-              onDelete={onDelete}
               onStart={onStart}
               onAccept={onAccept}
               onExport={onExport}
@@ -102,22 +96,20 @@ export default function EventList({
     }
 
     return (
-      <section className="space-y-3">
-        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5">
+      <section className="space-y-3 w-full max-w-full min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-gray-200/60 pb-2.5 w-full max-w-full min-w-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-600">
             Upcoming Events ({upcomingEvents.length})
           </h3>
-          <span className="text-[11px] font-medium text-gray-400">
+          <span className="text-[11px] font-medium text-gray-400 hidden xs:inline">
             Click card to manage event details
           </span>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 w-full max-w-full min-w-0">
           {upcomingEvents.map((event) => (
             <EventCard
               key={event._id}
               event={event}
-              onEdit={onEdit}
-              onDelete={onDelete}
               onStart={onStart}
               onAccept={onAccept}
               onExport={onExport}
@@ -145,19 +137,17 @@ export default function EventList({
     }
 
     return (
-      <section className="space-y-3">
-        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5">
+      <section className="space-y-3 w-full max-w-full min-w-0">
+        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5 w-full max-w-full min-w-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
             Completed & Settled Events ({completedEvents.length})
           </h3>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 w-full max-w-full min-w-0">
           {completedEvents.map((event) => (
             <EventCard
               key={event._id}
               event={event}
-              onEdit={onEdit}
-              onDelete={onDelete}
               onExport={onExport}
               compact={true}
             />
@@ -179,19 +169,17 @@ export default function EventList({
     }
 
     return (
-      <section className="space-y-3">
-        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5">
+      <section className="space-y-3 w-full max-w-full min-w-0">
+        <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5 w-full max-w-full min-w-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
             Cancelled Events ({events.length})
           </h3>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 w-full max-w-full min-w-0">
           {events.map((event) => (
             <EventCard
               key={event._id}
               event={event}
-              onEdit={onEdit}
-              onDelete={onDelete}
               compact={true}
             />
           ))}
@@ -202,13 +190,11 @@ export default function EventList({
 
   // 5. Fallback: Generic display
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full max-w-full min-w-0">
       {events.map((event) => (
         <EventCard
           key={event._id}
           event={event}
-          onEdit={onEdit}
-          onDelete={onDelete}
           onStart={onStart}
           onAccept={onAccept}
           onExport={onExport}

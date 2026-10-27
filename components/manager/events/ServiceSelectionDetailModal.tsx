@@ -42,18 +42,18 @@ export default function ServiceSelectionDetailModal({
   const categoryServices = Array.isArray(spec.categoryServices) ? spec.categoryServices : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs overflow-y-auto">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-black/40 transition-opacity"
       />
 
       {/* Modal Dialog */}
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-2xl rounded-3xl border border-[#e8e1d8] bg-white p-6 sm:p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-[#29241f] max-h-[90vh] overflow-y-auto"
+        className="relative z-10 w-full max-w-2xl rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-6 sm:p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-[#29241f] max-h-[92dvh] overflow-y-auto"
       >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-gray-100 pb-4">

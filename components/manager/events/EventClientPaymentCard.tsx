@@ -210,10 +210,10 @@ export default function EventClientPaymentCard({
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-3 divide-x divide-y divide-[#f1ece5] sm:grid-cols-3 sm:divide-y-0 border-b border-[#f1ece5]">
+      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#f1ece5] border-b border-[#f1ece5]">
         {/* KPI 1: Total Contract Amount */}
-        <div className="bg-white p-5">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
+        <div className="bg-white p-4 sm:p-5">
+          <p className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
             Total Contracted
           </p>
           <p className="mt-1.5 text-xl font-black text-[#29241f] sm:text-2xl">
@@ -224,23 +224,10 @@ export default function EventClientPaymentCard({
           </p>
         </div>
 
-        {/* KPI 2: Advance Deposit */}
-        {/* <div className="bg-white p-5">
-          <p className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
-            Advance Deposit
-          </p>
-          <p className="mt-1.5 text-xl font-black text-[#8C7A55] sm:text-2xl">
-            ₹{advancePayment.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-1 text-[11px] font-medium text-gray-500">
-            Initial booking token
-          </p>
-        </div> */}
-
-        {/* KPI 3: Total Paid Amount */}
-        <div className="bg-white p-5">
+        {/* KPI 2: Total Paid Amount */}
+        <div className="bg-white p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider text-gray-400">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-400">
               Total Paid Amount
             </p>
             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
@@ -255,10 +242,10 @@ export default function EventClientPaymentCard({
           </p>
         </div>
 
-        {/* KPI 4: Remaining Balance */}
-        <div className={`p-5 ${eventBalance > 0 ? "bg-amber-50/40" : "bg-emerald-50/30"}`}>
+        {/* KPI 3: Remaining Balance */}
+        <div className={`p-4 sm:p-5 ${eventBalance > 0 ? "bg-amber-50/40" : "bg-emerald-50/30"}`}>
           <div className="flex items-center justify-between">
-            <p className="text-[11px] uppercase tracking-wider text-gray-400">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-400">
               Balance Due
             </p>
             {eventBalance > 0 ? (
@@ -285,7 +272,7 @@ export default function EventClientPaymentCard({
       </div>
 
       {/* Itemized Payment History */}
-      <div className="p-5 sm:p-6">
+      <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
             Payment History & Receipts ({history.length})
@@ -302,11 +289,11 @@ export default function EventClientPaymentCard({
         </div>
 
         {history.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-[#faf8f5] py-8 text-center">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-[#faf8f5] py-8 text-center px-4">
             <CreditCard size={28} className="text-gray-300" />
             <p className="mt-2 text-xs font-bold text-gray-600">No payment records logged yet</p>
             <p className="mt-0.5 text-[11px] text-gray-400 max-w-sm">
-              Click &quot;Record Payment&quot; to log client deposits, installment checks, or final settlements.
+              Click &quot;Add Payment&quot; to log client deposits, installment checks, or final settlements.
             </p>
             <button
               type="button"
@@ -318,71 +305,122 @@ export default function EventClientPaymentCard({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-200 text-[10px] font-extrabold uppercase text-gray-400">
-                  <th className="pb-2.5">Date</th>
-                  <th className="pb-2.5">Type</th>
-                  <th className="pb-2.5">Payment Method</th>
-                  <th className="pb-2.5">Transaction Ref</th>
-                  <th className="pb-2.5">Recorded By</th>
-                  <th className="pb-2.5 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {history.map((item, idx) => {
-                  const recordedByName =
-                    typeof item.recordedBy === "object" && item.recordedBy !== null
-                      ? item.recordedBy.name
-                      : typeof item.recordedBy === "string"
-                      ? item.recordedBy
-                      : "Staff";
+          <>
+            {/* Mobile Cards View */}
+            <div className="space-y-2.5 sm:hidden">
+              {history.map((item, idx) => {
+                const recordedByName =
+                  typeof item.recordedBy === "object" && item.recordedBy !== null
+                    ? item.recordedBy.name
+                    : typeof item.recordedBy === "string"
+                    ? item.recordedBy
+                    : "Staff";
 
-                  return (
-                    <tr key={item._id || idx} className="hover:bg-[#faf8f5] transition">
-                      <td className="py-3 font-semibold text-gray-700">
-                        {item.paymentDate ? new Date(item.paymentDate).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        }) : "—"}
-                      </td>
-                      <td className="py-3">
-                        <span className="inline-flex rounded-md bg-[#F4EFE4] px-2 py-0.5 text-[10px] font-extrabold text-[#8C7A55]">
-                          {item.paymentType || "PAYMENT"}
-                        </span>
-                      </td>
-                      <td className="py-3 font-medium text-gray-600">
-                        <div>{item.paymentMethod || "Cash"}</div>
-                        {item.notes && (
-                          <div className="text-[10px] text-gray-400 italic max-w-xs truncate" title={item.notes}>
-                            {item.notes}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 text-gray-500 font-mono text-[11px]">
-                        {item.transactionId || "—"}
-                      </td>
-                      <td className="py-3 text-gray-500">
-                        {recordedByName}
-                      </td>
-                      <td className="py-3 text-right font-extrabold text-[#29241f]">
+                return (
+                  <div
+                    key={item._id || idx}
+                    className="rounded-2xl border border-gray-100 bg-[#faf8f5]/60 p-3.5 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex rounded-md bg-[#F4EFE4] px-2 py-0.5 text-[10px] font-extrabold text-[#8C7A55]">
+                        {item.paymentType || "PAYMENT"}
+                      </span>
+                      <span className="text-sm font-black text-[#29241f]">
                         ₹{item.amount?.toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>{item.paymentMethod || "Cash"} {item.transactionId ? `· ${item.transactionId}` : ""}</span>
+                      <span className="text-gray-400 font-medium">
+                        {item.paymentDate
+                          ? new Date(item.paymentDate).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </span>
+                    </div>
+                    {item.notes && (
+                      <p className="text-[11px] text-gray-500 italic bg-white p-2 rounded-xl border border-gray-100">
+                        {item.notes}
+                      </p>
+                    )}
+                    <div className="text-[10px] text-gray-400 text-right">
+                      Recorded by: {recordedByName}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 text-[10px] font-extrabold uppercase text-gray-400">
+                    <th className="pb-2.5">Date</th>
+                    <th className="pb-2.5">Type</th>
+                    <th className="pb-2.5">Payment Method</th>
+                    <th className="pb-2.5">Transaction Ref</th>
+                    <th className="pb-2.5">Recorded By</th>
+                    <th className="pb-2.5 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {history.map((item, idx) => {
+                    const recordedByName =
+                      typeof item.recordedBy === "object" && item.recordedBy !== null
+                        ? item.recordedBy.name
+                        : typeof item.recordedBy === "string"
+                        ? item.recordedBy
+                        : "Staff";
+
+                    return (
+                      <tr key={item._id || idx} className="hover:bg-[#faf8f5] transition">
+                        <td className="py-3 font-semibold text-gray-700">
+                          {item.paymentDate ? new Date(item.paymentDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          }) : "—"}
+                        </td>
+                        <td className="py-3">
+                          <span className="inline-flex rounded-md bg-[#F4EFE4] px-2 py-0.5 text-[10px] font-extrabold text-[#8C7A55]">
+                            {item.paymentType || "PAYMENT"}
+                          </span>
+                        </td>
+                        <td className="py-3 font-medium text-gray-600">
+                          <div>{item.paymentMethod || "Cash"}</div>
+                          {item.notes && (
+                            <div className="text-[10px] text-gray-400 italic max-w-xs truncate" title={item.notes}>
+                              {item.notes}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 text-gray-500 font-mono text-[11px]">
+                          {item.transactionId || "—"}
+                        </td>
+                        <td className="py-3 text-gray-500">
+                          {recordedByName}
+                        </td>
+                        <td className="py-3 text-right font-extrabold text-[#29241f]">
+                          ₹{item.amount?.toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* Record Payment Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="relative w-full max-w-md rounded-3xl border border-[#e8e1d8] bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="relative w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-6 shadow-2xl">
             <button
               type="button"
               onClick={() => setModalOpen(false)}

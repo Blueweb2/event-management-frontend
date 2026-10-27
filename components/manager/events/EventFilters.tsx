@@ -54,8 +54,8 @@ export default function EventFilters({
     : allFilters;
 
   return (
-    <div className="-mx-4 overflow-x-auto px-4 scrollbar-none">
-      <div className="flex min-w-max gap-2">
+    <div className="w-full max-w-full overflow-x-auto pb-1 no-scrollbar touch-pan-x">
+      <div className="flex w-max flex-nowrap items-center gap-1.5 sm:gap-2">
         {filters.map((filter) => {
           const active = value === filter.value;
 
@@ -65,7 +65,7 @@ export default function EventFilters({
               type="button"
               onClick={() => onChange(filter.value)}
               className={[
-                "inline-flex items-center gap-2 min-h-10 rounded-full px-4 text-sm font-medium transition cursor-pointer",
+                "inline-flex items-center gap-1.5 sm:gap-2 min-h-9 sm:min-h-10 rounded-full px-3 sm:px-4 text-xs sm:text-sm font-medium transition cursor-pointer shrink-0 whitespace-nowrap",
                 active
                   ? "bg-[#252525] text-white shadow-xs"
                   : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
@@ -74,7 +74,7 @@ export default function EventFilters({
               <span>{filter.label}</span>
               {filter.badge !== undefined && filter.badge > 0 && (
                 <span
-                  className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-black ${
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-black shrink-0 ${
                     active
                       ? "bg-amber-400 text-black"
                       : filter.badgeColor || "bg-amber-100 text-amber-900"

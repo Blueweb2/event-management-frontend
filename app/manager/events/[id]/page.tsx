@@ -511,33 +511,30 @@ export default function ManagerEventDetailsPage() {
               type="button"
               onClick={() => router.back()}
               aria-label="Back to Events"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-xs border border-gray-200 hover:bg-gray-50 transition active:scale-95"
+              className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-white text-xl text-[#252525] shadow-xs border border-gray-200 hover:bg-gray-50 transition active:scale-95"
             >
               ←
             </button>
 
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#8C7A55]">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.16em] text-[#8C7A55]">
                 Event Management
               </p>
 
-              <h1 className="mt-0.5 truncate text-lg sm:text-2xl font-black tracking-tight text-[#252525]">
+              <h1 className="mt-0.5 truncate text-base sm:text-2xl font-black tracking-tight text-[#252525]" title={event.eventName}>
                 {event.eventName}
               </h1>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Create Estimate / Booking Button */}
-           
-
             {/* Accept / Confirm Action if Pending */}
             {(event.status || "").toLowerCase() === "pending" && (
               <button
                 type="button"
                 disabled={actionLoading}
                 onClick={() => handleUpdateStatus("CONFIRMED")}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95 disabled:opacity-50"
+                className="inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-2xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition active:scale-95 disabled:opacity-50"
               >
                 {actionLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                 <span>Accept & Confirm</span>
@@ -552,7 +549,7 @@ export default function ManagerEventDetailsPage() {
                   type="button"
                   disabled={actionLoading}
                   onClick={handleStartEvent}
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95 disabled:opacity-50"
+                  className="inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-2xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95 disabled:opacity-50"
                   title="Start live operations for this event"
                 >
                   {actionLoading ? (
@@ -571,7 +568,7 @@ export default function ManagerEventDetailsPage() {
                 type="button"
                 disabled={actionLoading}
                 onClick={() => handleUpdateStatus("Completed")}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-purple-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-purple-800 transition active:scale-95 disabled:opacity-50"
+                className="inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-2xl bg-purple-700 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-purple-800 transition active:scale-95 disabled:opacity-50"
                 title="Mark this event operations as completed"
               >
                 {actionLoading ? (
@@ -589,7 +586,7 @@ export default function ManagerEventDetailsPage() {
                 type="button"
                 disabled={actionLoading}
                 onClick={() => handleUpdateStatus("Settled")}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-[#29241F] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95 disabled:opacity-50"
+                className="inline-flex min-h-10 sm:min-h-11 items-center gap-1.5 rounded-2xl bg-[#29241F] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95 disabled:opacity-50"
                 title="Mark financial settlement as closed"
               >
                 {actionLoading ? (
@@ -606,21 +603,20 @@ export default function ManagerEventDetailsPage() {
               <button
                 type="button"
                 onClick={() => setExportModalOpen(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-2xl bg-[#29241F] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95"
+                className="inline-flex min-h-10 sm:min-h-11 items-center gap-2 rounded-2xl bg-[#29241F] px-3.5 sm:px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-black transition active:scale-95"
               >
                 <Sparkles size={14} className="text-[#D4AF37]" />
-                <span>Export Invoice & Quotation</span>
+                <span className="hidden sm:inline">Export Invoice & Quotation</span>
+                <span className="sm:hidden">Export Invoice</span>
               </button>
             )}
 
-            {/* Record Payment Trigger */}
-          
             {/* 3-Dots More Options Menu for Edit & Delete */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
-                className="inline-flex min-h-11 w-11 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
+                className="inline-flex min-h-10 sm:min-h-11 w-10 sm:w-11 items-center justify-center rounded-2xl border border-gray-300 bg-white text-gray-700 shadow-xs hover:bg-gray-50 transition active:scale-95"
                 title="More event actions"
                 aria-label="More event actions"
                 aria-expanded={menuOpen}
@@ -672,7 +668,7 @@ export default function ManagerEventDetailsPage() {
         {/* Action Feedback Banner */}
         {actionFeedback && (
           <div
-            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs font-semibold shadow-xs transition ${
+            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-3.5 sm:p-4 text-xs font-semibold shadow-xs transition ${
               actionFeedback.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                 : "border-red-200 bg-red-50 text-red-800"
@@ -689,7 +685,7 @@ export default function ManagerEventDetailsPage() {
             <button
               type="button"
               onClick={() => setActionFeedback(null)}
-              className="text-gray-400 hover:text-gray-700 shrink-0"
+              className="text-gray-400 hover:text-gray-700 shrink-0 p-1"
             >
               <X size={15} />
             </button>
@@ -700,73 +696,63 @@ export default function ManagerEventDetailsPage() {
             Event Overview Grid
         ====================================== */}
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Event Status & Specs */}
-          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-400">
                   Event Status
                 </p>
-                <p className="mt-1 text-lg font-black text-[#252525]">
+                <p className="mt-1 text-base sm:text-lg font-black text-[#252525] truncate">
                   {event.eventType}
                 </p>
               </div>
 
-              <span className="rounded-full bg-[#F4EFE4] px-3 py-1 text-xs font-bold text-[#8C7A55]">
+              <span className="rounded-full bg-[#F4EFE4] px-3 py-1 text-xs font-bold text-[#8C7A55] shrink-0">
                 {event.status}
               </span>
             </div>
 
             <div className="mt-4 space-y-2.5 border-t border-gray-100 pt-3 text-xs text-gray-600">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Date:</span>
-                <span className="font-bold text-[#252525]">{formatDate(event.eventDate)}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-gray-400 shrink-0">Date:</span>
+                <span className="font-bold text-[#252525] text-right">{formatDate(event.eventDate)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Time:</span>
-                <span className="font-bold text-[#252525]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-gray-400 shrink-0">Time:</span>
+                <span className="font-bold text-[#252525] text-right">
                   {formatTime24to12(event.eventTime) || event.eventTime}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Guests:</span>
-                <span className="font-bold text-[#252525]">{event.guests} guests</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-gray-400 shrink-0">Guests:</span>
+                <span className="font-bold text-[#252525] text-right">{event.guests} guests</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Venue:</span>
-                <span className="font-bold text-[#252525] truncate max-w-[150px]">{event.location}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-gray-400 shrink-0">Venue:</span>
+                <span className="font-bold text-[#252525] truncate text-right flex-1 ml-2" title={event.location}>{event.location}</span>
               </div>
-              {/* <div className="flex justify-between border-t border-dashed border-gray-100 pt-2">
-                <span className="text-gray-400">Client Payments:</span>
-                <span className="font-bold text-[#252525]">
-                  <span className="text-emerald-700">₹{eventPaid.toLocaleString("en-IN")}</span>
-                  {" / "}
-                  <span className={eventBalance > 0 ? "text-red-600" : "text-gray-500"}>
-                    ₹{eventBalance.toLocaleString("en-IN")} bal
-                  </span>
-                </span>
-              </div> */}
             </div>
           </section>
 
           {/* Client Information */}
-          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-sm">
+            <h2 className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-400">
               Client Details
             </h2>
 
             <div className="mt-3">
-              {typeof event.client === "object" ? (
+              {typeof event.client === "object" && event.client !== null ? (
                 <>
-                  <p className="text-base font-extrabold text-[#252525]">
+                  <p className="text-sm sm:text-base font-extrabold text-[#252525] truncate">
                     {event.client.name}
                   </p>
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-500 truncate">
                     <Phone size={13} className="text-[#9a6c37] shrink-0" />
                     <span>{event.client.phone}</span>
                   </p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500 truncate">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-gray-500 truncate" title={event.client.email}>
                     <Mail size={13} className="text-[#9a6c37] shrink-0" />
                     <span className="truncate">{event.client.email}</span>
                   </p>
@@ -778,8 +764,8 @@ export default function ManagerEventDetailsPage() {
           </section>
 
           {/* Description & Internal Notes */}
-          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-5 shadow-sm">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <section className="rounded-3xl border border-[#e8e1d8] bg-white p-4 sm:p-5 shadow-sm sm:col-span-2 lg:col-span-1">
+            <h2 className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-gray-400">
               Event Notes & Scope
             </h2>
             <p className="mt-2 text-xs leading-5 text-gray-600 line-clamp-4">
@@ -814,7 +800,7 @@ export default function ManagerEventDetailsPage() {
         {/* ======================================
             Dynamic Service & Catering Staffing Matrix
         ====================================== */}
-        <section className="mt-6">
+        <section className="mt-6 w-full max-w-full min-w-0">
           <EventServiceStaffingMatrix
             eventId={eventId}
             token={token || undefined}

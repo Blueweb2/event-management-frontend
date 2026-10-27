@@ -104,7 +104,7 @@ export default function EstimateList({
         return (
           <div
             key={est._id}
-            className={`rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition hover:shadow-md ${
+            className={`rounded-3xl border bg-white p-4 sm:p-6 shadow-xs transition hover:shadow-md w-full max-w-full min-w-0 overflow-hidden ${
               isConverted
                 ? "border-emerald-200 bg-emerald-50/20"
                 : isDateOver
@@ -113,9 +113,9 @@ export default function EstimateList({
             }`}
           >
             {/* Header: Estimate Number, Status, Created Date */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-gray-100">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="rounded-xl bg-stone-100 px-3 py-1 font-mono text-xs font-black text-stone-800 border border-stone-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-gray-100 w-full max-w-full min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+                <span className="rounded-xl bg-stone-100 px-3 py-1 font-mono text-xs font-black text-stone-800 border border-stone-200 shrink-0">
                   {est.estimateNumber || `EST-${est._id.slice(-6).toUpperCase()}`}
                 </span>
 
@@ -285,12 +285,12 @@ export default function EstimateList({
             </div>
 
             {/* Bottom Action Bar: Accept & Create Event, View Estimate, Edit, Reject */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-gray-100 w-full max-w-full min-w-0">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => onExport(est)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <FileText size={14} className="text-[#9a6c37]" />
                   <span>View & Print Quote</span>
@@ -298,7 +298,7 @@ export default function EstimateList({
 
                 <Link
                   href={`/manager/booking?edit=${est._id}&editEstimateId=${est._id}`}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <Edit size={13} />
                   <span>Edit Proposal</span>
@@ -327,22 +327,22 @@ export default function EstimateList({
               </div>
 
               {/* PRIMARY ACTION: Accept & Create Event */}
-              <div>
+              <div className="w-full sm:w-auto">
                 {isConverted ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 px-4 py-2.5 text-xs font-black text-emerald-800">
+                  <span className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-100 px-4 py-2.5 text-xs font-black text-emerald-800">
                     <CheckCircle2 size={15} />
                     <span>Event Created & Scheduled</span>
                   </span>
                 ) : isDateOver ? (
                   <span
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold text-gray-500 border border-gray-200"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold text-gray-500 border border-gray-200"
                     title="The event date for this proposal has passed. It cannot be accepted."
                   >
                     <AlertCircle size={15} className="text-gray-400" />
                     <span>Event Date Passed</span>
                   </span>
                 ) : est.status === "CANCELLED" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2.5 text-xs font-bold text-stone-600 border border-stone-200">
+                  <span className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2.5 text-xs font-bold text-stone-600 border border-stone-200">
                     <XCircle size={15} className="text-stone-400" />
                     <span>Proposal Cancelled</span>
                   </span>

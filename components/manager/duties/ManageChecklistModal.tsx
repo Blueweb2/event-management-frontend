@@ -256,7 +256,7 @@ export default function ManageChecklistModal({
         )}
 
         {/* Shift Details Banner */}
-        <div className="grid grid-cols-3 gap-2 border-b border-[#eee7dc] bg-[#faf8f5]/60 px-6 py-3 text-xs text-[#554e46]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-b border-[#eee7dc] bg-[#faf8f5]/60 px-4 sm:px-6 py-2.5 sm:py-3 text-xs text-[#554e46]">
           <div className="flex items-center gap-1.5 truncate">
             <CalendarDays size={14} className="text-[#a7773f] shrink-0" />
             <span className="truncate">{duty.eventDate}</span>
@@ -272,7 +272,7 @@ export default function ManageChecklistModal({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Real-time Sub-Task Progress Card */}
           <div className="rounded-2xl border border-[#e8e1d8] bg-linear-to-br from-[#faf7f2] to-white p-4">
             <div className="flex items-center justify-between">

@@ -197,14 +197,14 @@ export default function StaffStockPage() {
 
       if (res.success) {
         setSuccessMsg(
-          `Success! Held ${qty} ${holdModalItem.unit || "units"} of "${holdModalItem.name}". Manager has been notified via email.`
+          `Success! Booked ${qty} ${holdModalItem.unit || "items"} of "${holdModalItem.name}". Your manager has been notified.`
         );
         setHoldModalItem(null);
         await fetchData();
         setActiveTab("held");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to place stock on hold.");
+      setError(err.response?.data?.message || err.message || "Failed to book item.");
     } finally {
       setActionLoading(false);
     }
@@ -214,7 +214,7 @@ export default function StaffStockPage() {
   const handleReleaseHold = async (stock: EventStock) => {
     const item = typeof stock.stockItemId === "object" ? stock.stockItemId : (stock as any).stockItem;
     const confirmRelease = window.confirm(
-      `Are you sure you want to release the hold on ${stock.reservedQuantity || stock.requiredQuantity} ${item?.unit || "units"} of "${item?.name || "this item"}"?`
+      `Are you sure you want to cancel the booking for ${stock.reservedQuantity || stock.requiredQuantity} ${item?.unit || "items"} of "${item?.name || "this item"}"?`
     );
     if (!confirmRelease) return;
 
@@ -223,11 +223,11 @@ export default function StaffStockPage() {
       setError(null);
       const res = await releaseStockHold(stock._id);
       if (res.success) {
-        setSuccessMsg("Hold released successfully. Inventory restored to available stock.");
+        setSuccessMsg("Booking cancelled. The item is now available for others.");
         await fetchData();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to release hold.");
+      setError(err.response?.data?.message || err.message || "Failed to cancel booking.");
     } finally {
       setActionLoading(false);
     }
@@ -251,13 +251,13 @@ export default function StaffStockPage() {
 
     const qty = Number(takeForm.takenQuantity);
     if (qty <= 0) {
-      setError("Please specify a valid quantity to take.");
+      setError("Please enter a valid quantity to take.");
       return;
     }
 
     const expected = takeModalStock.reservedQuantity || takeModalStock.requiredQuantity;
     if (qty !== expected && !takeForm.takeNotes.trim()) {
-      setError(`Quantity differs from expected hold (${expected}). A note explaining why is required.`);
+      setError(`Quantity is different from what was booked (${expected}). Please add a short note explaining why.`);
       return;
     }
 
@@ -270,13 +270,13 @@ export default function StaffStockPage() {
       });
 
       if (res.success) {
-        setSuccessMsg(`Successfully checked out ${qty} units into your possession.`);
+        setSuccessMsg(`Picked up ${qty} items successfully.`);
         setTakeModalStock(null);
         await fetchData();
         setActiveTab("custody");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to confirm stock collection.");
+      setError(err.response?.data?.message || err.message || "Failed to confirm item pickup.");
     } finally {
       setActionLoading(false);
     }
@@ -309,17 +309,17 @@ export default function StaffStockPage() {
     const expected = returnModalStock.takenQuantity || 0;
 
     if (totalAccounted !== expected) {
-      setError(`Quantities do not match! Taken: ${expected}, Accounted: ${totalAccounted} (${Math.abs(expected - totalAccounted)} items difference).`);
+      setError(`Numbers don't match! You took ${expected}, but counted ${totalAccounted} (${Math.abs(expected - totalAccounted)} items difference).`);
       return;
     }
 
     if (dmg > 0 && !returnForm.damagedReason.trim()) {
-      setError("Please provide a reason/explanation for the damaged items.");
+      setError("Please write what happened to the damaged items.");
       return;
     }
 
     if (lost > 0 && !returnForm.lostReason.trim()) {
-      setError("Please provide a reason/explanation for the lost/missing items.");
+      setError("Please write what happened to the lost or missing items.");
       return;
     }
 
@@ -337,13 +337,13 @@ export default function StaffStockPage() {
       });
 
       if (res.success) {
-        setSuccessMsg("Stock return submitted! Manager has been notified for verification.");
+        setSuccessMsg("Return submitted! Your manager will check and verify the items.");
         setReturnModalStock(null);
         await fetchData();
         setActiveTab("history");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to submit stock return.");
+      setError(err.response?.data?.message || err.message || "Failed to submit return.");
     } finally {
       setActionLoading(false);
     }
@@ -391,13 +391,13 @@ export default function StaffStockPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base font-extrabold text-[#252525]">Stock &amp; Equipment Portal</h1>
+                <h1 className="text-base font-extrabold text-[#252525]">Items &amp; Equipment</h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-800">
-                  <Sparkles size={10} /> Live Inventory
+                  <Sparkles size={10} /> Available Now
                 </span>
               </div>
               <p className="text-xs text-gray-500 font-medium">
-                Browse numbers, place holds with manager email alert, take &amp; return stock
+                Book items, pick them up, and return them when finished
               </p>
             </div>
           </div>
@@ -407,7 +407,7 @@ export default function StaffStockPage() {
             onClick={fetchData}
             disabled={loading}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            title="Refresh Inventory"
+            title="Refresh Items"
           >
             <RefreshCw size={16} className={loading ? "animate-spin text-[#9a6c37]" : ""} />
           </button>
@@ -425,7 +425,7 @@ export default function StaffStockPage() {
             }`}
           >
             <Layers size={14} />
-            <span>Stock Catalog ({catalogItems.length})</span>
+            <span>All Items ({catalogItems.length})</span>
           </button>
 
           <button
@@ -438,7 +438,7 @@ export default function StaffStockPage() {
             }`}
           >
             <BookmarkCheck size={14} />
-            <span>My Held Stocks ({heldStocks.length})</span>
+            <span>My Booked Items ({heldStocks.length})</span>
           </button>
 
           <button
@@ -451,7 +451,7 @@ export default function StaffStockPage() {
             }`}
           >
             <ShieldCheck size={14} />
-            <span>In My Custody ({custodyStocks.length})</span>
+            <span>Items With Me ({custodyStocks.length})</span>
           </button>
 
           <button
@@ -464,7 +464,7 @@ export default function StaffStockPage() {
             }`}
           >
             <RotateCcw size={14} />
-            <span>Returns &amp; History ({historyStocks.length})</span>
+            <span>Returned Items ({historyStocks.length})</span>
           </button>
         </div>
       </div>
@@ -500,12 +500,12 @@ export default function StaffStockPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <RefreshCw size={32} className="animate-spin text-[#9a6c37]" />
-            <p className="mt-3 text-xs font-bold text-gray-600">Loading live stock catalog...</p>
+            <p className="mt-3 text-xs font-bold text-gray-600">Loading items...</p>
           </div>
         ) : (
           <div>
             {/* ========================================================================= */}
-            {/* TAB 1: STOCK CATALOG (Browse & Hold) */}
+            {/* TAB 1: ALL ITEMS (Browse & Book) */}
             {/* ========================================================================= */}
             {activeTab === "catalog" && (
               <div className="space-y-4">
@@ -518,7 +518,7 @@ export default function StaffStockPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search stock item name, SKU, or category..."
+                        placeholder="Search item name, code, or category..."
                         className="w-full rounded-2xl border border-gray-200 bg-[#faf8f5] pl-10 pr-4 py-2 text-xs font-semibold text-[#252525] placeholder:text-gray-400 focus:border-[#9a6c37] focus:bg-white focus:outline-none"
                       />
                       {searchQuery && (
@@ -539,7 +539,7 @@ export default function StaffStockPage() {
                           onChange={(e) => setOnlyAvailable(e.target.checked)}
                           className="rounded text-[#9a6c37] focus:ring-0"
                         />
-                        <span>In-Stock Only</span>
+                        <span>Available Only</span>
                       </label>
                     </div>
                   </div>
@@ -567,7 +567,7 @@ export default function StaffStockPage() {
                 <div className="flex items-center gap-2.5 rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-2.5 text-xs font-medium text-amber-900 shadow-2xs">
                   <Mail size={16} className="text-[#9a6c37] shrink-0" />
                   <span>
-                    When you place a stock on <strong>Hold</strong>, the warehouse reserves it immediately and an email alert is automatically dispatched to the company manager.
+                    When you book an item, it is saved for you in the store and an email alert is sent to your manager.
                   </span>
                 </div>
 
@@ -575,9 +575,9 @@ export default function StaffStockPage() {
                 {filteredCatalog.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-[#e8e1d8] bg-white p-12 text-center shadow-2xs">
                     <Package size={40} className="mx-auto text-gray-300" />
-                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Stock Items Found</h3>
+                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Items Found</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                      Try adjusting your search query or category filters.
+                      Try searching with different words or categories.
                     </p>
                   </div>
                 ) : (
@@ -600,7 +600,7 @@ export default function StaffStockPage() {
                                 </span>
                                 <h3 className="mt-1 text-sm font-black text-[#252525]">{item.name}</h3>
                                 <p className="text-[11px] text-gray-400">
-                                  SKU: {item.sku || "N/A"} {item.location ? `• Loc: ${item.location}` : ""}
+                                  Code: {item.sku || "N/A"} {item.location ? `• Place: ${item.location}` : ""}
                                 </p>
                               </div>
 
@@ -616,7 +616,7 @@ export default function StaffStockPage() {
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 uppercase">
-                                    In Stock
+                                    Available
                                   </span>
                                 )}
                               </div>
@@ -631,13 +631,13 @@ export default function StaffStockPage() {
                                 </div>
                               </div>
                               <div className="rounded-xl bg-white p-1.5 shadow-2xs">
-                                <div className="text-[10px] font-bold text-gray-400 uppercase">On Hold</div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase">Booked</div>
                                 <div className="text-base font-black text-amber-700">
                                   {item.reservedQuantity}
                                 </div>
                               </div>
                               <div className="rounded-xl bg-white p-1.5 shadow-2xs">
-                                <div className="text-[10px] font-bold text-gray-400 uppercase">In-Use</div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase">Taken</div>
                                 <div className="text-base font-black text-indigo-700">
                                   {item.inUseQuantity}
                                 </div>
@@ -668,7 +668,7 @@ export default function StaffStockPage() {
                               className="inline-flex items-center gap-1.5 rounded-xl bg-[#9a6c37] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#855c2d] active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               <BookmarkCheck size={14} />
-                              Hold This Stock
+                              Book This Item
                             </button>
                           </div>
                         </div>
@@ -680,23 +680,23 @@ export default function StaffStockPage() {
             )}
 
             {/* ========================================================================= */}
-            {/* TAB 2: MY HELD STOCKS (Ready to Take or Release) */}
+            {/* TAB 2: MY BOOKED ITEMS (Ready to Pick Up or Cancel) */}
             {/* ========================================================================= */}
             {activeTab === "held" && (
               <div className="space-y-3">
                 {heldStocks.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-[#e8e1d8] bg-white p-12 text-center shadow-2xs">
                     <BookmarkCheck size={40} className="mx-auto text-gray-300" />
-                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Stocks Currently on Hold</h3>
+                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Booked Items</h3>
                     <p className="mt-1 text-xs text-gray-500 max-w-md mx-auto">
-                      You haven&apos;t placed any stocks on hold. Go to the Stock Catalog tab to select items and hold what you need.
+                      You haven&apos;t booked any items yet. Go to the &quot;All Items&quot; tab to select what you need.
                     </p>
                     <button
                       type="button"
                       onClick={() => setActiveTab("catalog")}
                       className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#9a6c37] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#855c2d]"
                     >
-                      Browse Stock Catalog
+                      Browse All Items
                     </button>
                   </div>
                 ) : (
@@ -713,18 +713,18 @@ export default function StaffStockPage() {
                         <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
                           <div>
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-800 border border-amber-200">
-                              <BookmarkCheck size={11} /> Stock on Hold (Reserved)
+                              <BookmarkCheck size={11} /> Booked (Saved for You)
                             </span>
                             <h3 className="mt-1 text-sm font-extrabold text-[#252525]">
                               {item?.name || "Equipment Item"}
                             </h3>
                             <p className="text-[11px] text-gray-400">
-                              SKU: {item?.sku || "N/A"} &bull; Category: {item?.category || "Equipment"}
+                              Code: {item?.sku || "N/A"} &bull; Category: {item?.category || "Equipment"}
                             </p>
                           </div>
 
                           <div className="text-right">
-                            <span className="text-[10px] uppercase font-bold text-gray-400">Held Quantity</span>
+                            <span className="text-[10px] uppercase font-bold text-gray-400">Booked Amount</span>
                             <div className="text-lg font-black text-[#9a6c37]">
                               {holdQty} <span className="text-xs font-normal text-gray-500">{item?.unit || "pcs"}</span>
                             </div>
@@ -734,15 +734,15 @@ export default function StaffStockPage() {
                         {/* Event / Usage Details */}
                         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase block">Purpose / Event</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase block">Event / Reason</span>
                             <span className="font-bold text-gray-800">
-                              {event?.eventName || stock.takeNotes || "General Staff Operations"}
+                              {event?.eventName || stock.takeNotes || "General Staff Work"}
                             </span>
                           </div>
 
                           {stock.expectedReturnAt && (
                             <div className="rounded-xl bg-gray-50 p-2.5 border border-gray-100">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Expected Usage Date</span>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Date Needed</span>
                               <span className="font-bold text-gray-800">
                                 {new Date(stock.expectedReturnAt).toLocaleDateString([], {
                                   month: "short",
@@ -768,7 +768,7 @@ export default function StaffStockPage() {
                             disabled={actionLoading}
                             className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline transition"
                           >
-                            Release Hold (Cancel)
+                            Cancel Booking
                           </button>
 
                           <button
@@ -777,7 +777,7 @@ export default function StaffStockPage() {
                             className="inline-flex items-center gap-1.5 rounded-xl bg-[#9a6c37] px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-[#855c2d] active:scale-[0.98] transition"
                           >
                             <Truck size={14} />
-                            Take / Issue Stock
+                            Pick Up / Take Item
                           </button>
                         </div>
                       </div>
@@ -788,16 +788,16 @@ export default function StaffStockPage() {
             )}
 
             {/* ========================================================================= */}
-            {/* TAB 3: IN MY CUSTODY (In Possession / In-Use) */}
+            {/* TAB 3: ITEMS WITH ME (Currently In Use) */}
             {/* ========================================================================= */}
             {activeTab === "custody" && (
               <div className="space-y-3">
                 {custodyStocks.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-[#e8e1d8] bg-white p-12 text-center shadow-2xs">
                     <ShieldCheck size={40} className="mx-auto text-gray-300" />
-                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Stock in Your Custody</h3>
+                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Items With You</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                      You are not currently holding any checked-out items. Check &quot;My Held Stocks&quot; to issue items into custody.
+                      You don&apos;t have any items checked out right now. Check &quot;My Booked Items&quot; to pick up your gear.
                     </p>
                   </div>
                 ) : (
@@ -813,18 +813,18 @@ export default function StaffStockPage() {
                         <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-3">
                           <div>
                             <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 border border-indigo-200">
-                              <ShieldCheck size={11} /> In Your Custody (In-Use)
+                              <ShieldCheck size={11} /> With You (In Use)
                             </span>
                             <h3 className="mt-1 text-sm font-extrabold text-[#252525]">
                               {item?.name || "Equipment Item"}
                             </h3>
                             <p className="text-[11px] text-gray-400">
-                              SKU: {item?.sku || "N/A"} &bull; {event?.eventName || "Staff Operations"}
+                              Code: {item?.sku || "N/A"} &bull; {event?.eventName || "Staff Work"}
                             </p>
                           </div>
 
                           <div className="text-right">
-                            <span className="text-[10px] uppercase font-bold text-gray-400">In Possession</span>
+                            <span className="text-[10px] uppercase font-bold text-gray-400">You Have</span>
                             <div className="text-lg font-black text-indigo-700">
                               {stock.takenQuantity} <span className="text-xs font-normal text-gray-500">{item?.unit || "pcs"}</span>
                             </div>
@@ -835,7 +835,7 @@ export default function StaffStockPage() {
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                           {stock.takenAt && (
                             <div className="flex items-center gap-1 rounded-xl bg-gray-50 px-2.5 py-1 text-gray-600 border border-gray-100">
-                              <span className="font-semibold text-gray-500">Collected:</span>
+                              <span className="font-semibold text-gray-500">Picked Up:</span>
                               <span className="font-bold text-gray-800">
                                 {new Date(stock.takenAt).toLocaleDateString([], { month: "short", day: "numeric" })},{" "}
                                 {formatTime24to12(stock.takenAt)}
@@ -846,7 +846,7 @@ export default function StaffStockPage() {
                           {stock.expectedReturnAt && (
                             <div className="flex items-center gap-1 rounded-xl bg-amber-50 px-2.5 py-1 text-amber-800 border border-amber-100 font-medium">
                               <Clock size={12} className="text-amber-600" />
-                              <span className="font-semibold">Return Deadline:</span>
+                              <span className="font-semibold">Return By:</span>
                               <span className="font-bold">
                                 {new Date(stock.expectedReturnAt).toLocaleDateString([], { month: "short", day: "numeric" })}
                               </span>
@@ -856,7 +856,7 @@ export default function StaffStockPage() {
 
                         {/* Actions */}
                         <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                          <span className="text-xs text-gray-500 font-medium">Ready to return items?</span>
+                          <span className="text-xs text-gray-500 font-medium">Done using this item?</span>
 
                           <button
                             type="button"
@@ -864,7 +864,7 @@ export default function StaffStockPage() {
                             className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-[0.98] transition"
                           >
                             <RotateCcw size={14} />
-                            Return Stock
+                            Return Item
                           </button>
                         </div>
                       </div>
@@ -875,16 +875,16 @@ export default function StaffStockPage() {
             )}
 
             {/* ========================================================================= */}
-            {/* TAB 4: RETURNS & VERIFICATION HISTORY */}
+            {/* TAB 4: RETURNED ITEMS & MANAGER CHECK */}
             {/* ========================================================================= */}
             {activeTab === "history" && (
               <div className="space-y-3">
                 {historyStocks.length === 0 ? (
                   <div className="rounded-3xl border border-dashed border-[#e8e1d8] bg-white p-12 text-center shadow-2xs">
                     <RotateCcw size={40} className="mx-auto text-gray-300" />
-                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Return History</h3>
+                    <h3 className="mt-3 text-sm font-bold text-gray-800">No Returned Items Yet</h3>
                     <p className="mt-1 text-xs text-gray-500">
-                      Returned stock records and manager verifications will appear here.
+                      Items you return will show up here after the manager checks them.
                     </p>
                   </div>
                 ) : (
@@ -910,29 +910,29 @@ export default function StaffStockPage() {
                           <div>
                             {isPending && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-purple-800 animate-pulse">
-                                <Clock size={10} /> Awaiting Manager Verification
+                                <Clock size={10} /> Waiting for Manager to Check
                               </span>
                             )}
                             {isDiscrepancy && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-red-800">
-                                <AlertCircle size={10} /> Discrepancy Flagged
+                                <AlertCircle size={10} /> Issue Found (Damaged or Missing)
                               </span>
                             )}
                             {isVerified && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-emerald-800">
-                                <CheckCircle2 size={10} /> Verified &amp; Restocked
+                                <CheckCircle2 size={10} /> Checked &amp; Returned to Store
                               </span>
                             )}
 
                             <h3 className="mt-1 text-sm font-extrabold text-[#252525]">{item?.name || "Item"}</h3>
                             <p className="text-[11px] text-gray-400">
-                              {event?.eventName || "Staff Operations"}{" "}
+                              {event?.eventName || "Staff Work"}{" "}
                               {stock.returnedAt ? `• Returned on ${new Date(stock.returnedAt).toLocaleDateString()}` : ""}
                             </p>
                           </div>
 
                           <div className="text-right">
-                            <span className="text-[10px] uppercase font-bold text-gray-400">Taken</span>
+                            <span className="text-[10px] uppercase font-bold text-gray-400">Total Taken</span>
                             <div className="text-base font-bold text-gray-800">
                               {stock.takenQuantity} {item?.unit || "units"}
                             </div>
@@ -942,7 +942,7 @@ export default function StaffStockPage() {
                         {/* Breakdown */}
                         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
                           <div className="rounded-xl bg-emerald-50 p-2 border border-emerald-100">
-                            <div className="text-[10px] font-bold text-emerald-800 uppercase">Good Condition</div>
+                            <div className="text-[10px] font-bold text-emerald-800 uppercase">Returned Good</div>
                             <div className="text-sm font-black text-emerald-700">
                               +{stock.approvedReturnedQuantity ?? stock.returnedQuantity}
                             </div>
@@ -963,29 +963,29 @@ export default function StaffStockPage() {
 
                         {stock.damagedReason && (
                           <div className="mt-2 text-xs text-amber-900 bg-amber-50 p-2 rounded-xl border border-amber-100">
-                            <span className="font-bold">Damaged Reason:</span> {stock.damagedReason}
+                            <span className="font-bold">Reason for Damage:</span> {stock.damagedReason}
                           </div>
                         )}
                         {stock.lostReason && (
                           <div className="mt-2 text-xs text-red-900 bg-red-50 p-2 rounded-xl border border-red-100">
-                            <span className="font-bold">Lost Reason:</span> {stock.lostReason}
+                            <span className="font-bold">Reason for Loss:</span> {stock.lostReason}
                           </div>
                         )}
                         {stock.managerNotes && (
                           <div className="mt-2 text-xs text-gray-700 bg-gray-50 p-2 rounded-xl border border-gray-100">
-                            <span className="font-bold">Manager Remarks:</span> {stock.managerNotes}
+                            <span className="font-bold">Manager Note:</span> {stock.managerNotes}
                           </div>
                         )}
 
                         {isDiscrepancy && (
                           <div className="mt-3 pt-2 border-t border-red-100 flex items-center justify-between">
-                            <span className="text-xs text-red-700 font-semibold">Manager requested recount:</span>
+                            <span className="text-xs text-red-700 font-semibold">Manager asked to re-check:</span>
                             <button
                               type="button"
                               onClick={() => openReturnModal(stock)}
                               className="rounded-xl bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-red-700 transition"
                             >
-                              Re-Submit Return
+                              Submit Return Again
                             </button>
                           </div>
                         )}
@@ -1000,7 +1000,7 @@ export default function StaffStockPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: HOLD STOCK MODAL (With Manager Email Notification Callout) */}
+      {/* MODAL 1: BOOK ITEM MODAL (With Manager Email Notification Callout) */}
       {/* ========================================================================= */}
       {holdModalItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -1011,8 +1011,8 @@ export default function StaffStockPage() {
                   <BookmarkCheck size={24} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#252525]">Hold / Reserve Stock</h3>
-                  <p className="text-xs text-gray-500">Reserve item from warehouse inventory</p>
+                  <h3 className="text-base font-extrabold text-[#252525]">Book / Reserve Item</h3>
+                  <p className="text-xs text-gray-500">Save item for your upcoming shift or event</p>
                 </div>
               </div>
               <button
@@ -1031,7 +1031,7 @@ export default function StaffStockPage() {
                 <span className="font-bold text-gray-800">{holdModalItem.category}</span>
               </div>
               <div className="mt-1 flex justify-between text-gray-600">
-                <span>Available to Hold:</span>
+                <span>Available to Book:</span>
                 <span className="font-black text-emerald-700 text-sm">
                   {holdModalItem.availableQuantity} {holdModalItem.unit || "units"}
                 </span>
@@ -1042,9 +1042,9 @@ export default function StaffStockPage() {
             <div className="mt-3.5 flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/80 p-3 text-xs text-amber-900">
               <Mail size={16} className="text-[#9a6c37] shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold">Manager Email Notification:</span>
+                <span className="font-bold">Manager Alert:</span>
                 <p className="text-[11px] text-amber-800 mt-0.5">
-                  Submitting this hold will automatically dispatch an alert email to the company manager with your details, item quantity, and notes.
+                  Booking this will save the item and send an email alert to the manager with your details and notes.
                 </p>
               </div>
             </div>
@@ -1052,7 +1052,7 @@ export default function StaffStockPage() {
             <form onSubmit={handleHoldSubmit} className="mt-4 space-y-3.5">
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 mb-1">
-                  Quantity to Hold / Reserve *
+                  How many do you need? *
                 </label>
                 <input
                   type="number"
@@ -1067,7 +1067,7 @@ export default function StaffStockPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Expected Usage Date (Optional)
+                  Date Needed (Optional)
                 </label>
                 <input
                   type="date"
@@ -1079,13 +1079,13 @@ export default function StaffStockPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Purpose / Notes for Manager
+                  Why do you need it? (Notes for manager)
                 </label>
                 <textarea
                   rows={2}
                   value={holdForm.notes}
                   onChange={(e) => setHoldForm({ ...holdForm, notes: e.target.value })}
-                  placeholder="e.g. Needed for catering at Grand Ballroom banquet..."
+                  placeholder="e.g. Needed for evening dinner shift..."
                   className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-800 focus:border-[#9a6c37] focus:outline-none"
                 />
               </div>
@@ -1104,7 +1104,7 @@ export default function StaffStockPage() {
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#9a6c37] px-5 py-2 text-xs font-bold text-white hover:bg-[#855c2d] shadow-sm transition disabled:opacity-50"
                 >
                   <Send size={14} />
-                  {actionLoading ? "Holding..." : "Confirm Hold & Email Manager"}
+                  {actionLoading ? "Booking..." : "Confirm & Book Item"}
                 </button>
               </div>
             </form>
@@ -1113,7 +1113,7 @@ export default function StaffStockPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: TAKE STOCK MODAL */}
+      {/* MODAL 2: PICK UP ITEM MODAL */}
       {/* ========================================================================= */}
       {takeModalStock && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -1124,8 +1124,8 @@ export default function StaffStockPage() {
                   <Truck size={22} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#252525]">Take / Issue Stock</h3>
-                  <p className="text-xs text-gray-500">Collect item into your possession</p>
+                  <h3 className="text-base font-extrabold text-[#252525]">Pick Up Item</h3>
+                  <p className="text-xs text-gray-500">Confirm you are taking this item now</p>
                 </div>
               </div>
               <button
@@ -1147,10 +1147,10 @@ export default function StaffStockPage() {
               return (
                 <div className="mt-4 rounded-2xl bg-[#faf8f5] p-4 text-xs border border-[#e8e1d8]">
                   <div className="font-bold text-[#252525] text-sm">
-                    {item?.name || "Stock Item"}
+                    {item?.name || "Item"}
                   </div>
                   <div className="mt-1 flex justify-between text-gray-500">
-                    <span>Reserved on Hold:</span>
+                    <span>Saved for You:</span>
                     <span className="font-black text-[#9a6c37] text-sm">
                       {takeModalStock.reservedQuantity || takeModalStock.requiredQuantity}{" "}
                       {item?.unit || "units"}
@@ -1163,7 +1163,7 @@ export default function StaffStockPage() {
             <form onSubmit={handleTakeSubmit} className="mt-4 space-y-4">
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 mb-1">
-                  Actual Quantity Taken / Issued *
+                  How many are you taking? *
                 </label>
                 <input
                   type="number"
@@ -1179,17 +1179,17 @@ export default function StaffStockPage() {
                 <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-3 text-xs">
                   <div className="flex items-center gap-1.5 font-bold text-amber-900">
                     <AlertTriangle size={14} className="shrink-0" />
-                    <span>Quantity difference noted</span>
+                    <span>Number is different from booked amount</span>
                   </div>
                   <label className="block text-[11px] font-bold text-amber-900 mt-2 mb-1">
-                    Reason / Note (Required) *
+                    Please tell us why (Required) *
                   </label>
                   <textarea
                     rows={2}
                     required
                     value={takeForm.takeNotes}
                     onChange={(e) => setTakeForm({ ...takeForm, takeNotes: e.target.value })}
-                    placeholder="e.g. Took less because event size changed..."
+                    placeholder="e.g. Took less because fewer guests showed up..."
                     className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs text-gray-800 focus:outline-none"
                   />
                 </div>
@@ -1208,7 +1208,7 @@ export default function StaffStockPage() {
                   disabled={actionLoading}
                   className="rounded-xl bg-[#9a6c37] px-5 py-2 text-xs font-bold text-white hover:bg-[#855c2d] shadow-sm transition disabled:opacity-50"
                 >
-                  {actionLoading ? "Confirming..." : "Confirm & Take Stock"}
+                  {actionLoading ? "Picking up..." : "Confirm & Pick Up Item"}
                 </button>
               </div>
             </form>
@@ -1217,7 +1217,7 @@ export default function StaffStockPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: RETURN STOCK MODAL (With Reconciliation Check) */}
+      {/* MODAL 3: RETURN ITEM MODAL (With Friendly Count Check) */}
       {/* ========================================================================= */}
       {returnModalStock && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
@@ -1228,8 +1228,8 @@ export default function StaffStockPage() {
                   <RotateCcw size={22} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#252525]">Return Stock to Warehouse</h3>
-                  <p className="text-xs text-gray-500">Provide condition breakdown for restock</p>
+                  <h3 className="text-base font-extrabold text-[#252525]">Return Item to Store</h3>
+                  <p className="text-xs text-gray-500">Tell us how many are in good condition, damaged, or lost</p>
                 </div>
               </div>
               <button
@@ -1258,7 +1258,7 @@ export default function StaffStockPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase">Total Taken</span>
+                    <span className="text-[11px] font-bold text-gray-400 uppercase">Total You Took</span>
                     <div className="font-black text-indigo-600 text-base">{returnModalStock.takenQuantity} {item?.unit || "units"}</div>
                   </div>
                 </div>
@@ -1280,16 +1280,16 @@ export default function StaffStockPage() {
                   ) : (
                     <AlertTriangle size={16} className="text-red-600" />
                   )}
-                  {isReturnBalanced ? "Reconciliation Balanced" : "Quantities Must Equal Taken Amount"}
+                  {isReturnBalanced ? "Count is Correct" : "Total count must equal what you took"}
                 </span>
                 <span>
-                  {returnAccounted} / {returnTarget} Accounted
+                  {returnAccounted} / {returnTarget} Counted
                 </span>
               </div>
 
               {!isReturnBalanced && (
                 <p className="mt-1.5 text-[11px] font-medium text-red-700">
-                  ⚠ {Math.abs(returnDiff)} items are {returnDiff > 0 ? "unaccounted for" : "over-counted"}. (Good + Damaged + Lost must equal {returnTarget}).
+                  ⚠ {Math.abs(returnDiff)} items are {returnDiff > 0 ? "missing from your count" : "counted too many"}. (Good + Damaged + Lost must add up to {returnTarget}).
                 </p>
               )}
             </div>
@@ -1298,7 +1298,7 @@ export default function StaffStockPage() {
               {/* Returned in Good Condition */}
               <div>
                 <label className="block text-xs font-bold text-emerald-800 mb-1">
-                  1. Returned in Good Condition (units) *
+                  1. How many in Good Condition? *
                 </label>
                 <input
                   type="number"
@@ -1315,7 +1315,7 @@ export default function StaffStockPage() {
               <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-3.5 space-y-2">
                 <div>
                   <label className="block text-xs font-bold text-amber-900 mb-1">
-                    2. Damaged Items (units)
+                    2. How many Damaged?
                   </label>
                   <input
                     type="number"
@@ -1330,14 +1330,14 @@ export default function StaffStockPage() {
                 {returnForm.damagedQuantity > 0 && (
                   <div>
                     <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                      Reason for Damage (Required) *
+                      What happened to the damaged items? *
                     </label>
                     <textarea
                       rows={2}
                       required
                       value={returnForm.damagedReason}
                       onChange={(e) => setReturnForm({ ...returnForm, damagedReason: e.target.value })}
-                      placeholder="e.g. Cracked during transit or usage..."
+                      placeholder="e.g. Cracked or broke during the event..."
                       className="w-full rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
                     />
                   </div>
@@ -1348,7 +1348,7 @@ export default function StaffStockPage() {
               <div className="rounded-2xl border border-red-100 bg-red-50/30 p-3.5 space-y-2">
                 <div>
                   <label className="block text-xs font-bold text-red-900 mb-1">
-                    3. Lost / Missing Items (units)
+                    3. How many Lost or Missing?
                   </label>
                   <input
                     type="number"
@@ -1363,14 +1363,14 @@ export default function StaffStockPage() {
                 {returnForm.lostQuantity > 0 && (
                   <div>
                     <label className="block text-[11px] font-bold text-red-900 mb-1">
-                      Reason for Loss (Required) *
+                      Where or how was it lost? *
                     </label>
                     <textarea
                       rows={2}
                       required
                       value={returnForm.lostReason}
                       onChange={(e) => setReturnForm({ ...returnForm, lostReason: e.target.value })}
-                      placeholder="e.g. Missing after venue breakdown..."
+                      placeholder="e.g. Could not be found after event breakdown..."
                       className="w-full rounded-xl border border-red-300 bg-white px-3 py-1.5 text-xs text-gray-800 focus:outline-none"
                     />
                   </div>
@@ -1379,12 +1379,12 @@ export default function StaffStockPage() {
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Additional Return Notes</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Any other notes? (Optional)</label>
                 <textarea
                   rows={2}
                   value={returnForm.returnNotes}
                   onChange={(e) => setReturnForm({ ...returnForm, returnNotes: e.target.value })}
-                  placeholder="Optional general notes regarding the return..."
+                  placeholder="Optional note for manager..."
                   className="w-full rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-800 focus:border-[#9a6c37] focus:outline-none"
                 />
               </div>
@@ -1402,7 +1402,7 @@ export default function StaffStockPage() {
                   disabled={!isReturnBalanced || actionLoading}
                   className="rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 shadow-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {actionLoading ? "Submitting..." : "Submit Return for Verification"}
+                  {actionLoading ? "Submitting..." : "Submit Return to Manager"}
                 </button>
               </div>
             </form>

@@ -5,7 +5,6 @@ import { CheckCircle2, AlertCircle, X, Sparkles, FileText, ArrowRight } from "lu
 
 import {
   getEvents,
-  deleteEvent,
   startEvent,
   updateEventStatus,
   type Event,
@@ -26,8 +25,6 @@ import EstimateList from "@/components/manager/events/EstimateList";
 import EmptyEvents from "@/components/manager/events/EmptyEvents";
 import ErrorMessage from "@/components/common/ErrorMessage";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
-import EditEventModal from "@/components/manager/events/EditEventModal";
-import DeleteEventModal from "@/components/manager/events/DeleteEventModal";
 import ClientDocumentModal from "@/components/manager/documents/ClientDocumentModal";
 import {
   buildDocumentDataFromEvent,
@@ -50,8 +47,6 @@ function ManagerEventsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [activeDocument, setActiveDocument] = useState<ClientDocumentData | null>(null);
   const [acceptingEstimateId, setAcceptingEstimateId] = useState<string | null>(null);
 
@@ -290,36 +285,24 @@ function ManagerEventsContent() {
     }
   };
 
-  const handleEditSuccess = (updatedEvent: Event) => {
-    setEvents((prev) =>
-      prev.map((e) => (e._id === updatedEvent._id ? updatedEvent : e))
-    );
-    fetchAllData();
-  };
-
-  const handleDeleteConfirm = async (eventId: string) => {
-    await deleteEvent(eventId, token || undefined);
-    setEvents((prev) => prev.filter((e) => e._id !== eventId));
-  };
-
   return (
-    <div className="w-full space-y-6">
-      <div className="w-full">
+    <div className="w-full max-w-full min-w-0 space-y-5 sm:space-y-6">
+      <div className="w-full max-w-full min-w-0">
         {/* Unified Header */}
-        <div className="border-b border-gray-200 pb-5">
+        <div className="border-b border-gray-200 pb-5 w-full max-w-full min-w-0">
           <EventsHeader isOperationsManager={isOperationsManager} />
         </div>
 
         {/* Action Feedback Banner */}
         {actionFeedback && (
           <div
-            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs font-semibold shadow-xs transition ${
+            className={`mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4 text-xs font-semibold shadow-xs transition w-full max-w-full min-w-0 ${
               actionFeedback.type === "success"
                 ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                 : "border-red-200 bg-red-50 text-red-800"
             }`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {actionFeedback.type === "success" ? (
                 <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
               ) : (
@@ -339,21 +322,21 @@ function ManagerEventsContent() {
 
         {/* Prominent Banner for Pending Booking Estimates (Hidden for Operations Manager) */}
         {!isOperationsManager && pendingEstimates.length > 0 && status !== "Estimates" && (
-          <div className="mt-4 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-amber-50/80 to-amber-100/50 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200 text-amber-950 font-black text-sm shadow-2xs">
+          <div className="mt-4 rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-amber-50/80 to-amber-100/50 p-3.5 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in w-full max-w-full min-w-0 overflow-hidden">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200 text-amber-950 font-black text-xs sm:text-sm shadow-2xs">
                 {pendingEstimates.length}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-black text-amber-950">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+                  <h3 className="text-xs sm:text-sm font-black text-amber-950 truncate max-w-full">
                     {pendingEstimates.length} New Booking Proposal{pendingEstimates.length > 1 ? "s" : ""} / Estimate{pendingEstimates.length > 1 ? "s" : ""}
                   </h3>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-200/80 px-2 py-0.5 text-[10px] font-black uppercase text-amber-900">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-200/80 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-amber-900 shrink-0">
                     Awaiting Acceptance
                   </span>
                 </div>
-                <p className="text-xs text-amber-800/90 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-amber-800/90 mt-0.5 line-clamp-2 sm:line-clamp-none">
                   Review new booking requests, confirm service pricing, and convert them to live events.
                 </p>
               </div>
@@ -362,17 +345,16 @@ function ManagerEventsContent() {
             <button
               type="button"
               onClick={() => setStatus("Estimates")}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#29241f] hover:bg-black text-white px-4 py-2 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs shrink-0"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#29241f] hover:bg-black text-white px-4 py-2 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs shrink-0"
             >
-              <Sparkles size={13} className="text-amber-300" />
               <span>Review & Accept Proposals</span>
-              <ArrowRight size={13} />
+              <ArrowRight size={13} className="shrink-0" />
             </button>
           </div>
         )}
 
         {/* Search */}
-        <section className="mt-5 max-w-7xl">
+        <section className="mt-4 sm:mt-5 w-full max-w-full min-w-0">
           <EventSearch
             value={search}
             onChange={setSearch}
@@ -380,7 +362,7 @@ function ManagerEventsContent() {
         </section>
 
         {/* Status Filters */}
-        <section className="mt-4 max-w-7xl">
+        <section className="mt-3.5 sm:mt-4 w-full max-w-full min-w-0">
           <EventFilters
             value={status}
             onChange={setStatus}
@@ -391,7 +373,7 @@ function ManagerEventsContent() {
         </section>
 
         {/* Unified Event List OR Estimates List */}
-        <section className="mt-6 max-w-7xl">
+        <section className="mt-5 sm:mt-6 w-full max-w-full min-w-0">
           {loading ? (
             <div className="flex min-h-[240px] items-center justify-center">
               <LoadingSpinner />
@@ -437,8 +419,6 @@ function ManagerEventsContent() {
             <EventList
               events={events}
               activeStatus={status}
-              onEdit={(evt) => setEditingEvent(evt)}
-              onDelete={(evt) => setDeletingEvent(evt)}
               onStart={handleStartEvent}
               onAccept={handleAcceptEvent}
               onExport={handleExportEvent}
@@ -447,21 +427,7 @@ function ManagerEventsContent() {
         </section>
       </div>
 
-      {/* Edit Event Modal */}
-      <EditEventModal
-        isOpen={Boolean(editingEvent)}
-        event={editingEvent}
-        onClose={() => setEditingEvent(null)}
-        onSuccess={handleEditSuccess}
-      />
-
-      {/* Delete Event Modal */}
-      <DeleteEventModal
-        isOpen={Boolean(deletingEvent)}
-        event={deletingEvent}
-        onClose={() => setDeletingEvent(null)}
-        onConfirm={handleDeleteConfirm}
-      />
+      {/* Export Quotation / Invoice Modal (Handles both Events & Estimates) */}
 
       {/* Export Quotation / Invoice Modal (Handles both Events & Estimates) */}
       {activeDocument && (
