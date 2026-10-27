@@ -9,7 +9,7 @@ interface EmptyEventsProps {
 
 export default function EmptyEvents({
   title = "No events found",
-  description = "Confirmed bookings will appear here as events.",
+  description = "Confirmed bookings will show up here.",
 }: EmptyEventsProps) {
   return (
     <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-xs border border-gray-100">

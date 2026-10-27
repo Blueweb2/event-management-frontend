@@ -49,8 +49,8 @@ export default function EventList({
     if (ongoingEvents.length === 0) {
       return (
         <EmptyEvents
-          title="No ongoing events today"
-          description="There are no live events currently running."
+          title="No events running today"
+          description="No events are happening right now."
         />
       );
     }
@@ -60,7 +60,7 @@ export default function EventList({
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
           <h3 className="text-xs font-black uppercase tracking-wider text-[#29241f] truncate">
-            Live Ongoing Events ({ongoingEvents.length})
+            Events Running Today ({ongoingEvents.length})
           </h3>
         </div>
         <div className="space-y-3 w-full max-w-full min-w-0">
@@ -90,7 +90,7 @@ export default function EventList({
       return (
         <EmptyEvents
           title="No upcoming events"
-          description="No upcoming events scheduled."
+          description="No events planned yet."
         />
       );
     }
@@ -102,7 +102,7 @@ export default function EventList({
             Upcoming Events ({upcomingEvents.length})
           </h3>
           <span className="text-[11px] font-medium text-gray-400 hidden xs:inline">
-            Click card to manage event details
+            Tap any event to view details
           </span>
         </div>
         <div className="space-y-2 w-full max-w-full min-w-0">
@@ -131,7 +131,7 @@ export default function EventList({
       return (
         <EmptyEvents
           title="No completed events"
-          description="Completed events will appear here."
+          description="Finished events will appear here."
         />
       );
     }
@@ -140,7 +140,7 @@ export default function EventList({
       <section className="space-y-3 w-full max-w-full min-w-0">
         <div className="flex items-center justify-between border-b border-gray-200/60 pb-2.5 w-full max-w-full min-w-0">
           <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
-            Completed & Settled Events ({completedEvents.length})
+            Finished & Paid Events ({completedEvents.length})
           </h3>
         </div>
         <div className="space-y-2 w-full max-w-full min-w-0">

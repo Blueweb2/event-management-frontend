@@ -34,7 +34,7 @@ export default function EventFilters({
       value: "Upcoming",
     },
     {
-      label: "New Bookings & Estimates",
+      label: "New Bookings & Quotes",
       value: "Estimates",
       badge: estimatesCount,
       badgeColor: "bg-amber-100 text-amber-900 border border-amber-300",

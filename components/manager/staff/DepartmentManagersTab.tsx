@@ -553,18 +553,13 @@ export default function DepartmentManagersTab() {
       <section className="relative overflow-hidden rounded-3xl border border-[#e8e1d8] bg-white p-5 sm:p-7 shadow-xs">
         <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-900">
-              <ShieldCheck size={14} className="text-[#9A7B4F]" />
-              Super Admin Exclusive Access Control
-            </div>
+        
 
             <h2 className="mt-2 text-xl sm:text-2xl font-black tracking-tight text-[#29241f]">
               Department Managers & Scoped Roles
             </h2>
 
-            <p className="mt-1 text-xs sm:text-sm text-gray-600 max-w-2xl leading-relaxed">
-              Create, configure, and isolate department managers across Kitchen, Decoration, Photography, Sound, and Operations. Department managers only access workflows and inventory within their assigned boundary.
-            </p>
+      
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

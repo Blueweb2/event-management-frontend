@@ -29,11 +29,19 @@ export default function EventStatusBadge({
 
   const badgeStyle = styles[status] || "bg-[#F4EFE4] text-[#8C7A55]";
 
+  const labelMap: Record<string, string> = {
+    IN_PROGRESS: "In Progress",
+    READY_TO_START: "Ready to Start",
+    CONFIRMED: "Confirmed",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+  };
+
   return (
     <span
       className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ${badgeStyle}`}
     >
-      {status === "IN_PROGRESS" ? "In Progress" : status}
+      {labelMap[status] || status}
     </span>
   );
 }

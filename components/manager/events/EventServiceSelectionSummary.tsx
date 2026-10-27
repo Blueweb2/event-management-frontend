@@ -27,8 +27,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "catering",
       icon: Utensils,
-      title: "Catering Menu & Ingredients",
-      defaultDesc: "View selected dishes, quantities, and kitchen ingredients",
+      title: "Food Menu & Ingredients",
+      defaultDesc: "View dishes, quantities, and food ingredients",
       badgeLabel: "dishes",
       containerClass:
         "border-amber-200/90 bg-gradient-to-r from-[#fdfbf7] via-[#faf5ec] to-[#f6ede0] hover:border-amber-300 hover:bg-[#f5ede0]",
@@ -46,8 +46,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "decoration",
       icon: Palette,
-      title: "Selected Decoration & Packages",
-      defaultDesc: "View selected decor items, package specifications, and quantities",
+      title: "Decoration & Setup Items",
+      defaultDesc: "View decor items, package details, and counts",
       badgeLabel: "items",
       containerClass:
         "border-rose-200/90 bg-gradient-to-r from-[#fff9fa] via-[#fdf2f4] to-[#fae8ec] hover:border-rose-300 hover:bg-[#fae8ec]",
@@ -65,8 +65,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "photography",
       icon: Camera,
-      title: "Selected Photography & Media Packages",
-      defaultDesc: "View selected photography packages, shoot hours, and deliverables",
+      title: "Photography & Video Packages",
+      defaultDesc: "View photo packages, shoot timings, and deliverables",
       badgeLabel: "package",
       containerClass:
         "border-sky-200/90 bg-gradient-to-r from-[#f7faff] via-[#edf5fc] to-[#e4eef9] hover:border-sky-300 hover:bg-[#e4eef9]",
@@ -90,8 +90,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "sound",
       icon: Music,
-      title: "Selected Sound & Lighting Setup",
-      defaultDesc: "View sound equipment, lighting rigs, and audio specifications",
+      title: "Sound & Lighting Setup",
+      defaultDesc: "View sound systems, lights, and setup details",
       badgeLabel: "setup",
       containerClass:
         "border-purple-200/90 bg-gradient-to-r from-[#fbf8fe] via-[#f5eefb] to-[#ece0f6] hover:border-purple-300 hover:bg-[#ece0f6]",
@@ -109,8 +109,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "equipment",
       icon: Package,
-      title: "Selected Equipment & Rental Items",
-      defaultDesc: "View selected rental equipment, units, and inventory allocations",
+      title: "Equipment & Rental Items",
+      defaultDesc: "View rental items, quantities, and stock assigned",
       badgeLabel: "units",
       containerClass:
         "border-emerald-200/90 bg-gradient-to-r from-[#f6fcf8] via-[#eef9f2] to-[#e1f4e7] hover:border-emerald-300 hover:bg-[#e1f4e7]",
@@ -128,8 +128,8 @@ export function getCategoryTheme(category = "") {
     return {
       name: "logistics",
       icon: Truck,
-      title: "Selected Logistics & Transportation",
-      defaultDesc: "View transit schedule, vehicle requirements, and load requirements",
+      title: "Vehicles & Transport",
+      defaultDesc: "View vehicle timings, trips, and load details",
       badgeLabel: "units",
       containerClass:
         "border-teal-200/90 bg-gradient-to-r from-[#f4faf9] via-[#eaf6f4] to-[#dcf0ec] hover:border-teal-300 hover:bg-[#dcf0ec]",
@@ -147,8 +147,8 @@ export function getCategoryTheme(category = "") {
   return {
     name: "general",
     icon: Layers,
-    title: "Selected Service Details & Options",
-    defaultDesc: "View client selection specifications, options, and quantities",
+    title: "Service Details & Options",
+    defaultDesc: "View selected options, details, and quantities",
     badgeLabel: "booked",
     containerClass:
       "border-[#e8dfd3] bg-gradient-to-r from-[#fdfbf7] via-[#faf6f0] to-[#f4ebe0] hover:border-[#d9cbba] hover:bg-[#f2e7db]",

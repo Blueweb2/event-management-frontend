@@ -297,10 +297,10 @@ export default function EventServiceStaffingMatrix({
             <div className="min-w-0">
               <h2 className="text-base sm:text-xl font-black tracking-tight text-[#29241f] flex items-center gap-2">
                 <Layers size={18} className="text-[#9a6c37] shrink-0" />
-                <span className="truncate">Event Services &amp; Staffing</span>
+                <span className="truncate">Event Services &amp; Staff</span>
               </h2>
               <p className="mt-0.5 text-xs text-gray-500">
-                Department staffing requirements, client-selected options, and real-time personnel assignments
+                Booked services, staff needed, and team assignments
               </p>
             </div>
 
@@ -308,7 +308,7 @@ export default function EventServiceStaffingMatrix({
               <div className="flex items-center gap-2 bg-[#faf8f5] px-3 py-1.5 rounded-xl border border-[#eee7dc] text-xs">
                 <Users size={13} className="text-[#9a6c37] shrink-0" />
                 <span className="font-bold text-[#29241f] whitespace-nowrap">
-                  {totalAllocated} / {totalRecommended} Staffed
+                  {totalAllocated} / {totalRecommended} Staff Assigned
                 </span>
                 <span className="text-gray-300">|</span>
                 <span className="text-gray-500 font-medium whitespace-nowrap">
@@ -394,7 +394,7 @@ export default function EventServiceStaffingMatrix({
                         : "bg-amber-50 text-amber-700 border border-amber-200"
                     }`}
                   >
-                    {stream.allocatedCount} / {stream.recommendedStaffCount} Staffed
+                    {stream.allocatedCount} / {stream.recommendedStaffCount} Staff Assigned
                   </span>
                 </div>
 
@@ -470,11 +470,11 @@ export default function EventServiceStaffingMatrix({
                                   type="button"
                                   onClick={() => openDutyChecklist(duty, stream)}
                                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:border-emerald-400 transition cursor-pointer active:scale-95 shadow-2xs min-w-0"
-                                  title="Click to manage and edit subtasks"
+                                  title="Click to manage and edit tasks"
                                 >
                                   <ListChecks size={13} className="text-emerald-600 shrink-0" />
                                   <span className="truncate">
-                                    Manage Subtasks
+                                    Manage Tasks
                                     {checklistCount > 0
                                       ? ` (${completedCount}/${checklistCount})`
                                       : " (+ Add)"}
@@ -482,7 +482,7 @@ export default function EventServiceStaffingMatrix({
                                 </button>
                               ) : (
                                 <span className="text-[11px] text-gray-400 italic">
-                                  Awaiting acceptance
+                                  Waiting for staff to accept
                                 </span>
                               )}
                             </div>
@@ -497,7 +497,7 @@ export default function EventServiceStaffingMatrix({
                 <div className="mt-4 border-t border-[#f1ece5] pt-3 w-full max-w-full min-w-0">
                   <div className="flex items-center justify-between text-xs font-bold text-[#29241f]">
                     <span className="truncate">
-                      {stream.department} Staff Pool (
+                      {stream.department} Team (
                       {stream.departmentStaff.filter((s) => s.isAvailable).length} available):
                     </span>
                   </div>
@@ -588,7 +588,7 @@ export default function EventServiceStaffingMatrix({
                                 onClick={() => openAllocateModal(stream, staffMember)}
                                 className="shrink-0 rounded-lg bg-[#9a6c37] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[#83592a] transition active:scale-95"
                               >
-                                Choose
+                                Assign
                               </button>
                             ) : (
                               <span className="shrink-0 rounded-lg bg-gray-100 px-2 py-1 text-[11px] text-gray-400">
@@ -636,12 +636,12 @@ export default function EventServiceStaffingMatrix({
             <div className="flex items-center justify-between border-b border-gray-100 bg-[#faf8f5] px-5 py-4 shrink-0">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9a6c37]">
-                  Allocate to {allocatingStream.department}
+                  Assign to {allocatingStream.department}
                 </p>
                 <h3 className="text-base sm:text-lg font-black text-[#29241f]">
                   {allocatingStaff
                     ? `Assign ${allocatingStaff.name}`
-                    : `New Duty: ${allocatingStream.title}`}
+                    : `New Task: ${allocatingStream.title}`}
                 </h3>
               </div>
               <button
@@ -667,7 +667,7 @@ export default function EventServiceStaffingMatrix({
                 {!allocatingStaff ? (
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
-                      Select Available Staff Member *
+                      Choose Available Staff *
                     </label>
                     <select
                       required
@@ -710,7 +710,7 @@ export default function EventServiceStaffingMatrix({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700">
-                    Duty Title *
+                    Role / Job Title *
                   </label>
                   <input
                     type="text"
@@ -725,7 +725,7 @@ export default function EventServiceStaffingMatrix({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
-                      Role / Sub-department
+                      Sub-category / Speciality
                     </label>
                     <input
                       type="text"
@@ -737,7 +737,7 @@ export default function EventServiceStaffingMatrix({
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
-                      Duty Date *
+                      Work Date *
                     </label>
                     <input
                       type="date"
@@ -789,7 +789,7 @@ export default function EventServiceStaffingMatrix({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-gray-700">
-                      Hourly Pay Rate (₹/hr)
+                      Pay Rate per Hour (₹/hr)
                     </label>
                     <input
                       type="number"
@@ -801,12 +801,12 @@ export default function EventServiceStaffingMatrix({
                       className="mt-1.5 h-12 w-full rounded-2xl border border-gray-200 px-3.5 text-sm outline-none focus:border-[#9a6c37]"
                     />
                     <p className="mt-1 text-[10px] text-gray-400">
-                      Auto-filled from staff member&apos;s base salary profile.
+                      Auto-filled from staff member&apos;s pay rate.
                     </p>
                   </div>
 
                   <div className="flex flex-col justify-center rounded-2xl border border-[#eee8e1] bg-[#faf8f5] p-3 text-xs">
-                    <p className="font-semibold text-gray-700">Calculated Payout</p>
+                    <p className="font-semibold text-gray-700">Estimated Total Pay</p>
                     <div className="mt-1 flex items-center justify-between text-[11px] text-gray-600">
                       <span>Duration: <strong>{(() => {
                         if (!startTime || !endTime) return "0.0";
@@ -833,7 +833,7 @@ export default function EventServiceStaffingMatrix({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700">
-                    Duty Instructions & Notes (optional)
+                    Instructions & Notes (optional)
                   </label>
                   <textarea
                     rows={2}
@@ -865,7 +865,7 @@ export default function EventServiceStaffingMatrix({
                   ) : (
                     <UserPlus size={16} />
                   )}
-                  {submitting ? "Allocating..." : "Confirm Allocation"}
+                  {submitting ? "Assigning..." : "Confirm Assignment"}
                 </button>
               </div>
             </form>
@@ -886,7 +886,7 @@ export default function EventServiceStaffingMatrix({
         onClose={() => setManagingChecklistDuty(null)}
         onSaveChecklist={async (dutyId, checklist) => {
           await updateAssignmentChecklist(dutyId, checklist, token);
-          setSuccessToast("Sub-duty instructions assigned & saved successfully!");
+          setSuccessToast("Task instructions saved successfully!");
           setTimeout(() => setSuccessToast(""), 4000);
           setManagingChecklistDuty(null);
           await loadMatrix();

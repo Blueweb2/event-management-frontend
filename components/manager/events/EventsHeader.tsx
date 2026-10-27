@@ -20,7 +20,7 @@ export default function EventsHeader({
     <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full max-w-full min-w-0">
       <div className="min-w-0 flex-1">
         <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-[#8C7A55]">
-          {isOperationsManager ? "Event Operations" : "Operations & Financials"}
+          {isOperationsManager ? "Events" : "Events & Billing"}
         </p>
 
         <h1 className="mt-0.5 sm:mt-1 text-xl sm:text-2xl font-black tracking-tight text-[#252525]">
@@ -28,8 +28,8 @@ export default function EventsHeader({
         </h1>
         <p className="mt-0.5 text-xs text-gray-500">
           {isOperationsManager
-            ? "Manage live operations, execution schedules, and upcoming events."
-            : "Manage estimates, live operations, client payments, and documentation in one place."}
+            ? "View running events, daily timings, and upcoming bookings."
+            : "View quotes, running events, client payments, and bills in one place."}
         </p>
       </div>
 

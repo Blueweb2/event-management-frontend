@@ -197,7 +197,7 @@ function ManagerEventsContent() {
       await convertEstimateToBooking(estimate._id, token || undefined);
       setActionFeedback({
         type: "success",
-        message: `Proposal "${estimate.eventName}" accepted! Event has been created and confirmed successfully.`,
+        message: `Booking "${estimate.eventName}" accepted! Event has been confirmed.`,
       });
       // Refresh both events and estimates
       await fetchAllData();
@@ -209,7 +209,7 @@ function ManagerEventsContent() {
         message:
           err instanceof Error
             ? err.message
-            : "Failed to convert estimate to event. Please try again.",
+            : "Failed to convert quote to event. Please try again.",
       });
     } finally {
       setAcceptingEstimateId(null);
@@ -222,7 +222,7 @@ function ManagerEventsContent() {
       await updateEstimateStatusApi(estimate._id, "REJECTED", token || undefined);
       setActionFeedback({
         type: "success",
-        message: `Estimate "${estimate.eventName}" has been marked as rejected.`,
+        message: `Booking "${estimate.eventName}" has been marked as rejected.`,
       });
       await fetchAllData();
     } catch (err) {
@@ -231,7 +231,7 @@ function ManagerEventsContent() {
         message:
           err instanceof Error
             ? err.message
-            : "Failed to update estimate status.",
+            : "Failed to update booking status.",
       });
     }
   };
@@ -251,7 +251,7 @@ function ManagerEventsContent() {
       await startEvent(event._id, token || undefined);
       setActionFeedback({
         type: "success",
-        message: `Operations for "${event.eventName}" have been started successfully!`,
+        message: `"${event.eventName}" has been started!`,
       });
       setStatus("Ongoing");
       await fetchAllData();
@@ -261,7 +261,7 @@ function ManagerEventsContent() {
         message:
           err instanceof Error
             ? err.message
-            : "Failed to start event. Please check required duties or time window.",
+            : "Failed to start event. Please check assigned staff and timing.",
       });
     }
   };
@@ -330,14 +330,14 @@ function ManagerEventsContent() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
                   <h3 className="text-xs sm:text-sm font-black text-amber-950 truncate max-w-full">
-                    {pendingEstimates.length} New Booking Proposal{pendingEstimates.length > 1 ? "s" : ""} / Estimate{pendingEstimates.length > 1 ? "s" : ""}
+                    {pendingEstimates.length} New Booking Request{pendingEstimates.length > 1 ? "s" : ""} / Quote{pendingEstimates.length > 1 ? "s" : ""}
                   </h3>
                   <span className="inline-flex items-center gap-1 rounded-md bg-amber-200/80 px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-amber-900 shrink-0">
-                    Awaiting Acceptance
+                    Waiting for Approval
                   </span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-amber-800/90 mt-0.5 line-clamp-2 sm:line-clamp-none">
-                  Review new booking requests, confirm service pricing, and convert them to live events.
+                  Check new booking requests, confirm prices, and start live events.
                 </p>
               </div>
             </div>
@@ -347,7 +347,7 @@ function ManagerEventsContent() {
               onClick={() => setStatus("Estimates")}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#29241f] hover:bg-black text-white px-4 py-2 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs shrink-0"
             >
-              <span>Review & Accept Proposals</span>
+              <span>Review & Accept Bookings</span>
               <ArrowRight size={13} className="shrink-0" />
             </button>
           </div>
@@ -402,17 +402,17 @@ function ManagerEventsContent() {
             <EmptyEvents
               title={
                 status === "Ongoing"
-                  ? "No ongoing events today"
+                  ? "No events running today"
                   : status === "Upcoming"
                   ? "No upcoming events"
                   : "No events found"
               }
               description={
                 status === "Ongoing"
-                  ? "There are no live events currently running."
+                  ? "No events are happening right now."
                   : status === "Upcoming"
-                  ? "No upcoming events scheduled."
-                  : "Confirmed bookings will appear here as events."
+                  ? "No events planned yet."
+                  : "Confirmed bookings will show up here."
               }
             />
           ) : (

@@ -122,9 +122,7 @@ export default function StaffDirectoryTab() {
                   <ShieldCheck size={10} />
                   Total Managers
                 </span>
-                <span className="text-[10px] font-bold text-indigo-600 opacity-90 group-hover:opacity-100 transition-opacity">
-                  Tab 5 →
-                </span>
+            
               </div>
               <p className="mt-1.5 text-2xl font-bold tracking-tight text-indigo-950">
                 {computedStats.totalManagers}

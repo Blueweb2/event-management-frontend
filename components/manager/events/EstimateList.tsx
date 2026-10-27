@@ -48,7 +48,7 @@ export default function EstimateList({
       <div className="flex min-h-[260px] items-center justify-center rounded-3xl border border-gray-200 bg-white">
         <div className="flex items-center gap-3 text-sm font-semibold text-gray-500">
           <Loader2 size={20} className="animate-spin text-[#9a6c37]" />
-          <span>Loading booking estimates...</span>
+          <span>Loading bookings & quotes...</span>
         </div>
       </div>
     );
@@ -61,11 +61,10 @@ export default function EstimateList({
           <FileText size={26} />
         </div>
         <h3 className="mt-4 text-base font-black text-[#252525]">
-          No Pending Booking Estimates
+          No Pending Bookings or Quotes
         </h3>
         <p className="mx-auto mt-1 max-w-md text-xs text-gray-500">
-          All booking estimates have either been accepted and converted into events,
-          or none have been created yet.
+          All bookings have either been confirmed as events, or none have been added yet.
         </p>
         <div className="mt-5">
           <Link
@@ -73,7 +72,7 @@ export default function EstimateList({
             className="inline-flex items-center gap-2 rounded-xl bg-[#252525] px-4 py-2.5 text-xs font-bold text-white hover:bg-black transition active:scale-95"
           >
             <Sparkles size={14} className="text-[#D4AF37]" />
-            <span>Create New Booking Proposal</span>
+            <span>Create New Booking</span>
           </Link>
         </div>
       </div>
@@ -135,15 +134,15 @@ export default function EstimateList({
                   }`}
                 >
                   {isConverted
-                    ? "✓ Converted to Event"
+                    ? "✓ Confirmed as Event"
                     : isDateOver
-                    ? "Date Over / Expired"
+                    ? "Date Passed"
                     : est.status === "ACCEPTED"
                     ? "Accepted"
                     : est.status === "CANCELLED"
                     ? "Cancelled"
                     : est.status === "DRAFT"
-                    ? "Pending Acceptance"
+                    ? "Waiting for Approval"
                     : est.status}
                 </span>
 
@@ -155,7 +154,7 @@ export default function EstimateList({
               {/* Total Quotation Amount */}
               <div className="text-left sm:text-right">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Total Estimate
+                  Total Price
                 </p>
                 <p className="text-lg sm:text-xl font-black text-[#29241f]">
                   ₹{Number(est.total || 0).toLocaleString("en-IN")}
@@ -230,7 +229,7 @@ export default function EstimateList({
                   {foodItemsCount > 0 && (
                     <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 border border-amber-200">
                       <Utensils size={12} className="text-[#9a6c37]" />
-                      <span>Catering ({foodItemsCount} Dishes)</span>
+                      <span>Food ({foodItemsCount} Dishes)</span>
                     </span>
                   )}
 
@@ -293,7 +292,7 @@ export default function EstimateList({
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <FileText size={14} className="text-[#9a6c37]" />
-                  <span>View & Print Quote</span>
+                  <span>View & Print Bill</span>
                 </button>
 
                 <Link
@@ -301,7 +300,7 @@ export default function EstimateList({
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <Edit size={13} />
-                  <span>Edit Proposal</span>
+                  <span>Edit Booking</span>
                 </Link>
 
                 {onReject && !isConverted && est.status !== "REJECTED" && (
@@ -309,7 +308,7 @@ export default function EstimateList({
                     type="button"
                     disabled={isRejecting}
                     onClick={async () => {
-                      if (confirm(`Are you sure you want to mark estimate "${est.eventName}" as rejected?`)) {
+                      if (confirm(`Are you sure you want to reject booking "${est.eventName}"?`)) {
                         setRejectingId(est._id);
                         try {
                           await onReject(est);
@@ -331,12 +330,12 @@ export default function EstimateList({
                 {isConverted ? (
                   <span className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-100 px-4 py-2.5 text-xs font-black text-emerald-800">
                     <CheckCircle2 size={15} />
-                    <span>Event Created & Scheduled</span>
+                    <span>Event Confirmed</span>
                   </span>
                 ) : isDateOver ? (
                   <span
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-bold text-gray-500 border border-gray-200"
-                    title="The event date for this proposal has passed. It cannot be accepted."
+                    title="The event date for this booking has passed. It cannot be accepted."
                   >
                     <AlertCircle size={15} className="text-gray-400" />
                     <span>Event Date Passed</span>
@@ -344,7 +343,7 @@ export default function EstimateList({
                 ) : est.status === "CANCELLED" ? (
                   <span className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-100 px-4 py-2.5 text-xs font-bold text-stone-600 border border-stone-200">
                     <XCircle size={15} className="text-stone-400" />
-                    <span>Proposal Cancelled</span>
+                    <span>Booking Cancelled</span>
                   </span>
                 ) : (
                   <button
@@ -356,12 +355,12 @@ export default function EstimateList({
                     {isAccepting ? (
                       <>
                         <Loader2 size={15} className="animate-spin text-amber-300" />
-                        <span>Creating Event & Schedule...</span>
+                        <span>Confirming Event...</span>
                       </>
                     ) : (
                       <>
                         <CheckCircle2 size={15} className="text-emerald-400" />
-                        <span>Accept & Create Event</span>
+                        <span>Accept & Confirm Event</span>
                         <ArrowRight size={13} className="text-gray-400" />
                       </>
                     )}

@@ -139,21 +139,9 @@ export default function EventProfitabilityCard({
         </div>
 
         {/* KPI Cards: Total Revenue (Super Admin Only), Total Direct Costs (All Managers), Net Operating Profit (Super Admin Only) */}
-        <div className={`grid grid-cols-1 gap-px bg-[#f1ece5] ${isSuperAdmin ? "sm:grid-cols-3" : ""}`}>
+        <div className={`grid grid-cols-1 gap-px bg-[#f1ece5] ${isSuperAdmin ? "sm:grid-cols-2" : ""}`}>
           {/* Total Revenue - Strictly Super Admin Only */}
-          {isSuperAdmin && typeof data?.revenue?.total === "number" && (
-            <div className="bg-white p-5 text-center sm:text-left">
-              <p className="text-[10px] font-extrabold uppercase text-gray-400">
-                Total Revenue
-              </p>
-              <p className="mt-1.5 text-xl font-black text-[#29241f] sm:text-2xl">
-                ₹{data.revenue.total.toLocaleString()}
-              </p>
-              <p className="mt-0.5 text-[11px] font-semibold text-gray-500">
-                Event Gross Invoiced Value
-              </p>
-            </div>
-          )}
+        
 
           <div className="bg-white p-5 text-center sm:text-left">
             <p className="text-[10px] font-extrabold uppercase text-gray-400">

@@ -159,10 +159,10 @@ export default function EventCard({
                     onExport(event);
                   }}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
-                  title="Export Invoice / Quotation"
+                  title="View or share bill / quotation"
                 >
                   <Sparkles size={11} className="text-[#D4AF37]" />
-                  <span>Export</span>
+                  <span>View Bill</span>
                 </button>
               )}
 
@@ -173,9 +173,9 @@ export default function EventCard({
                   setIsExpanded(true);
                 }}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#9A7B4F] hover:bg-[#F4EBDD] transition shrink-0"
-                title="Expand to full card details"
+                title="See more details"
               >
-                <span>Elaborate</span>
+                <span>View Details</span>
                 <ChevronDown size={13} />
               </button>
             </div>
@@ -204,10 +204,10 @@ export default function EventCard({
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2 border-b border-[#ebdccb] pb-2.5 w-full max-w-full min-w-0">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#29241f] px-3 py-1 text-[10px] font-extrabold tracking-wider text-amber-200 uppercase shrink-0">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Live In-Progress Event
+              Event Running Now
             </span>
             <span className="text-[11px] font-bold text-[#9A7B4F] flex items-center gap-1 shrink-0">
-              <Activity size={13} /> Active Operations
+              <Activity size={13} /> Happening Today
             </span>
           </div>
         )}
@@ -241,7 +241,7 @@ export default function EventCard({
                   setIsExpanded(false);
                 }}
                 className="rounded-lg bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200 shrink-0"
-                title="Collapse to small card"
+                title="Show less"
               >
                 <ChevronUp size={15} />
               </button>
@@ -259,12 +259,12 @@ export default function EventCard({
 
           <InfoRow
             icon={<ClockIcon />}
-            value={event.eventTime ? formatTime24to12(event.eventTime) : "Schedule TBA"}
+            value={event.eventTime ? formatTime24to12(event.eventTime) : "Time to be set"}
           />
 
           <InfoRow
             icon={<LocationIcon />}
-            value={event.location || "Venue location TBA"}
+            value={event.location || "Venue to be set"}
           />
 
           <InfoRow
@@ -288,7 +288,7 @@ export default function EventCard({
                       <span>₹{eventTotal.toLocaleString("en-IN")}</span>
                     </>
                   ) : (
-                    <span className="text-gray-400 font-medium">Estimate pending</span>
+                    <span className="text-gray-400 font-medium">Price pending</span>
                   )}
                 </p>
               </div>
@@ -316,7 +316,7 @@ export default function EventCard({
                     onAccept(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95 shrink-0"
-                  title="Accept / Confirm booking"
+                  title="Accept & confirm booking"
                 >
                   <CheckCircle2 size={12} />
                   <span>Accept</span>
@@ -332,7 +332,7 @@ export default function EventCard({
                     onStart(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95 shrink-0"
-                  title="Start event operations now"
+                  title="Start this event"
                 >
                   <Play size={11} className="fill-white" />
                   <span>Start Event</span>
@@ -348,10 +348,10 @@ export default function EventCard({
                     onExport(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
-                  title="Export Quotation, Invoice & WhatsApp Summary"
+                  title="View or share bill / quotation"
                 >
                   <Sparkles size={11} className="text-[#D4AF37]" />
-                  <span>Export</span>
+                  <span>View Bill</span>
                 </button>
               )}
 
@@ -362,7 +362,7 @@ export default function EventCard({
                   router.push(`/manager/events/${event._id}#payments`);
                 }}
                 className="inline-flex items-center gap-1 rounded-lg bg-white border border-[#e8e1d8] px-2.5 py-1 text-[11px] font-bold text-[#29241f] shadow-2xs hover:bg-[#29241f] hover:text-white transition active:scale-95 shrink-0"
-                title="Record or view client payment for this event"
+                title="Add payment for this event"
               >
                 <Plus size={11} className="text-[#9a6c37]" />
                 <span>Add Payment</span>
@@ -383,7 +383,7 @@ export default function EventCard({
                     onAccept(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-blue-700 transition active:scale-95 shrink-0"
-                  title="Accept / Confirm booking"
+                  title="Accept & confirm booking"
                 >
                   <CheckCircle2 size={12} />
                   <span>Accept</span>
@@ -398,7 +398,7 @@ export default function EventCard({
                     onStart(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-emerald-800 transition active:scale-95 shrink-0"
-                  title="Start event operations now"
+                  title="Start this event"
                 >
                   <Play size={11} className="fill-white" />
                   <span>Start Event</span>
@@ -413,10 +413,10 @@ export default function EventCard({
                     onExport(event);
                   }}
                   className="inline-flex items-center gap-1 rounded-lg bg-[#29241F] px-2.5 py-1 text-[11px] font-bold text-white shadow-2xs hover:bg-black transition active:scale-95 shrink-0"
-                  title="Export Quotation, Invoice & WhatsApp Summary"
+                  title="View or share bill / quotation"
                 >
                   <Sparkles size={11} className="text-[#D4AF37]" />
-                  <span>Export</span>
+                  <span>View Bill</span>
                 </button>
               )}
             </div>
@@ -435,7 +435,7 @@ export default function EventCard({
           </div>
 
           <div className="inline-flex items-center gap-1 text-xs font-bold text-[#9A7B4F] group-hover:translate-x-0.5 transition shrink-0">
-            <span>Manage Event</span>
+            <span>View Details</span>
             <ArrowRight size={13} />
           </div>
         </div>
