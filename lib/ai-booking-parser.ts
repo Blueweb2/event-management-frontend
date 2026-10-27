@@ -199,9 +199,9 @@ export function normalizeDateString(dateInput: string): string | null {
     dec: 11, december: 11,
   };
 
-  // 6. English / Manglish pattern: "25th November 2026", "25 Nov", "25-am theeyathi November 2026"
+  // 6. English / Manglish pattern: "25th November 2026", "25 Nov-nu", "25-am theeyathi November 2026"
   const dayMonthMatch = cleaned.match(
-    /\b(\d{1,2})(?:st|nd|rd|th|am|aam)?\s*(?:theeyathi|thiyathi)?\s*(?:of\s+)?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s*,?\s*(20\d\d))?\b/i
+    /\b(\d{1,2})(?:st|nd|rd|th|am|aam)?\s*(?:theeyathi|thiyathi)?\s*(?:of\s+)?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:-?nu|-?inu|-?il)?(?:\s*,?\s*(20\d\d))?\b/i
   );
   if (dayMonthMatch) {
     const day = parseInt(dayMonthMatch[1], 10);
@@ -214,9 +214,9 @@ export function normalizeDateString(dateInput: string): string | null {
     return null;
   }
 
-  // 7. English pattern: "November 25, 2026" or "Nov 25"
+  // 7. English / Manglish pattern: "November 25, 2026", "Nov 25-nu", "Nov 15-inu"
   const monthDayMatch = cleaned.match(
-    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*(20\d\d))?\b/i
+    /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th|am|aam)?(?:-?nu|-?inu|-?il)?(?:\s*,?\s*(20\d\d))?\b/i
   );
   if (monthDayMatch) {
     const month = months[monthDayMatch[1].toLowerCase().slice(0, 3)];
@@ -359,12 +359,14 @@ const RESERVED_WORDS = new Set([
  */
 export function cleanMalayalamLocative(raw: string): string {
   return raw
-    .replace(/-(?:il|ൽ|യിൽ)$/i, "")
+    .replace(/-(?:il|yil|ൽ|യിൽ)$/i, "")
+    .replace(/(?:il|yil)$/i, "")
+    .replace(/രിൽ$/, "ർ")
     .replace(/(?:ത്തിൽ|ത്തി)$/, "ം")
     .replace(/(?:സിൽ|സി)$/, "സ്")
     .replace(/(?:ളിൽ|ളി)$/, "ൾ")
     .replace(/(?:യിൽ|യി)$/, "")
-    .replace(/(?:ിൽ|ി)$/, "്")
+    .replace(/(?:-ൽ|-യിൽ|ൽ|യിൽ)$/i, "")
     .trim();
 }
 
@@ -425,7 +427,13 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
   }
 
   // 6. Event Type (ordered by specificity to prevent false classifications)
-  if (/conference|seminar|summit|symposium|സമ്മേളനം|സെമിനാർ|കോൺഫറൻസ്|sammelanam/i.test(lower)) {
+  if (/corporate\s+dinner|കോർപ്പറേറ്റ്\s*ഡിന്നർ/i.test(lower)) {
+    result.eventType = "Corporate Gala";
+    result.eventName = "Corporate Dinner";
+  } else if (/wedding\s+reception|വിവാഹ\s*റിസപ്ഷൻ/i.test(lower)) {
+    result.eventType = "Wedding";
+    result.eventName = "Wedding Reception";
+  } else if (/conference|seminar|summit|symposium|സമ്മേളനം|സെമിനാർ|കോൺഫറൻസ്|sammelanam/i.test(lower)) {
     result.eventType = "Conference";
   } else if (/wedding|marriage|shaadi|reception|sangeet|mehendi|baraat|വിവാഹം|കല്യാണം|നിക്കാഹ്|മാംഗല്യം|kalyanam|vivaham|nikkah|mangalyam/i.test(lower)) {
     result.eventType = "Wedding";
@@ -435,10 +443,10 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
     result.eventType = "Product Launch";
   } else if (/concert|festival|musical|live\s+band|ഗാനമേള|സംഗീത\s*നിശ|ഉത്സവം|കച്ചേരി|ganamela|utsavam/i.test(lower)) {
     result.eventType = "Concert / Festival";
-  } else if (/dinner|private\s+party|cocktail|വിരുന്ന്|virunnu/i.test(lower)) {
-    result.eventType = "Private Dinner";
   } else if (/corporate|gala|annual\s+meet|business|townhall|award|വാർഷികം|വാർഷികാഘോഷം|varshikam|varshikotsavam/i.test(lower)) {
     result.eventType = "Corporate Gala";
+  } else if (/dinner|private\s+party|cocktail|വിരുന്ന്|virunnu/i.test(lower)) {
+    result.eventType = "Private Dinner";
   }
 
   // 7. Client Name extraction
@@ -447,14 +455,21 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
     /([A-Za-z\u0D00-\u0D7F]+?)(?:ിന്റെയും|ന്റെയും)\s*([A-Za-z\u0D00-\u0D7F]+?)(?:യുടെയും|ിന്റെയും|ന്റെയും)?\s*(?:കല്യാണം|വിവാഹം|wedding|marriage)/i
   );
 
+  // Manglish joint couple or possessive names: e.g. "Rahulinteyum Priyayudeyum kalyanam", "Rahulinte kalyanam"
+  const manglishCoupleMatch = text.match(
+    /\b([A-Z][a-z]+?)(?:inteyum|inte|ude)\s+([A-Z][a-z]+?)(?:yudeyum|udeyum|inteyum|inte|ude)\s*(?:kalyanam|reception|wedding|marriage|vivaham|engagement|pirannal)\b/i
+  ) || text.match(
+    /\b([A-Z][a-z]+?)(?:inteyum|inte|ude)\s*(?:kalyanam|reception|wedding|marriage|vivaham|engagement|pirannal)\b/i
+  );
+
   // Malayalam client identifier: "ക്ലയന്റ് രാഹുൽ", "ക്ലയന്റ് പേര്: രാഹുൽ", "ബന്ധപ്പെടേണ്ട വ്യക്തി: ജോൺ"
   const mlClientMatch = text.match(
     /(?:ക്ലയന്റ്(?:\s+പേര്)?|ബന്ധപ്പെടേണ്ട\s+വ്യക്തി|പേര്)\s*[:=-]?\s*(?!(?:ഫോൺ|ഇമെയിൽ|നമ്പർ|സ്ഥലം|തീയതി|phone|email)\b)([A-Za-z\u0D00-\u0D7F]+(?:\s+[A-Za-z\u0D00-\u0D7F]+)?)/i
   );
 
-  // English client markers
+  // English / Manglish client markers: "client Rahul", "contact person John", "peru Rahul"
   const directClientMatch = text.match(
-    /(?:client(?:\s+name)?(?:\s+is)?|contact(?:\s+person)?(?:\s+is)?|customer(?:\s+name)?(?:\s+is)?)\s*[:=-]?\s*(?!(?:phone|mobile|cell|contact|email|number|details|booking|event|venue|date|time|guests|pax)\b)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i
+    /(?:client(?:\s+name)?(?:\s+is)?|contact(?:\s+person)?(?:\s+is)?|customer(?:\s+name)?(?:\s+is)?|peru(?:\s+is)?)\s*[:=-]?\s*(?!(?:phone|mobile|cell|contact|email|number|details|booking|event|venue|date|time|guests|pax)\b)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i
   );
 
   const namedPersonMatch = text.match(
@@ -465,6 +480,14 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
     const p1 = mlJointCoupleMatch[1].trim().replace(/ല$/, "ൽ").replace(/[ിന്റെ]+$/, "");
     const p2 = mlJointCoupleMatch[2].trim().replace(/ല$/, "ൽ").replace(/[ിന്റെ]+$/, "");
     result.name = `${p1} and ${p2}`;
+  } else if (manglishCoupleMatch && manglishCoupleMatch[1]) {
+    const p1 = manglishCoupleMatch[1].trim().replace(/(?:inteyum|inte|ude)$/i, "");
+    const p2 = manglishCoupleMatch[2] ? manglishCoupleMatch[2].trim().replace(/(?:yudeyum|udeyum|inteyum|inte|ude)$/i, "") : "";
+    if (p2 && !RESERVED_WORDS.has(p2.toLowerCase()) && !RESERVED_WORDS.has(p1.toLowerCase())) {
+      result.name = `${p1} and ${p2}`;
+    } else if (!RESERVED_WORDS.has(p1.toLowerCase())) {
+      result.name = p1;
+    }
   } else if (mlClientMatch && mlClientMatch[1]) {
     const raw = mlClientMatch[1].trim();
     if (!RESERVED_WORDS.has(raw.toLowerCase())) {
@@ -504,26 +527,37 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
   }
 
   // 9. Location / Venue
-  // Malayalam venue: "...ൽ വെച്ച്", "...യിൽ വെച്ച്", "...-il vechu"
+  // Malayalam & Manglish venue: "...ൽ വെച്ച്", "...യിൽ വെച്ച്", "...-il vechu", "Nilamburil vechu", "Calicut-il vech"
   const mlVechuMatch = text.match(
-    /(?:(?:-?ന്|-?ആം|-?ാം|തിയതി|തീയതി|തീയ്യതി)\s+|[.,\n]|^)\s*([A-Za-z0-9\u0D00-\u0D7F\s&',.-]{2,50}?)(?:-ൽ|-യിൽ|ൽ|യിൽ|-il|il)\s*വെച്ച്(?![a-zA-Z0-9_\u0D00-\u0D7F])/i
+    /(?:^|[^\w\u0D00-\u0D7F])([A-Z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',.-]{1,35}?)(?:-ൽ|-യിൽ|ൽ|യിൽ|-il|il|-yil|yil)?\s*(?:വെച്ച്|vechu|vech)(?![a-zA-Z0-9_\u0D00-\u0D7F])/
   ) || text.match(
-    /([A-Za-z0-9\u0D00-\u0D7F\s&',.-]{2,50}?)(?:-ൽ|-യിൽ|ൽ|യിൽ|-il|il)\s*വെച്ച്(?![a-zA-Z0-9_\u0D00-\u0D7F])/i
+    /(?:(?:-?ന്|-?ആം|-?ാം|തിയതി|തീയതി|തിയ്യതി|മണിക്ക്|മണി|manikku|mani|pm|am)\s+|[.,\n]|^)\s*([A-Za-z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',.-]{1,35}?)(?:-ൽ|-യിൽ|ൽ|യിൽ|-il|il|-yil|yil)?\s*(?:വെച്ച്|vechu|vech)(?![a-zA-Z0-9_\u0D00-\u0D7F])/i
   );
 
-  // Explicit venue tag: "വേദി: ഗ്രാൻഡ് പാലസ്", "സ്ഥലം: ലീല പാലസ്"
+  // Standalone Malayalam locative (e.g. "നിലമ്പൂരിൽ", "കൊച്ചിയിൽ")
+  const mlStandaloneLocMatch = text.match(
+    /(?:(?:മണിക്ക്|വൈകിട്ട്|വൈകീട്ട്|രാവിലെ|രാത്രി|തിയതി|തീയതി|ന്)\s+|[.,\n]|^)\s*([\u0D00-\u0D7F]{2,40}?(?:-ൽ|-യിൽ|ൽ|യിൽ))(?=[.,\s]|$)/i
+  );
+
+  // Standalone Manglish locative (e.g. "Nilamburil", "Calicut-il", "Kozhikode-il", "Kochi-yil")
+  const manglishStandaloneLocMatch = text.match(
+    /(?:(?:manikku|vaikittu|ravile|raathri|on|at|date|\d+|guests?|perkk|perku|per|kalyanam|reception|functions?)\s+|[.,\n]|^)\s*([A-Z][a-z]{2,20}(?:-il|il|-yil|yil))(?=[.,\s]|$)/i
+  );
+
+  // Explicit venue tag: "വേദി: ഗ്രാൻഡ് പാലസ്", "സ്ഥലം: ലീല പാലസ്", "venue Manjeri", "place Nilambur"
   const explicitVenueMatch = text.match(
-    /(?:വേദി|സ്ഥലം|venue(?:\s+is)?|location(?:\s+is)?)\s*[:=-]?\s*([A-Za-z0-9\u0D00-\u0D7F\s&',.-]{2,50}?)(?=\s*(?:[.]|\s+(?:on|for|with|from|around|\d+|വൈകുന്നേരം|രാവിലെ|വൈകിട്ട്|ക്ലയന്റ്|$)))/i
+    /(?:വേദി|സ്ഥലം|venue(?:\s+is)?|location(?:\s+is)?|place(?:\s+is)?|sthalem|sthalam)\s*[:=-]?\s*([A-Za-z0-9\u0D00-\u0D7F\s&',.-]{2,50}?)(?=\s*(?:[.]|\s+(?:on|for|with|from|around|\d+|need|വൈകുന്നേരം|രാവിലെ|വൈകിട്ട്|ക്ലയന്റ്|$)))/i
   );
 
-  // English venue: "at Grand Palace, Bangalore", "at Leela Palace"
+  // English venue: "in Nilambur", "at Grand Palace, Bangalore", "in Calicut"
   const englishVenueMatch =
-    text.match(/(?:at|held\s+at)\s+([A-Z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',-]{2,50}?)(?=\s*(?:[.]|\s+(?:on|for|with|from|around|\d+|വൈകുന്നേരം|രാവിലെ|വൈകിട്ട്|ക്ലയന്റ്|$)))/i) ||
-    text.match(/(?:at\s+)([A-Z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',-]+(?:Hall|Palace|Hotel|Resort|Convention|Center|Centre|Banquet|Gardens?|Grounds?))/i);
+    text.match(/(?:at|held\s+at|in)\s+([A-Z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',-]{2,50}?)(?=\s*(?:[.]|\s+(?:on|for|with|from|around|at|\d+|need|വൈകുന്നേരം|രാവിലെ|വൈകിട്ട്|ക്ലയന്റ്|$)))/i) ||
+    text.match(/(?:at|in\s+)([A-Z\u0D00-\u0D7F][A-Za-z0-9\u0D00-\u0D7F\s&',-]+(?:Hall|Palace|Hotel|Resort|Convention|Center|Centre|Banquet|Gardens?|Grounds?))/i);
 
   if (mlVechuMatch && mlVechuMatch[1]) {
     let rawLoc = mlVechuMatch[1].trim()
       .replace(/^(?:(?:20\d\d)\s+)?(?:[^\s]+\s+)?(?:\d{1,2}(?:-?ന്|-?ആം|-?ാം)?\s+)?/, "")
+      .replace(/^(?:.*?\b(?:manikku|mani|pm|am|at|in|on|vaikittu|ravile|raathri)\s+)/i, "")
       .replace(/[.,]$/, "")
       .trim();
     rawLoc = cleanMalayalamLocative(rawLoc);
@@ -533,34 +567,46 @@ export function parseBookingTextLocally(rawText: string): ExtractedBookingFields
   } else if (explicitVenueMatch && explicitVenueMatch[1]) {
     let rawLoc = explicitVenueMatch[1].trim().replace(/[.,]$/, "");
     rawLoc = cleanMalayalamLocative(rawLoc);
-    if (!RESERVED_WORDS.has(rawLoc.toLowerCase())) {
+    if (!RESERVED_WORDS.has(rawLoc.toLowerCase()) && rawLoc.length >= 2) {
       result.location = rawLoc;
     }
   } else if (englishVenueMatch && englishVenueMatch[1]) {
     const cleanLoc = englishVenueMatch[1].trim().replace(/[.,]$/, "");
-    if (!RESERVED_WORDS.has(cleanLoc.toLowerCase())) {
+    if (!RESERVED_WORDS.has(cleanLoc.toLowerCase()) && cleanLoc.length >= 2) {
       result.location = cleanLoc;
+    }
+  } else if (mlStandaloneLocMatch && mlStandaloneLocMatch[1]) {
+    let rawLoc = mlStandaloneLocMatch[1].trim();
+    rawLoc = cleanMalayalamLocative(rawLoc);
+    if (!RESERVED_WORDS.has(rawLoc.toLowerCase()) && rawLoc.length >= 2) {
+      result.location = rawLoc;
+    }
+  } else if (manglishStandaloneLocMatch && manglishStandaloneLocMatch[1]) {
+    let rawLoc = manglishStandaloneLocMatch[1].trim();
+    rawLoc = cleanMalayalamLocative(rawLoc);
+    if (!RESERVED_WORDS.has(rawLoc.toLowerCase()) && rawLoc.length >= 2) {
+      result.location = rawLoc;
     }
   }
 
   // 10. Services Detection (English, Malayalam script, Manglish)
   const servicesDetected: string[] = [];
-  if (/photo|photography|camera|videography|drone|cinematography|ഫോട്ടോഗ്രാഫി|വീഡിയോഗ്രാഫി|ഫോട്ടോ|വീഡിയോ/i.test(lower)) {
+  if (/photo|photography|camera|videography|drone|cinematography|ഫോട്ടോഗ്രാഫി(?:യും)?|വീഡിയോഗ്രാഫി(?:യും)?|ഫോട്ടോ|വീഡിയോ/i.test(lower)) {
     servicesDetected.push("Photography & Videography");
   }
-  if (/lighting|stage\s+lights|led\s+wall|ambient\s+lights|spotlight|ലൈറ്റിംഗ്|ലൈറ്റ്|സ്റ്റേജ്\s*ലൈറ്റ്/i.test(lower)) {
+  if (/lighting|stage\s+lights|led\s+wall|ambient\s+lights|spotlight|ലൈറ്റിംഗ്(?:ും)?|ലൈറ്റിങ്(?:ും)?|ലൈറ്റ്|സ്റ്റേജ്\s*ലൈറ്റ്/i.test(lower)) {
     servicesDetected.push("Stage & Ambient Lighting");
   }
-  if (/sound|audio|speakers?|microphones?|mic|dj|music|pa\s+system|സൗണ്ട്|ഡിജെ|ഓഡിയോ|മൈക്ക്|പാട്ട്/i.test(lower)) {
+  if (/sound|audio|speakers?|microphones?|mic|dj|music|pa\s+system|pattu|gana|സൗണ്ട്(?:ഉം)?|ഡിജെ|ഓഡിയോ|മൈക്ക്|പാട്ട്/i.test(lower)) {
     servicesDetected.push("Pro Sound System & DJ");
   }
-  if (/decor|decoration|flowers?|floral|mandap|stage\s+decor|backdrop|ഡെക്കറേഷൻ|അലങ്കാരം|ഫ്ലോറൽ|പൂക്കൾ/i.test(lower)) {
+  if (/decor|decoration|flowers?|floral|mandap|mandapam|stage\s+decor|backdrop|ഡെക്കറേഷൻ|ഡെക്കറേഷനും|അലങ്കാരം|ഫ്ലോറൽ|പൂക്കൾ/i.test(lower)) {
     servicesDetected.push("Stage & Floral Decoration");
   }
   if (/anchor|emcee|host|mc|ആങ്കർ|എംസി|അവതാരക/i.test(lower)) {
     servicesDetected.push("Event Anchor & Host");
   }
-  if (/catering|food|buffet|lunch|dinner|beverages?|snack|ഭക്ഷണം|കാറ്ററിംഗ്|സദ്യ|ബുഫെ|ബുഫേ|ഊണ്|സൽക്കാരം/i.test(lower)) {
+  if (/catering|food|buffet|lunch|dinner|beverages?|snack|biriyani|biryani|sadya|sadhya|oonu|ഭക്ഷണം|കാറ്ററിംഗ്|കാറ്ററിംഗും|കാറ്ററിങ്|കാറ്ററിങ്ങും|സദ്യ|ബുഫെ|ബുഫേ|ഊണ്|സൽക്കാരം/i.test(lower)) {
     result.cateringIncluded = true;
     servicesDetected.push("Catering & Food Experience");
     if (/buffet|per\s+guest|per\s+person|ബുഫെ|ബുഫേ|ഓരോരുത്തർക്കും/i.test(lower)) {

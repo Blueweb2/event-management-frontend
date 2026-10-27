@@ -139,7 +139,7 @@ export default function EventProfitabilityCard({
         </div>
 
         {/* KPI Cards: Total Revenue (Super Admin Only), Total Direct Costs (All Managers), Net Operating Profit (Super Admin Only) */}
-        <div className={`grid grid-cols-1 gap-px bg-[#f1ece5] ${isSuperAdmin ? "sm:grid-cols-2" : ""}`}>
+        <div className={`grid grid-cols-2 gap-px bg-[#f1ece5] ${isSuperAdmin ? "sm:grid-cols-2" : ""}`}>
           {/* Total Revenue - Strictly Super Admin Only */}
         
 

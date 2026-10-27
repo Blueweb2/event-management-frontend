@@ -31,7 +31,7 @@ import {
   type Estimate,
 } from "@/lib/estimates.api";
 import { getServices } from "@/lib/services.api";
-import VoiceBookingModal from "./ai/VoiceBookingModal";
+import StickyAiAssistant from "./ai/StickyAiAssistant";
 import type { ExtractedBookingFields } from "@/lib/ai-booking-parser";
 import { formatTime12to24 } from "@/lib/time-utils";
 
@@ -386,27 +386,27 @@ export default function BookingForm() {
     setCreatedEstimate(null);
   };
 
-  // AI Voice Auto-Fill Handler
-  const handleApplyAIBooking = async (data: ExtractedBookingFields) => {
+  // AI Auto-Fill Handler
+  const handleApplyAIBooking = async (data: ExtractedBookingFields, overwrite = true) => {
     setFormData((prev) => {
       const next: BookingFormData = {
         ...prev,
-        eventName: data.eventName || prev.eventName,
-        eventType: data.eventType || prev.eventType,
-        eventDate: data.eventDate || prev.eventDate,
-        eventTime: data.eventTime
-          ? formatTime12to24(data.eventTime) || data.eventTime
+        eventName: (overwrite || !prev.eventName.trim()) ? (data.eventName || prev.eventName) : prev.eventName,
+        eventType: (overwrite || !prev.eventType.trim()) ? (data.eventType || prev.eventType) : prev.eventType,
+        eventDate: (overwrite || !prev.eventDate.trim()) ? (data.eventDate || prev.eventDate) : prev.eventDate,
+        eventTime: (overwrite || !prev.eventTime.trim())
+          ? (data.eventTime ? formatTime12to24(data.eventTime) || data.eventTime : prev.eventTime)
           : prev.eventTime,
-        guests: data.guests || prev.guests,
-        location: data.location || prev.location,
-        description: data.description || prev.description,
-        name: data.name || prev.name,
-        phone: data.phone || prev.phone,
-        email: data.email || prev.email,
-        address: data.address || prev.address,
+        guests: (overwrite || !prev.guests.trim()) ? (data.guests || prev.guests) : prev.guests,
+        location: (overwrite || !prev.location.trim()) ? (data.location || prev.location) : prev.location,
+        description: (overwrite || !prev.description?.trim()) ? (data.description || prev.description) : prev.description,
+        name: (overwrite || !prev.name.trim()) ? (data.name || prev.name) : prev.name,
+        phone: (overwrite || !prev.phone.trim()) ? (data.phone || prev.phone) : prev.phone,
+        email: (overwrite || !prev.email.trim()) ? (data.email || prev.email) : prev.email,
+        address: (overwrite || !prev.address?.trim()) ? (data.address || prev.address) : prev.address,
       };
 
-      if (data.cateringIncluded !== undefined) {
+      if (data.cateringIncluded !== undefined && (overwrite || prev.foodMenu.included === undefined)) {
         next.foodMenu = {
           ...next.foodMenu,
           included: data.cateringIncluded,
@@ -985,36 +985,6 @@ export default function BookingForm() {
       {/* Main Content */}
       <section className="mt-4 sm:mt-8">
         <div className={`mx-auto transition-all duration-300 ${currentStep === 4 ? "max-w-6xl" : "max-w-4xl"}`}>
-          {/* AI Voice Assistant Trigger Banner */}
-          <div className="mb-4 sm:mb-6 rounded-3xl border border-[#E8E1D8] bg-gradient-to-r from-white via-[#FAF8F5] to-white p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9A6C37] to-[#B8894B] text-white shadow-md">
-                <Sparkles size={22} className="animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-[#29241F]">
-                    AI Voice Auto-Fill Assistant
-                  </h3>
-                  <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider">
-                    ⚡ 10x Faster
-                  </span>
-                </div>
-                <p className="text-xs text-[#756D64] mt-0.5">
-                  Speak or paste event notes to automatically fill event dates, guests, client info, and services.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsVoiceModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#29241F] to-[#403932] px-4.5 py-2.5 text-xs font-bold text-white shadow-md hover:from-black hover:to-[#29241F] active:scale-95 transition cursor-pointer shrink-0"
-            >
-              <Mic size={15} className="text-[#D4AF37]" />
-              <span>Speak to Auto-Fill</span>
-            </button>
-          </div>
 
           {/* AI Success Confirmation Banner */}
           {aiSuccessBanner && (
@@ -1201,11 +1171,12 @@ export default function BookingForm() {
         </div>
       </section>
 
-      {/* Voice Booking Modal */}
-      <VoiceBookingModal
+      {/* Sticky AI Booking Assistant */}
+      <StickyAiAssistant
         isOpen={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
+        onOpenChange={setIsVoiceModalOpen}
         onApply={handleApplyAIBooking}
+        currentFormData={formData}
       />
     </div>
   );

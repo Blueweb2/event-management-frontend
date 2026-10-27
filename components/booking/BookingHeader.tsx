@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft, Sparkles } from "lucide-react";
 
@@ -20,28 +22,32 @@ export default function BookingHeader({ onVoiceClick }: BookingHeaderProps) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-xl font-black tracking-tight text-[#29241f]">
-              Create Event Proposal
+              Book an Event
             </h1>
             <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#B8894B]/10 px-2.5 py-0.5 text-[10px] font-extrabold text-[#9A6C37] uppercase tracking-wider">
-              <Sparkles size={11} /> AI Enabled
+              <Sparkles size={11} /> Auto Fill Ready
             </span>
           </div>
           <p className="text-[11px] sm:text-xs text-[#756d64]">
-            Fill in event, client, food, and service details.
+            Fill in event, customer, food, and service details.
           </p>
         </div>
       </div>
 
-      {onVoiceClick && (
-        <button
-          type="button"
-          onClick={onVoiceClick}
-          className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-[#9A6C37] to-[#B8894B] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:brightness-105 active:scale-95 transition cursor-pointer"
-        >
-          <Sparkles size={13} className="text-[#FFE58F]" />
-          <span>AI Voice Fill</span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          if (onVoiceClick) onVoiceClick();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("open-ai-booking-assistant"));
+          }
+        }}
+        className="inline-flex items-center gap-1.5 rounded-2xl bg-[#1E1B18] border border-[#D4AF37]/40 px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:border-[#D4AF37] hover:bg-[#29241F] active:scale-95 transition cursor-pointer"
+        title="Open AI Booking Helper"
+      >
+        <Sparkles size={13} className="text-[#FFE58F]" />
+        <span>AI Helper</span>
+      </button>
     </div>
   );
 }

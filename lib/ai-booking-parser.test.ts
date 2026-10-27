@@ -482,3 +482,23 @@ test("Scenario 18: Timestamp and ISO Date Formatting (formatDateTime12 & formatT
   assert.ok(formatDateTime12(isoUtc).includes("2026"));
 });
 
+test("Scenario 19: Pure Manglish Spoken Voice Dictation", async () => {
+  const manglishSample =
+    "Rahulinteyum Priyayudeyum kalyanam Nov 15-nu vaikittu 6 manikku Nilamburil vechu. 500 perkk biriyani catering venam, stage decoration photo and video venam. Contact phone 9847123456.";
+
+  const result = await parseBookingVoiceText(manglishSample);
+
+  assert.equal(result.success, true);
+  assert.equal(result.data.eventType, "Wedding");
+  assert.equal(result.data.eventDate, "2026-11-15");
+  assert.equal(result.data.eventTime, "18:00");
+  assert.equal(result.data.guests, "500");
+  assert.equal(result.data.location, "Nilambur");
+  assert.equal(result.data.name, "Rahul and Priya");
+  assert.equal(result.data.phone, "9847123456");
+  assert.equal(result.data.cateringIncluded, true);
+  assert.ok(result.data.requestedServices?.includes("Catering & Food Experience"));
+  assert.ok(result.data.requestedServices?.includes("Photography & Videography"));
+  assert.ok(result.data.requestedServices?.includes("Stage & Floral Decoration"));
+});
+

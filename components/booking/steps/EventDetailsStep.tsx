@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Clock3,
   MapPin,
@@ -7,6 +7,10 @@ import {
   Plus,
   Minus,
   Building2,
+  Search,
+  X,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 
 import Input from "@/components/ui/Input";
@@ -21,6 +25,31 @@ import {
   formatTime24to12,
 } from "@/lib/time-utils";
 
+interface VenueOption {
+  id: string;
+  name: string;
+  city?: string;
+  price?: number;
+  isBackend?: boolean;
+}
+
+const CURATED_VENUES: VenueOption[] = [
+  { id: "v-1", name: "Nilambur Convention Centre", city: "Nilambur" },
+  { id: "v-2", name: "Calicut Trade Centre", city: "Kozhikode" },
+  { id: "v-3", name: "Lulu International Convention Centre", city: "Thrissur" },
+  { id: "v-4", name: "Grand Hyatt Bolgatty", city: "Kochi" },
+  { id: "v-5", name: "Manjeri Town Hall & Auditorium", city: "Manjeri, Malappuram" },
+  { id: "v-6", name: "Gokulam Convention Center", city: "Kaloor, Kochi" },
+  { id: "v-7", name: "Apsara Convention Centre", city: "Kozhikode" },
+  { id: "v-8", name: "Flora Convention Centre", city: "Perinthalmanna" },
+  { id: "v-9", name: "Woodbine Convention Centre", city: "Nilambur" },
+  { id: "v-10", name: "Leela Palace", city: "Bangalore / Kovalam" },
+  { id: "v-11", name: "Al Saj Convention Centre", city: "Kazhakkoottam, Trivandrum" },
+  { id: "v-12", name: "Taj Malabar Resort & Spa", city: "Willingdon Island, Kochi" },
+  { id: "v-13", name: "Kottakkal Arya Vaidya Sala Hall", city: "Kottakkal, Malappuram" },
+  { id: "v-14", name: "Rose Lounge & Banquet", city: "Kozhikode" },
+];
+
 interface EventDetailsStepProps {
   formData: BookingFormData;
   updateField: (
@@ -34,6 +63,8 @@ export default function EventDetailsStep({
   updateField,
 }: EventDetailsStepProps) {
   const [backendVenues, setBackendVenues] = useState<Service[]>([]);
+  const [isVenueDropdownOpen, setIsVenueDropdownOpen] = useState(false);
+  const venueComboboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -54,6 +85,59 @@ export default function EventDetailsStep({
       isMounted = false;
     };
   }, []);
+
+  // Close venue dropdown on outside click or tap
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (
+        venueComboboxRef.current &&
+        !venueComboboxRef.current.contains(e.target as Node)
+      ) {
+        setIsVenueDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  // Merge backend venues and curated venues
+  const allVenues = useMemo<VenueOption[]>(() => {
+    const backendList: VenueOption[] = backendVenues.map((v) => ({
+      id: v._id || v.name,
+      name: v.name,
+      city: v.description?.slice(0, 32) || "Registered Venue",
+      price: v.basePrice,
+      isBackend: true,
+    }));
+
+    const names = new Set(backendList.map((b) => b.name.toLowerCase().trim()));
+    const remainingCurated = CURATED_VENUES.filter(
+      (c) => !names.has(c.name.toLowerCase().trim())
+    );
+
+    return [...backendList, ...remainingCurated];
+  }, [backendVenues]);
+
+  const searchQuery = formData.location.trim().toLowerCase();
+
+  const filteredVenues = useMemo(() => {
+    if (!searchQuery) {
+      return allVenues.slice(0, 8);
+    }
+    return allVenues.filter(
+      (v) =>
+        v.name.toLowerCase().includes(searchQuery) ||
+        (v.city && v.city.toLowerCase().includes(searchQuery))
+    );
+  }, [allVenues, searchQuery]);
+
+  const hasExactMatch = allVenues.some(
+    (v) => v.name.toLowerCase().trim() === searchQuery
+  );
 
   const { hour: timeHour, minute: timeMinute, ampm: timeAmpm } =
     parse12HourComponents(formData.eventTime);
@@ -365,58 +449,181 @@ export default function EventDetailsStep({
           </p>
         </div>
 
-        {/* Location / Venue */}
-        <div className="space-y-2.5">
+        {/* Location / Venue - Spread Search */}
+        <div ref={venueComboboxRef} className="relative space-y-1.5">
           <Input
             id="location"
-            list="backend-venues-list"
             label="Event Venue / Location"
-            placeholder="Search venue or enter custom hall/destination"
+            placeholder="Type venue name or location "
             value={formData.location}
-            onChange={(event) =>
-              updateField(
-                "location",
-                event.target.value,
-              )
+            onChange={(event) => {
+              updateField("location", event.target.value);
+              if (!isVenueDropdownOpen) setIsVenueDropdownOpen(true);
+            }}
+            onFocus={() => setIsVenueDropdownOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setIsVenueDropdownOpen(false);
+              } else if (e.key === "Enter") {
+                if (isVenueDropdownOpen) {
+                  e.preventDefault();
+                  if (filteredVenues.length > 0 && !formData.location.trim()) {
+                    updateField("location", filteredVenues[0].name);
+                  }
+                  setIsVenueDropdownOpen(false);
+                }
+              }
+            }}
+            leftIcon={<Search size={18} />}
+            rightElement={
+              <div className="flex items-center gap-1">
+                {formData.location && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateField("location", "");
+                    }}
+                    className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                    title="Clear location"
+                    aria-label="Clear location"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsVenueDropdownOpen((prev) => !prev)}
+                  className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                  title="Toggle venue search"
+                  aria-label="Toggle venue search"
+                >
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-200 ${
+                      isVenueDropdownOpen ? "rotate-180 text-[#9A7B4F]" : ""
+                    }`}
+                  />
+                </button>
+              </div>
             }
-            leftIcon={<MapPin size={18} />}
-            helperText="Select a registered convention centre from the backend or enter any custom location."
+            helperText="Search across in-house & regional convention centres or type any custom hall/city."
             required
+            autoComplete="off"
           />
 
-          <datalist id="backend-venues-list">
-            {backendVenues.map((v) => (
-              <option key={v._id} value={v.name}>
-                {v.name} · ₹{v.basePrice.toLocaleString("en-IN")}/day
-              </option>
-            ))}
-          </datalist>
+          {/* Spread Search Dropdown Panel */}
+          {isVenueDropdownOpen && (
+            <div
+              role="listbox"
+              className="absolute z-40 left-0 right-0 top-full mt-1 max-h-72 overflow-y-auto rounded-xl border border-[#e8e1d8] bg-white shadow-xl p-1.5 focus:outline-none transition-all"
+            >
+              {/* Custom Location Option (when text typed does not match exact venue) */}
+              {formData.location.trim() && !hasExactMatch && (
+                <div className="mb-1 p-1 border-b border-[#f0eae1]">
+                  <button
+                    type="button"
+                    onClick={() => setIsVenueDropdownOpen(false)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 text-xs rounded-lg text-left bg-[#fcfaf7] hover:bg-[#f5efe6] border border-dashed border-[#d8cfc4] text-[#6B5B95] font-medium transition-colors"
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <MapPin size={14} className="text-[#9A7B4F] shrink-0" />
+                      <span className="truncate">
+                        Use custom location: <strong className="text-[#29241f]">&quot;{formData.location.trim()}&quot;</strong>
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[10px] text-gray-500 bg-white border border-[#e8e1d8] px-1.5 py-0.5 rounded font-semibold">
+                      Custom
+                    </span>
+                  </button>
+                </div>
+              )}
 
-          {backendVenues.length > 0 && (
-            <div className="rounded-xl border border-[#e8e1d8] bg-[#fcfaf7] p-3 text-xs">
-              <span className="flex items-center gap-1.5 font-semibold text-[#6B5B95] mb-2">
-                <Building2 size={13} />
-                Registered Venues ({backendVenues.length}):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {backendVenues.map((venue) => {
-                  const isSelected = formData.location === venue.name;
-                  return (
-                    <button
-                      key={venue._id}
-                      type="button"
-                      onClick={() => updateField("location", venue.name)}
-                      className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all ${
-                        isSelected
-                          ? "bg-[#6B5B95] text-white shadow-2xs font-semibold scale-105"
-                          : "border border-[#ded5cb] bg-white text-[#5c544a] hover:border-[#6B5B95] hover:text-[#6B5B95]"
-                      }`}
-                    >
-                      {venue.name.split(",")[0]}
-                    </button>
-                  );
-                })}
+              {/* Spread Search Header */}
+              <div className="px-2.5 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+                <span>
+                  {searchQuery
+                    ? `Matching Venues (${filteredVenues.length})`
+                    : `Venues & Convention Centres (${allVenues.length})`}
+                </span>
+                <span className="text-[10px] font-normal text-gray-400">
+                  {searchQuery ? "Click to pick" : "Type to filter"}
+                </span>
               </div>
+
+              {filteredVenues.length === 0 ? (
+                <div className="py-4 px-3 text-center text-xs text-gray-500">
+                  <p className="font-medium text-gray-700">No matching venues found</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400">
+                    Press Enter or click outside to keep &quot;{formData.location}&quot; as your custom location.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-0.5 mt-1">
+                  {filteredVenues.map((venue) => {
+                    const isSelected =
+                      formData.location.trim().toLowerCase() ===
+                      venue.name.toLowerCase();
+
+                    return (
+                      <button
+                        key={venue.id}
+                        type="button"
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          updateField("location", venue.name);
+                          setIsVenueDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                          isSelected
+                            ? "bg-[#6B5B95]/10 text-[#6B5B95] font-medium"
+                            : "text-[#29241f] hover:bg-[#fcfaf7]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                              venue.isBackend
+                                ? "bg-[#6B5B95]/10 text-[#6B5B95]"
+                                : "bg-[#9A7B4F]/10 text-[#9A7B4F]"
+                            }`}
+                          >
+                            <Building2 size={14} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-semibold text-[#29241f] truncate flex items-center gap-1.5">
+                              <span>{venue.name}</span>
+                              {venue.isBackend && (
+                                <span className="rounded bg-[#6B5B95]/15 px-1.5 py-0.2 text-[9px] font-semibold text-[#6B5B95]">
+                                  Registered
+                                </span>
+                              )}
+                            </div>
+                            {venue.city && (
+                              <div className="text-[11px] text-gray-400 truncate flex items-center gap-1">
+                                <MapPin size={10} className="shrink-0" />
+                                <span>{venue.city}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {venue.price && venue.price > 0 && (
+                            <span className="text-[11px] font-semibold text-[#9A7B4F]">
+                              ₹{venue.price.toLocaleString("en-IN")}/day
+                            </span>
+                          )}
+                          {isSelected && (
+                            <Check size={14} className="text-[#6B5B95] shrink-0" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
